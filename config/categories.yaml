@@ -1,0 +1,13 @@
+# Skill Manager 默认分类
+- name: coding
+  displayName: 编程开发
+  description: 代码编写、调试、重构相关的 Skill
+- name: writing
+  displayName: 文档写作
+  description: 文档、注释、技术写作相关的 Skill
+- name: devops
+  displayName: DevOps
+  description: 部署、CI/CD、运维相关的 Skill
+- name: workflows
+  displayName: 工作流
+  description: 多 Skill 组合的自动化工作流

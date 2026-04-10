@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-10T16:32:00
+last_updated: 2026-04-10T16:37:20
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -47,12 +47,12 @@ development_status:
   # 用户运行 npm start，看到暗色主题的空壳应用界面，5 个路由页面可切换
   # Dependencies: None (foundation epic)
   # ============================================================
-  epic-0: in-progress
+  epic-0: done
   0-1-project-init-and-frontend-backend-skeleton: done
   0-2-shared-types-schemas-and-error-handling-framework: done
-  0-3-file-parsing-and-path-utils-infrastructure: backlog
-  0-4-dark-theme-design-system-and-shell-layout: backlog
-  0-5-config-file-reading-and-app-startup: backlog
+  0-3-file-parsing-and-path-utils-infrastructure: done
+  0-4-dark-theme-design-system-and-shell-layout: done
+  0-5-config-file-reading-and-app-startup: done
   epic-0-retrospective: optional
 
   # ============================================================

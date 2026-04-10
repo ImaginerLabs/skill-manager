@@ -25,16 +25,24 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
+    "@tailwindcss/vite": "^4.2.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "fs-extra": "^11.3.4",
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.1",
+    "lucide-react": "^1.8.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.0",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

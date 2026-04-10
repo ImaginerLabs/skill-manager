@@ -2,6 +2,7 @@ import path from "node:path";
 import express from "express";
 import cors from "cors";
 import { healthRoutes } from "./routes/healthRoutes.js";
+import { configRoutes } from "./routes/configRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 interface AppOptions {
@@ -23,6 +24,7 @@ export function createApp(options: AppOptions) {
 
   // API 路由
   app.use("/api", healthRoutes);
+  app.use("/api", configRoutes);
 
   // API 404 处理器：未匹配的 /api/* 路由返回 JSON 404
   app.all("/api/{*path}", (_req, res) => {

@@ -1,0 +1,7 @@
+# Skill Manager 默认设置
+version: "0.1.0"
+sync:
+  targets: []
+ui:
+  defaultView: grid
+  sidebarWidth: 240

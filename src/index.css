@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+/* ============================================================
+ * Skill Manager — 暗色主题设计系统
+ * Code Dark (#0F172A) + Run Green (#22C55E)
+ * ============================================================ */
+
+/* ---- 字体定义 ---- */
+
+@font-face {
+  font-family: "Fira Code";
+  src: url("/fonts/FiraCode-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fira Code";
+  src: url("/fonts/FiraCode-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  src: url("/fonts/FiraSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fira Sans";
+  src: url("/fonts/FiraSans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---- CSS Variables（shadcn/ui 暗色主题映射） ---- */
+
+:root {
+  --background: 222.2 84% 4.9%; /* #0F172A Code Dark */
+  --foreground: 210 40% 98%; /* #F8FAFC Text Primary */
+
+  --card: 217.2 32.6% 17.5%; /* #1E293B Surface */
+  --card-foreground: 210 40% 98%;
+
+  --popover: 217.2 32.6% 17.5%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 142.1 76.2% 36.3%; /* #22C55E Run Green */
+  --primary-foreground: 355.7 100% 97.3%;
+
+  --secondary: 217.2 32.6% 17.5%; /* #1E293B */
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 215.4 16.3% 46.9%; /* #64748B */
+  --muted-foreground: 215 20.2% 65.1%; /* #94A3B8 */
+
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 84.2% 60.2%; /* #EF4444 Error */
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 215.3 19.3% 34.5%; /* #475569 */
+  --input: 215.3 19.3% 34.5%;
+  --ring: 142.1 76.2% 36.3%; /* #22C55E */
+
+  --radius: 0.5rem;
+
+  /* 自定义 Token */
+  --surface: 217.2 32.6% 17.5%; /* #1E293B */
+  --surface-elevated: 215.3 25% 26.7%; /* #334155 */
+  --warning: 37.7 92.1% 50.2%; /* #F59E0B */
+  --info: 217.2 91.2% 59.8%; /* #3B82F6 */
+
+  /* 字体 */
+  --font-code: "Fira Code", "JetBrains Mono", monospace;
+  --font-sans: "Fira Sans", "Inter", system-ui, sans-serif;
+
+  /* 侧边栏 */
+  --sidebar-width: 240px;
+  --preview-width: 400px;
+}
+
+/* ---- 全局样式 ---- */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border-color: hsl(var(--border));
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-code);
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-code);
+}
+
+/* ---- 焦点指示器（无障碍） ---- */
+
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* ---- 滚动条样式 ---- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted));
+}
+
+/* ---- 减少动画偏好 ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
