@@ -536,6 +536,56 @@ src/components/skills/
 
 ### Process Patterns
 
+**Story 生命周期（强制流程）：**
+
+每个 Story 必须严格遵循以下完整生命周期，不允许跳过任何阶段：
+
+```mermaid
+graph LR
+    A[backlog] --> B[ready-for-dev]
+    B --> C[in-progress]
+    C --> D[qa]
+    D -->|测试失败| C
+    D --> E[review]
+    E -->|发现问题| C
+    E --> F[done]
+```
+
+| 阶段 | 执行者 | 工具/技能 | 质量门禁 |
+|------|--------|-----------|----------|
+| **ready-for-dev** | PM/Architect | `bmad-create-story` | Story 文件包含完整上下文和 AC |
+| **in-progress** | Developer (Amelia) | `bmad-dev-story` | 每个 task 完成时必须有对应单元测试 |
+| **qa** | QA/Developer | `bmad-qa-generate-e2e-tests` 或 `bmad-testarch-automate` | 集成测试 + E2E 测试覆盖所有 AC，全量测试套件 100% 通过 |
+| **review** | Reviewer | `bmad-code-review` | 对抗式代码审查通过，无阻塞性问题 |
+| **done** | — | — | 实现 + 测试 + 审查全部签收 |
+
+**阶段详细规则：**
+
+1. **in-progress → qa 门禁：**
+   - Story 文件中所有 tasks/subtasks 标记 `[x]`
+   - 每个 task 有对应的单元测试且通过
+   - `tsc --noEmit` 零错误
+   - `vitest run` 全部通过
+
+2. **qa 阶段执行内容：**
+   - 为 Story 的每个 Acceptance Criteria 生成集成测试或 E2E 测试
+   - 运行完整测试套件（单元 + 集成 + E2E）
+   - 测试结果记录到 Story 文件的 Dev Agent Record
+   - 测试失败 → 回退到 `in-progress` 修复
+
+3. **review 阶段执行内容：**
+   - 使用 `bmad-code-review` 执行多维度对抗式审查
+   - 建议使用新的上下文窗口和不同的 LLM 模型
+   - 发现阻塞性问题 → 回退到 `in-progress` 修复，修复后重新走 qa
+   - 审查通过 → 标记 `done`
+
+4. **Story 文件 Dev Agent Record 必须包含：**
+   - 使用的 Agent 模型
+   - 每个 task 的完成记录
+   - QA 测试结果（测试文件列表、通过/失败数）
+   - CR 审查结果（审查发现、解决方案）
+   - 变更文件列表
+
 **错误处理：**
 
 ```typescript
@@ -637,6 +687,9 @@ interface AsyncState<T> {
 5. 所有状态管理使用 Zustand store，禁止使用 React Context 做全局状态
 6. 所有错误使用 `AppError` 类，包含 `code` 和 `statusCode`
 7. 所有 API 响应使用 `ApiResponse<T>` 包装格式
+8. **每个 Story 完成实现后，必须进入 qa 阶段执行测试覆盖验证（bmad-qa-generate-e2e-tests 或 bmad-testarch-automate），禁止跳过**
+9. **每个 Story 通过 qa 后，必须进入 review 阶段执行代码审查（bmad-code-review），禁止跳过**
+10. **Story 状态流转必须严格遵循 backlog → ready-for-dev → in-progress → qa → review → done，禁止跳过任何阶段**
 
 ---
 

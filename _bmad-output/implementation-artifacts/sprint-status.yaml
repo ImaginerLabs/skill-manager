@@ -20,22 +20,61 @@
 #   - backlog: Story only exists in epic file
 #   - ready-for-dev: Story file created in stories folder
 #   - in-progress: Developer actively working on implementation
-#   - review: Ready for code review (via Dev's code-review workflow)
-#   - done: Story completed
+#   - qa: Implementation complete, running QA test coverage validation (bmad-qa-generate-e2e-tests / bmad-testarch-automate)
+#   - review: QA passed, ready for code review (bmad-code-review)
+#   - done: Code review passed, story completed
 #
 # Retrospective Status:
 #   - optional: Can be completed but not required
 #   - done: Retrospective has been completed
+#
+# STORY LIFECYCLE (MANDATORY):
+# ============================
+# Every story MUST follow this complete lifecycle — no skipping steps:
+#
+#   backlog → ready-for-dev → in-progress → qa → review → done
+#
+# Phase Details:
+#   1. ready-for-dev: Story file created via bmad-create-story with full context
+#   2. in-progress: Developer (Amelia) implements tasks/subtasks with unit tests per task
+#   3. qa: QA validation phase — run bmad-qa-generate-e2e-tests or bmad-testarch-automate
+#      - Generate/update integration tests and E2E tests for the story's acceptance criteria
+#      - Run full test suite (unit + integration + E2E) — ALL must pass 100%
+#      - Record test coverage results in story file Dev Agent Record
+#      - If tests fail → back to in-progress for fixes
+#   4. review: Code review phase — run bmad-code-review (fresh context, different LLM recommended)
+#      - Adversarial review across multiple quality facets
+#      - If issues found → back to in-progress for fixes, then re-run qa
+#      - If approved → move to done
+#   5. done: Story completed with full implementation, test coverage, and code review sign-off
+#
+# GATE REQUIREMENTS:
+# ==================
+# in-progress → qa GATE:
+#   - All tasks/subtasks marked [x] in story file
+#   - Unit tests exist and pass for every task
+#   - tsc --noEmit passes with zero errors
+#
+# qa → review GATE:
+#   - Integration/E2E tests generated for all acceptance criteria
+#   - Full test suite passes 100% (vitest run + playwright test if applicable)
+#   - Test results documented in story file
+#
+# review → done GATE:
+#   - Code review completed with no blocking issues
+#   - All review findings resolved
+#   - Story file Dev Agent Record updated with final status
 #
 # WORKFLOW NOTES:
 # ===============
 # - Epic transitions to 'in-progress' automatically when first story is created
 # - Stories can be worked in parallel if team capacity allows
 # - Developer typically creates next story after previous one is 'done' to incorporate learnings
-# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Dev moves story to 'qa' after all tasks complete, then 'review' after QA passes
+# - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-10T16:37:20
+last_updated: 2026-04-10T20:24:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -76,12 +115,12 @@ development_status:
   # 用户可以从 CodeBuddy IDE 扫描并导入 Skill 文件到仓库中
   # Dependencies: Epic 1
   # ============================================================
-  epic-2: backlog
-  2-0-safe-write-and-path-protection-infrastructure: backlog
-  2-1-ide-directory-scan-api: backlog
-  2-2-import-wizard-and-category-selection: backlog
-  2-3-file-import-and-frontmatter-completion: backlog
-  2-4-cold-start-guide-and-post-import-cleanup: backlog
+  epic-2: in-progress
+  2-0-safe-write-and-path-protection-infrastructure: in-progress
+  2-1-ide-directory-scan-api: in-progress
+  2-2-import-wizard-and-category-selection: in-progress
+  2-3-file-import-and-frontmatter-completion: in-progress
+  2-4-cold-start-guide-and-post-import-cleanup: in-progress
   epic-2-retrospective: optional
 
   # ============================================================

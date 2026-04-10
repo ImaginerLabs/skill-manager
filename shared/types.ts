@@ -55,6 +55,80 @@ export interface Workflow {
   steps: WorkflowStep[];
 }
 
+// ---- 扫描相关类型 ----
+
+/** 扫描结果项（单个文件） */
+export interface ScanResultItem {
+  /** slug 化文件名 */
+  id: string;
+  /** Frontmatter: name（解析失败时使用文件名） */
+  name: string;
+  /** Frontmatter: description（解析失败时为空） */
+  description: string;
+  /** 相对于扫描目录的路径 */
+  filePath: string;
+  /** 绝对路径 */
+  absolutePath: string;
+  /** 解析状态 */
+  parseStatus: "ok" | "failed";
+  /** 解析失败时的错误信息 */
+  parseError?: string;
+  /** 文件大小（bytes） */
+  fileSize: number;
+  /** ISO 8601 时间戳 */
+  lastModified: string;
+}
+
+/** 扫描结果 */
+export interface ScanResult {
+  /** 扫描到的文件列表 */
+  items: ScanResultItem[];
+  /** 扫描的目录路径 */
+  scanPath: string;
+  /** 扫描到的 .md 文件总数 */
+  totalFiles: number;
+}
+
+// ---- 导入相关类型 ----
+
+/** 导入请求项 */
+export interface ImportRequestItem {
+  /** 源文件绝对路径 */
+  absolutePath: string;
+  /** 文件名 */
+  name: string;
+}
+
+/** 导入请求 */
+export interface ImportRequest {
+  /** 要导入的文件列表 */
+  items: ImportRequestItem[];
+  /** 目标分类 */
+  category: string;
+}
+
+/** 导入结果项 */
+export interface ImportResultItem {
+  /** 文件名 */
+  name: string;
+  /** 状态 */
+  status: "success" | "failed";
+  /** 失败时的错误信息 */
+  error?: string;
+}
+
+/** 导入结果 */
+export interface ImportResult {
+  /** 总数 */
+  total: number;
+  /** 成功数 */
+  success: number;
+  /** 失败数 */
+  failed: number;
+  /** 详细列表 */
+  details: ImportResultItem[];
+}
+
 // ---- 同步相关类型 ----
 
 /** 同步目标 */

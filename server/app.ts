@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { categoryRoutes } from "./routes/categoryRoutes.js";
 import { configRoutes } from "./routes/configRoutes.js";
 import { healthRoutes } from "./routes/healthRoutes.js";
+import { importRoutes } from "./routes/importRoutes.js";
 import { skillRoutes } from "./routes/skillRoutes.js";
 
 interface AppOptions {
@@ -29,6 +30,7 @@ export function createApp(options: AppOptions) {
   app.use("/api", configRoutes);
   app.use("/api", skillRoutes);
   app.use("/api", categoryRoutes);
+  app.use("/api", importRoutes);
 
   // API 404 处理器：未匹配的 /api/* 路由返回 JSON 404
   app.all("/api/{*path}", (_req, res) => {

@@ -25,6 +25,10 @@ export const ErrorCode = {
 
   // 安全相关
   PATH_TRAVERSAL: "PATH_TRAVERSAL",
+
+  // 扫描相关
+  SCAN_PATH_NOT_FOUND: "SCAN_PATH_NOT_FOUND",
+  SCAN_PERMISSION_DENIED: "SCAN_PERMISSION_DENIED",
 } as const;
 
 /** 错误码类型 */
@@ -40,6 +44,7 @@ export const HttpStatus = {
   BAD_REQUEST: 400,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  FORBIDDEN: 403,
   INTERNAL_SERVER_ERROR: 500,
 } as const;
 

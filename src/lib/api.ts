@@ -180,3 +180,57 @@ export async function deleteSkill(id: string): Promise<void> {
     method: "DELETE",
   });
 }
+
+// ---- Import/Scan API ----
+
+import type { ImportResult, ScanResult } from "../../shared/types";
+
+/** 扫描 IDE 目录中的 Skill 文件 */
+export async function scanDirectory(scanPath?: string): Promise<ScanResult> {
+  return apiCall<ScanResult>("/api/import/scan", {
+    method: "POST",
+    body: JSON.stringify({ path: scanPath }),
+  });
+}
+
+/** 执行文件导入 */
+export async function importFiles(
+  items: Array<{ absolutePath: string; name: string }>,
+  category: string,
+): Promise<ImportResult> {
+  return apiCall<ImportResult>("/api/import/execute", {
+    method: "POST",
+    body: JSON.stringify({ items, category }),
+  });
+}
+
+/** 检测 CodeBuddy IDE 目录（冷启动引导） */
+export async function detectCodeBuddy(): Promise<{
+  detected: boolean;
+  path: string;
+  fileCount: number;
+}> {
+  return apiCall<{ detected: boolean; path: string; fileCount: number }>(
+    "/api/import/detect-codebuddy",
+  );
+}
+
+/** 清理源文件（导入后删除原始文件） */
+export async function cleanupSourceFiles(
+  filePaths: string[],
+): Promise<{
+  total: number;
+  success: number;
+  failed: number;
+  errors: string[];
+}> {
+  return apiCall<{
+    total: number;
+    success: number;
+    failed: number;
+    errors: string[];
+  }>("/api/import/cleanup", {
+    method: "POST",
+    body: JSON.stringify({ filePaths }),
+  });
+}

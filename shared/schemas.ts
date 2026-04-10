@@ -46,6 +46,62 @@ export const WorkflowSchema = z.object({
   steps: z.array(WorkflowStepSchema),
 });
 
+// ---- 扫描相关 Schema ----
+
+/** ScanResultItem Zod Schema */
+export const ScanResultItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  filePath: z.string(),
+  absolutePath: z.string(),
+  parseStatus: z.enum(["ok", "failed"]),
+  parseError: z.string().optional(),
+  fileSize: z.number().nonnegative(),
+  lastModified: z.string(),
+});
+
+/** ScanResult Zod Schema */
+export const ScanResultSchema_Import = z.object({
+  items: z.array(ScanResultItemSchema),
+  scanPath: z.string(),
+  totalFiles: z.number().nonnegative(),
+});
+
+/** POST /api/import/scan 请求体 */
+export const ScanRequestBodySchema = z.object({
+  path: z.string().optional(),
+});
+
+// ---- 导入相关 Schema ----
+
+/** ImportRequestItem Zod Schema */
+export const ImportRequestItemSchema = z.object({
+  absolutePath: z.string().min(1),
+  name: z.string().min(1),
+});
+
+/** POST /api/import/execute 请求体 */
+export const ImportRequestBodySchema = z.object({
+  items: z.array(ImportRequestItemSchema).min(1, "至少选择一个文件"),
+  category: z.string().min(1, "分类为必填项"),
+});
+
+/** ImportResultItem Zod Schema */
+export const ImportResultItemSchema = z.object({
+  name: z.string(),
+  status: z.enum(["success", "failed"]),
+  error: z.string().optional(),
+});
+
+/** ImportResult Zod Schema */
+export const ImportResultSchema = z.object({
+  total: z.number().nonnegative(),
+  success: z.number().nonnegative(),
+  failed: z.number().nonnegative(),
+  details: z.array(ImportResultItemSchema),
+});
+
 // ---- 同步相关 Schema ----
 
 /** SyncTarget Zod Schema */
@@ -170,3 +226,5 @@ export type SyncDetailInferred = z.infer<typeof SyncDetailSchema>;
 export type SyncResultInferred = z.infer<typeof SyncResultSchema>;
 export type CategoryInferred = z.infer<typeof CategorySchema>;
 export type AppConfigInferred = z.infer<typeof AppConfigSchema>;
+export type ScanResultItemInferred = z.infer<typeof ScanResultItemSchema>;
+export type ScanResultInferred_Import = z.infer<typeof ScanResultSchema_Import>;

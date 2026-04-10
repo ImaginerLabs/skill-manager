@@ -96,4 +96,22 @@ export class AppError extends Error {
       HttpStatus.BAD_REQUEST,
     );
   }
+
+  /** 扫描路径不存在 */
+  static scanPathNotFound(scanPath: string): AppError {
+    return new AppError(
+      ErrorCode.SCAN_PATH_NOT_FOUND,
+      `扫描路径不存在: ${scanPath}`,
+      HttpStatus.NOT_FOUND,
+    );
+  }
+
+  /** 扫描路径权限被拒 */
+  static scanPermissionDenied(scanPath: string): AppError {
+    return new AppError(
+      ErrorCode.SCAN_PERMISSION_DENIED,
+      `扫描路径权限被拒: ${scanPath}`,
+      HttpStatus.FORBIDDEN,
+    );
+  }
 }

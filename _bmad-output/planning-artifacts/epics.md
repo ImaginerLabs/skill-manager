@@ -288,6 +288,31 @@ This document provides the complete epic and story breakdown for Skill Manager, 
 - Epic 1 → Epic 2/3/4：钻石依赖（2/3/4 之间无相互依赖，但都依赖 Epic 1 的 Skill CRUD API 和分类 API）
 - 单人开发时按 Epic 2 → 3 → 4 串行；多人可并行
 
+### Story 生命周期（强制质量门禁）
+
+每个 Story 必须严格遵循以下完整生命周期，**不允许跳过 QA 和 CR 阶段**：
+
+```
+backlog → ready-for-dev → in-progress → qa → review → done
+```
+
+| 阶段 | 动作 | 工具 | 门禁条件 |
+|------|------|------|----------|
+| ready-for-dev | 创建 Story 文件 | `bmad-create-story` | Story 文件包含完整 AC 和上下文 |
+| in-progress | 实现 + 单元测试 | `bmad-dev-story` | 每个 task 有单元测试，`tsc --noEmit` 通过 |
+| **qa** | **测试覆盖验证** | **`bmad-qa-generate-e2e-tests`** | **集成/E2E 测试覆盖所有 AC，全量测试 100% 通过** |
+| **review** | **对抗式代码审查** | **`bmad-code-review`** | **审查通过，无阻塞性问题** |
+| done | 签收完成 | — | 实现 + 测试 + 审查全部通过 |
+
+**回退规则：**
+- qa 阶段测试失败 → 回退到 in-progress 修复
+- review 阶段发现问题 → 回退到 in-progress 修复 → 重新走 qa → review
+
+**Story 文件 Dev Agent Record 必须记录：**
+- ✅ 每个 task 的实现和单元测试结果
+- ✅ QA 阶段：生成的测试文件列表、测试通过/失败数
+- ✅ CR 阶段：审查发现、解决方案、最终审查结论
+
 ### 对抗式审查决议
 
 本 Epic 方案经过以下团队成员的对抗式审查：
