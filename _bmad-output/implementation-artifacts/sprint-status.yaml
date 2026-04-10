@@ -60,15 +60,15 @@ development_status:
   # 用户可以浏览分类目录中的 Skill 卡片，查看预览，搜索筛选，管理分类和元数据
   # Dependencies: Epic 0
   # ============================================================
-  epic-1: backlog
-  1-1-backend-skill-scan-and-cache-service: backlog
-  1-2-category-tree-and-card-grid-view: backlog
-  1-3-markdown-rendering-preview: backlog
-  1-4-search-and-command-palette: backlog
-  1-5-view-toggle-and-list-view: backlog
-  1-6-category-management-crud: backlog
-  1-7-skill-management-delete-move-edit-metadata: backlog
-  1-8-toast-notification-system-and-accessibility: backlog
+  epic-1: done
+  1-1-backend-skill-scan-and-cache-service: done
+  1-2-category-tree-and-card-grid-view: done
+  1-3-markdown-rendering-preview: done
+  1-4-search-and-command-palette: done
+  1-5-view-toggle-and-list-view: done
+  1-6-category-management-crud: done
+  1-7-skill-management-delete-move-edit-metadata: done
+  1-8-toast-notification-system-and-accessibility: done
   epic-1-retrospective: optional
 
   # ============================================================

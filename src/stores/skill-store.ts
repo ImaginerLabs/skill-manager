@@ -3,7 +3,11 @@
 // ============================================================
 
 import { create } from "zustand";
-import type { SkillMeta, Category } from "../../shared/types";
+import type { Category, SkillMeta } from "../../shared/types";
+import {
+  fetchCategories as apiFetchCategories,
+  fetchSkills as apiFetchSkills,
+} from "../lib/api";
 
 export interface SkillStore {
   skills: SkillMeta[];
@@ -12,7 +16,10 @@ export interface SkillStore {
   searchQuery: string;
   selectedSkillId: string | null;
   viewMode: "grid" | "list";
+  loading: boolean;
+  error: string | null;
   // actions
+  fetchSkills: () => Promise<void>;
   setSkills: (skills: SkillMeta[]) => void;
   setCategories: (categories: Category[]) => void;
   setCategory: (category: string | null) => void;
@@ -28,7 +35,25 @@ export const useSkillStore = create<SkillStore>((set) => ({
   searchQuery: "",
   selectedSkillId: null,
   viewMode: "grid",
+  loading: false,
+  error: null,
 
+  fetchSkills: async () => {
+    set({ loading: true, error: null });
+    try {
+      // 并行获取 Skill 列表和分类数据（含 displayName）
+      const [skills, categories] = await Promise.all([
+        apiFetchSkills(),
+        apiFetchCategories(),
+      ]);
+      set({ skills, categories, loading: false });
+    } catch (err) {
+      set({
+        error: err instanceof Error ? err.message : "加载 Skill 列表失败",
+        loading: false,
+      });
+    }
+  },
   setSkills: (skills) => set({ skills }),
   setCategories: (categories) => set({ categories }),
   setCategory: (category) => set({ selectedCategory: category }),

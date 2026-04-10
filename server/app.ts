@@ -1,9 +1,11 @@
-import path from "node:path";
-import express from "express";
 import cors from "cors";
-import { healthRoutes } from "./routes/healthRoutes.js";
-import { configRoutes } from "./routes/configRoutes.js";
+import express from "express";
+import path from "node:path";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { categoryRoutes } from "./routes/categoryRoutes.js";
+import { configRoutes } from "./routes/configRoutes.js";
+import { healthRoutes } from "./routes/healthRoutes.js";
+import { skillRoutes } from "./routes/skillRoutes.js";
 
 interface AppOptions {
   isProduction: boolean;
@@ -25,6 +27,8 @@ export function createApp(options: AppOptions) {
   // API 路由
   app.use("/api", healthRoutes);
   app.use("/api", configRoutes);
+  app.use("/api", skillRoutes);
+  app.use("/api", categoryRoutes);
 
   // API 404 处理器：未匹配的 /api/* 路由返回 JSON 404
   app.all("/api/{*path}", (_req, res) => {

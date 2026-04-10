@@ -131,6 +131,34 @@ export function createApiResponseSchema<T extends z.ZodTypeAny>(dataSchema: T) {
   ]);
 }
 
+// ---- 请求体校验 Schema（后端路由入口使用） ----
+
+/** PUT /api/skills/:id/meta 请求体 */
+export const UpdateSkillMetaBodySchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  category: z.string().min(1).optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+/** PUT /api/skills/:id/category 请求体 */
+export const MoveSkillCategoryBodySchema = z.object({
+  category: z.string().min(1, "category 为必填项"),
+});
+
+/** POST /api/categories 请求体 */
+export const CreateCategoryBodySchema = z.object({
+  name: z.string().min(1, "name 为必填项"),
+  displayName: z.string().min(1, "displayName 为必填项"),
+  description: z.string().optional(),
+});
+
+/** PUT /api/categories/:name 请求体 */
+export const UpdateCategoryBodySchema = z.object({
+  displayName: z.string().min(1).optional(),
+  description: z.string().optional(),
+});
+
 // ---- 类型推断导出 ----
 
 export type SkillMetaInferred = z.infer<typeof SkillMetaSchema>;

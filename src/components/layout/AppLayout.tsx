@@ -1,11 +1,52 @@
+import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
+import { useSkillStore } from "../../stores/skill-store";
+import { useUIStore } from "../../stores/ui-store";
+import CommandPalette from "../shared/CommandPalette";
+import ToastContainer from "../shared/Toast";
+import SkillPreview from "../skills/SkillPreview";
 import Sidebar from "./Sidebar";
 
 /**
  * 三栏布局容器
- * 侧边栏 240px + 主内容区 flex-1 + 预览面板 400px（后续 Story 实现）
+ * 侧边栏 240px + 主内容区 flex-1 + 预览面板 400px
  */
 export default function AppLayout() {
+  const { previewOpen, toggleSidebar, togglePreview } = useUIStore();
+  const { selectedSkillId } = useSkillStore();
+
+  // 预览面板在有选中 Skill 时自动显示
+  const showPreview = previewOpen || !!selectedSkillId;
+
+  // 全局键盘快捷键
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 输入框内不触发单键快捷键
+      const target = e.target as HTMLElement;
+      const isInput =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+
+      // ⌘B 切换侧边栏
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+        e.preventDefault();
+        toggleSidebar();
+        return;
+      }
+
+      // Space 切换预览面板（非输入框内）
+      if (e.key === " " && !isInput) {
+        e.preventDefault();
+        togglePreview();
+        return;
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [toggleSidebar, togglePreview]);
+
   return (
     <div className="flex h-screen overflow-hidden bg-[hsl(var(--background))]">
       {/* 左侧边栏 */}
@@ -16,7 +57,21 @@ export default function AppLayout() {
         <Outlet />
       </main>
 
-      {/* 右侧预览面板占位（后续 Story 实现） */}
+      {/* 右侧预览面板 */}
+      {showPreview && (
+        <aside
+          className="border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] shrink-0 overflow-hidden"
+          style={{ width: "var(--preview-width)" }}
+        >
+          <SkillPreview />
+        </aside>
+      )}
+
+      {/* Command Palette（全局浮层） */}
+      <CommandPalette />
+
+      {/* Toast 通知容器 */}
+      <ToastContainer />
     </div>
   );
 }
