@@ -22,8 +22,10 @@ export default function Header() {
 
       {/* 中间：全局搜索入口 */}
       <button
+        type="button"
+        aria-label="全局搜索"
         onClick={() => setCommandPaletteOpen(true)}
-        className="flex items-center gap-2 h-8 px-3 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm text-[hsl(var(--muted-foreground))] hover:border-[hsl(var(--muted))] transition-colors duration-200 cursor-pointer min-w-[280px]"
+        className="flex items-center gap-2 h-8 px-3 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm text-[hsl(var(--muted-foreground))] hover:border-[hsl(var(--muted))] transition-colors duration-200 min-w-[280px]"
       >
         <Search size={14} />
         <span className="flex-1 text-left">⌘K 搜索 Skill...</span>

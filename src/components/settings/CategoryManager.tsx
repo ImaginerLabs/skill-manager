@@ -133,11 +133,16 @@ export default function CategoryManager() {
 
       {/* 错误提示 */}
       {error && (
-        <div className="mb-4 p-3 rounded-md bg-[hsl(var(--destructive))/0.1] border border-[hsl(var(--destructive))/0.3] text-sm text-[hsl(var(--destructive))]">
-          {error}
-          <button onClick={() => setError(null)} className="ml-2 underline">
-            关闭
-          </button>
+        <div className="mb-4 p-3 rounded-md bg-[hsl(var(--destructive))/0.1] border border-[hsl(var(--destructive))/0.3] text-sm text-[hsl(var(--destructive))] flex items-center justify-between">
+          <span>{error}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setError(null)}
+            className="h-6 w-6 shrink-0 text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+          >
+            <X size={14} />
+          </Button>
         </div>
       )}
 

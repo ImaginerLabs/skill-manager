@@ -6,6 +6,7 @@ import { FolderInput, Save, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import type { SkillMeta } from "../../../shared/types";
 import { deleteSkill, moveSkillCategory, updateSkillMeta } from "../../lib/api";
+import { cn } from "../../lib/utils";
 import { useSkillStore } from "../../stores/skill-store";
 import {
   AlertDialog,
@@ -133,7 +134,9 @@ export default function MetadataEditor({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className="flex w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 resize-none"
+            className={cn(
+              "flex w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm text-[hsl(var(--foreground))] ring-offset-[hsl(var(--background))] placeholder:text-[hsl(var(--muted-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+            )}
           />
         </div>
 
