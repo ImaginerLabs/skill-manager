@@ -31,5 +31,9 @@ npm-debug.log*
 # TypeScript
 *.tsbuildinfo
 
-knowledge
-test-results
+# Knowledge base (third-party skill repos)
+knowledge/
+
+# Test artifacts
+test-results/
+playwright-report/

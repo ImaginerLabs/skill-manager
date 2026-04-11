@@ -223,6 +223,8 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
   ├── integration/       # 集成测试
   │   └── api/           # API 端到端集成测试（import.test.ts、skills.test.ts）
   ├── e2e/               # Playwright E2E 测试
+  │   ├── app.spec.ts
+  │   ├── import.spec.ts
   │   └── skill-browsing.spec.ts
   ├── fixtures/          # 测试数据
   └── support/           # 测试辅助工具
@@ -231,7 +233,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
       └── page-objects/  # Playwright Page Object（SkillBrowsePage、SkillCard）
   ```
 - **文件命名**：`{module}.test.ts` 或 `{module}.test.tsx`
-- **E2E 文件**：`e2e/` 根目录和 `tests/e2e/` 目录，使用 `.spec.ts` 后缀
+- **E2E 文件**：统一存放在 `tests/e2e/` 目录，使用 `.spec.ts` 后缀
 
 ### 测试配置
 
