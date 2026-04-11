@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { act } from "react";
 import { describe, expect, it } from "vitest";
 import {
   Tooltip,
@@ -24,7 +25,7 @@ describe("Tooltip", () => {
     expect(screen.getByText("悬停我")).toBeInTheDocument();
   });
 
-  it("trigger 可聚焦", () => {
+  it("trigger 可聚焦", async () => {
     render(
       <TooltipProvider>
         <Tooltip>
@@ -38,7 +39,9 @@ describe("Tooltip", () => {
       </TooltipProvider>,
     );
     const trigger = screen.getByText("悬停我");
-    trigger.focus();
+    await act(async () => {
+      trigger.focus();
+    });
     expect(trigger).toHaveFocus();
   });
 

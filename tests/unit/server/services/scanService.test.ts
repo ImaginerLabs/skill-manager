@@ -15,6 +15,7 @@ vi.mock("fs-extra", () => ({
     stat: vi.fn(),
     readdir: vi.fn(),
     readFile: vi.fn(),
+    realpath: vi.fn((p: string) => Promise.resolve(p)),
     constants: { R_OK: 4 },
   },
 }));

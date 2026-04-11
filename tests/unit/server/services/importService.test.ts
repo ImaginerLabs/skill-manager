@@ -20,6 +20,17 @@ vi.mock("../../../../server/services/skillService", () => ({
     .mockResolvedValue({ total: 0, success: 0, errors: 0 }),
 }));
 
+// Mock pathUtils — isSubPath 始终返回 true（单元测试关注导入逻辑，不测路径安全）
+vi.mock("../../../../server/utils/pathUtils", () => ({
+  isSubPath: vi.fn().mockReturnValue(true),
+  normalizePath: vi.fn((p: string) => p),
+}));
+
+// Mock scanService — 提供默认扫描路径
+vi.mock("../../../../server/services/scanService", () => ({
+  getDefaultScanPath: vi.fn().mockReturnValue("/source"),
+}));
+
 describe("importService", () => {
   beforeEach(() => {
     vi.clearAllMocks();

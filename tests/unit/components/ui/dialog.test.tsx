@@ -53,7 +53,7 @@ describe("Dialog", () => {
     const user = userEvent.setup();
     renderDialog();
     await user.click(screen.getByText("打开"));
-    expect(screen.getByText("Close")).toBeInTheDocument();
+    expect(screen.getByText("关闭")).toBeInTheDocument();
   });
 
   it("点击关闭按钮关闭对话框", async () => {
@@ -61,7 +61,7 @@ describe("Dialog", () => {
     renderDialog();
     await user.click(screen.getByText("打开"));
     expect(screen.getByText("编辑信息")).toBeInTheDocument();
-    const closeBtn = screen.getByText("Close").closest("button")!;
+    const closeBtn = screen.getByText("关闭").closest("button")!;
     await user.click(closeBtn);
     expect(screen.queryByText("编辑信息")).not.toBeInTheDocument();
   });
