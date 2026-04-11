@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-10T23:30:00
+last_updated: 2026-04-11T11:46:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -115,13 +115,13 @@ development_status:
   # UI 视觉质感全面提升：补全 shadcn/ui 组件、添加顶部栏/状态栏、统一样式
   # Dependencies: Epic 1
   # ============================================================
-  epic-1.5: in-progress
-  1.5-1-shadcn-ui-component-completion: review
-  1.5-2-header-and-statusbar-layout: review
-  1.5-3-sidebar-visual-enhancement: review
-  1.5-4-page-style-unification: review
-  1.5-5-empty-state-and-preview-enhancement: review
-  1.5-6-visual-polish-and-consistency: review
+  epic-1.5: done
+  1.5-1-shadcn-ui-component-completion: done
+  1.5-2-header-and-statusbar-layout: done
+  1.5-3-sidebar-visual-enhancement: done
+  1.5-4-page-style-unification: done
+  1.5-5-empty-state-and-preview-enhancement: done
+  1.5-6-visual-polish-and-consistency: done
   epic-1.5-retrospective: optional
 
   # ============================================================
@@ -129,12 +129,12 @@ development_status:
   # 用户可以从 CodeBuddy IDE 扫描并导入 Skill 文件到仓库中
   # Dependencies: Epic 1
   # ============================================================
-  epic-2: in-progress
-  2-0-safe-write-and-path-protection-infrastructure: in-progress
-  2-1-ide-directory-scan-api: in-progress
-  2-2-import-wizard-and-category-selection: in-progress
-  2-3-file-import-and-frontmatter-completion: in-progress
-  2-4-cold-start-guide-and-post-import-cleanup: in-progress
+  epic-2: done
+  2-0-safe-write-and-path-protection-infrastructure: done
+  2-1-ide-directory-scan-api: done
+  2-2-import-wizard-and-category-selection: done
+  2-3-file-import-and-frontmatter-completion: done
+  2-4-cold-start-guide-and-post-import-cleanup: done
   epic-2-retrospective: optional
 
   # ============================================================

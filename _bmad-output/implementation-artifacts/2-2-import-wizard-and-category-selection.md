@@ -1,6 +1,6 @@
 # Story 2.2: 导入向导与分类选择
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -60,6 +60,12 @@ So that 导入的 Skill 能被正确归类管理。
 - [x] Task 4: 验证 (AC: #5)
   - [x] 4.1 运行 `tsc --noEmit` 确认编译通过
   - [x] 4.2 运行 `vitest run` 确认无回归
+
+### Review Findings
+
+- [x] [Review][Patch] P1: 前端 importFiles() 未传递 scanRoot，自定义扫描路径场景下导入不可用 [src/pages/ImportPage.tsx] — 已修复
+- [x] [Review][Defer] ImportPage 组件过大，缺少组件拆分 — deferred, pre-existing
+
 ## Dev Notes
 
 ### 纯前端 Story — 无后端修改
@@ -102,6 +108,6 @@ Claude claude-4.6-opus-1m-context (Amelia)
 
 ### File List
 
-| 文件 | 操作 |
-|------|------|
+| 文件                     | 操作 |
+| ------------------------ | ---- |
 | src/pages/ImportPage.tsx | 修改 |

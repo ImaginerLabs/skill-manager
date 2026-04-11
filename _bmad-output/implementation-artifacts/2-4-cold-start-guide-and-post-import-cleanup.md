@@ -1,6 +1,6 @@
 # Story 2.4: 冷启动引导与导入后清理
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -49,6 +49,11 @@ So that 我能快速上手而不感到迷茫。
 
 - [x] Task 4: 验证 (AC: #4)
 
+### Review Findings
+
+- [x] [Review][Patch] P2: cleanup 路由未传递 allowedRoot [server/routes/importRoutes.ts] — 已修复
+- [x] [Review][Patch] P4: /api/import/cleanup 缺少 Zod Schema 校验 [server/routes/importRoutes.ts, shared/schemas.ts] — 已修复
+
 ## Dev Notes
 
 ### 已有代码上下文
@@ -82,11 +87,11 @@ Claude claude-4.6-opus-1m-context (Amelia)
 
 ### File List
 
-| 文件 | 操作 |
-|------|------|
-| server/services/scanService.ts | 修改（添加 detectCodeBuddy）|
-| server/services/importService.ts | 修改（添加 cleanupFiles）|
-| server/routes/importRoutes.ts | 修改（添加 2 个新路由）|
-| src/lib/api.ts | 修改（添加 2 个 API 函数）|
-| src/pages/SkillBrowsePage.tsx | 修改（冷启动引导）|
-| src/pages/ImportPage.tsx | 修改（清理选项）|
+| 文件                             | 操作                         |
+| -------------------------------- | ---------------------------- |
+| server/services/scanService.ts   | 修改（添加 detectCodeBuddy） |
+| server/services/importService.ts | 修改（添加 cleanupFiles）    |
+| server/routes/importRoutes.ts    | 修改（添加 2 个新路由）      |
+| src/lib/api.ts                   | 修改（添加 2 个 API 函数）   |
+| src/pages/SkillBrowsePage.tsx    | 修改（冷启动引导）           |
+| src/pages/ImportPage.tsx         | 修改（清理选项）             |

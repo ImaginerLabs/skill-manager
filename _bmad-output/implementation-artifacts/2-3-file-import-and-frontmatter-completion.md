@@ -1,6 +1,6 @@
 # Story 2.3: 文件导入与 Frontmatter 补充
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -55,6 +55,11 @@ So that 所有导入的 Skill 都有完整的 Frontmatter 信息。
 
 - [x] Task 5: 验证 (AC: #4)
 
+### Review Findings
+
+- [x] [Review][Patch] P1: 前端 importFiles() 未传递 scanRoot [src/lib/api.ts] — 已修复
+- [x] [Review][Patch] P3: cleanupFiles 路径校验失败直接 throw 中断循环 [server/services/importService.ts] — 已修复
+
 ## Dev Notes
 
 ### 已有代码上下文
@@ -100,12 +105,12 @@ Claude claude-4.6-opus-1m-context (Amelia)
 
 ### File List
 
-| 文件 | 操作 |
-|------|------|
-| shared/types.ts | 修改 |
-| shared/schemas.ts | 修改 |
-| server/services/importService.ts | 新建 |
-| server/routes/importRoutes.ts | 修改 |
-| src/lib/api.ts | 修改 |
-| src/pages/ImportPage.tsx | 修改 |
+| 文件                                             | 操作 |
+| ------------------------------------------------ | ---- |
+| shared/types.ts                                  | 修改 |
+| shared/schemas.ts                                | 修改 |
+| server/services/importService.ts                 | 新建 |
+| server/routes/importRoutes.ts                    | 修改 |
+| src/lib/api.ts                                   | 修改 |
+| src/pages/ImportPage.tsx                         | 修改 |
 | tests/unit/server/services/importService.test.ts | 新建 |

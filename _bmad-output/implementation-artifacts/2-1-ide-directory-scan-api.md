@@ -1,6 +1,6 @@
 # Story 2.1: IDE 目录扫描 API
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -88,6 +88,10 @@ So that 我可以看到 IDE 中有哪些 Skill 可以导入。
   - [x] 6.2 运行 `vitest run` 确认所有测试通过
   - [x] 6.3 确认现有测试不受影响（无回归）
 
+### Review Findings
+
+- [x] [Review][Patch] P5: collectMdFiles 未检测 symlink 循环 [server/services/scanService.ts] — 已修复
+
 ## Dev Notes
 
 ### 架构约束（必须遵守）
@@ -102,12 +106,14 @@ So that 我可以看到 IDE 中有哪些 Skill 可以导入。
 ### 已有代码上下文
 
 **已有的工具函数：**
+
 - `server/utils/frontmatterParser.ts` — `parseSkillFile(filePath, skillsRoot)` 解析 Frontmatter
 - `server/utils/pathUtils.ts` — `normalizePath()`, `isSubPath()`, `slugify()`
 - `server/utils/fileUtils.ts` — `atomicWrite()`, `safeWrite()`（Story 2-0 新建）
 - `server/middleware/pathValidator.ts` — `createPathValidator()`, `validatePathParam()`（Story 2-0 新建）
 
 **已有的路由模式（参考 `server/routes/skillRoutes.ts`）：**
+
 ```typescript
 import { Router } from "express";
 export const importRoutes = Router();
@@ -117,6 +123,7 @@ importRoutes.post("/import/scan", async (req, res, next) => {
 ```
 
 **已有的前端 API 模式（参考 `src/lib/api.ts`）：**
+
 ```typescript
 export async function scanDirectory(scanPath?: string): Promise<ScanResult> {
   return apiCall<ScanResult>("/api/import/scan", {
@@ -127,9 +134,11 @@ export async function scanDirectory(scanPath?: string): Promise<ScanResult> {
 ```
 
 **已有的前端页面（`src/pages/ImportPage.tsx`）：**
+
 - 当前为空壳页面，需要替换为完整的扫描 UI
 
 **默认 CodeBuddy 路径：**
+
 ```typescript
 import os from "node:os";
 const DEFAULT_SCAN_PATH = path.join(os.homedir(), ".codebuddy", "skills");
@@ -145,19 +154,19 @@ const DEFAULT_SCAN_PATH = path.join(os.homedir(), ".codebuddy", "skills");
 
 ### 文件创建/修改清单
 
-| 文件 | 操作 | 说明 |
-|------|------|------|
-| `shared/types.ts` | 修改 | 添加 ScanResultItem, ScanResult 类型 |
-| `shared/schemas.ts` | 修改 | 添加对应 Zod Schema |
-| `shared/constants.ts` | 修改 | 添加扫描相关错误码 |
-| `server/types/errors.ts` | 修改 | 添加扫描错误工厂方法 |
-| `server/services/scanService.ts` | 新建 | 目录扫描服务 |
-| `server/routes/importRoutes.ts` | 新建 | 导入 API 路由 |
-| `server/app.ts` | 修改 | 注册 importRoutes |
-| `src/lib/api.ts` | 修改 | 添加 scanDirectory API |
-| `src/pages/ImportPage.tsx` | 修改 | 扫描 UI 实现 |
-| `tests/unit/server/services/scanService.test.ts` | 新建 | scanService 单元测试 |
-| `tests/integration/api/import.test.ts` | 新建 | 导入 API 集成测试 |
+| 文件                                             | 操作 | 说明                                 |
+| ------------------------------------------------ | ---- | ------------------------------------ |
+| `shared/types.ts`                                | 修改 | 添加 ScanResultItem, ScanResult 类型 |
+| `shared/schemas.ts`                              | 修改 | 添加对应 Zod Schema                  |
+| `shared/constants.ts`                            | 修改 | 添加扫描相关错误码                   |
+| `server/types/errors.ts`                         | 修改 | 添加扫描错误工厂方法                 |
+| `server/services/scanService.ts`                 | 新建 | 目录扫描服务                         |
+| `server/routes/importRoutes.ts`                  | 新建 | 导入 API 路由                        |
+| `server/app.ts`                                  | 修改 | 注册 importRoutes                    |
+| `src/lib/api.ts`                                 | 修改 | 添加 scanDirectory API               |
+| `src/pages/ImportPage.tsx`                       | 修改 | 扫描 UI 实现                         |
+| `tests/unit/server/services/scanService.test.ts` | 新建 | scanService 单元测试                 |
+| `tests/integration/api/import.test.ts`           | 新建 | 导入 API 集成测试                    |
 
 ### Project Structure Notes
 
@@ -214,15 +223,15 @@ Claude claude-4.6-opus-1m-context (Amelia)
 
 ### File List
 
-| 文件 | 操作 |
-|------|------|
-| shared/types.ts | 修改（添加 ScanResultItem, ScanResult）|
-| shared/schemas.ts | 修改（添加 Zod Schema）|
-| shared/constants.ts | 修改（添加错误码 + FORBIDDEN 状态码）|
-| server/types/errors.ts | 修改（添加工厂方法）|
-| server/services/scanService.ts | 新建 |
-| server/routes/importRoutes.ts | 新建 |
-| server/app.ts | 修改（注册 importRoutes）|
-| src/lib/api.ts | 修改（添加 scanDirectory）|
-| src/pages/ImportPage.tsx | 修改（扫描 UI）|
-| tests/unit/server/services/scanService.test.ts | 新建 |
+| 文件                                           | 操作                                    |
+| ---------------------------------------------- | --------------------------------------- |
+| shared/types.ts                                | 修改（添加 ScanResultItem, ScanResult） |
+| shared/schemas.ts                              | 修改（添加 Zod Schema）                 |
+| shared/constants.ts                            | 修改（添加错误码 + FORBIDDEN 状态码）   |
+| server/types/errors.ts                         | 修改（添加工厂方法）                    |
+| server/services/scanService.ts                 | 新建                                    |
+| server/routes/importRoutes.ts                  | 新建                                    |
+| server/app.ts                                  | 修改（注册 importRoutes）               |
+| src/lib/api.ts                                 | 修改（添加 scanDirectory）              |
+| src/pages/ImportPage.tsx                       | 修改（扫描 UI）                         |
+| tests/unit/server/services/scanService.test.ts | 新建                                    |

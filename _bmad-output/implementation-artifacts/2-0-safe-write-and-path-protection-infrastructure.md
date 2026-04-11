@@ -1,6 +1,6 @@
 # Story 2.0: 安全写入与路径防护基础设施
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -81,7 +81,7 @@ So that 导入、移动等写操作能防止数据损坏和路径安全问题。
     - 从请求中提取路径参数（`req.params`、`req.body` 中的路径字段）
     - 对每个路径参数调用 `isSubPath()` 校验是否在白名单目录内
     - 检测 URL 编码的遍历模式（`%2e%2e`、`%2f`）
-    - 校验失败时调用 `next(AppError.pathTraversal())` 
+    - 校验失败时调用 `next(AppError.pathTraversal())`
   - [x] 4.2 实现 `validatePathParam(paramValue: string, allowedRoots: string[]): boolean` 独立校验函数
     - 先 URL 解码
     - 检查是否包含 `..` 路径段
@@ -98,14 +98,25 @@ So that 导入、移动等写操作能防止数据损坏和路径安全问题。
   - [x] 5.1 运行 `tsc --noEmit` 确认编译通过
   - [x] 5.2 运行 `vitest run` 确认所有测试通过
   - [x] 5.3 确认现有测试不受影响（无回归）
+
+### Review Findings
+
+- [x] [Review][Patch] P1: 前端 importFiles() 未传递 scanRoot 参数，自定义扫描路径场景下导入完全不可用 [src/lib/api.ts, src/pages/ImportPage.tsx] — 已修复
+- [x] [Review][Patch] P2: cleanup 路由未传递 allowedRoot，自定义路径场景下清理失败 [server/routes/importRoutes.ts] — 已修复
+- [x] [Review][Patch] P3: cleanupFiles 路径校验失败直接 throw 中断整个循环 [server/services/importService.ts] — 已修复
+- [x] [Review][Patch] P4: /api/import/cleanup 缺少 Zod Schema 校验 [server/routes/importRoutes.ts, shared/schemas.ts] — 已修复
+- [x] [Review][Patch] P5: collectMdFiles 未检测 symlink 循环 [server/services/scanService.ts] — 已修复
+- [x] [Review][Defer] ImportPage 组件过大（386行），缺少组件拆分 — deferred, pre-existing
+- [x] [Review][Defer] SKILLS_ROOT 硬编码为相对路径 — deferred, pre-existing
+
 ## Dev Notes
 
 ### 架构约束（必须遵守）
 
 1. **后端 ESM 模块系统** — 项目使用 `"type": "module"`，所有 import 需要 `.js` 扩展名
    ```typescript
-   import { AppError } from '../types/errors.js';
-   import { isSubPath, normalizePath } from './pathUtils.js';
+   import { AppError } from "../types/errors.js";
+   import { isSubPath, normalizePath } from "./pathUtils.js";
    ```
 2. **TypeScript strict mode** — 所有文件必须通过 strict 模式编译
 3. **错误处理** — 所有错误使用 `AppError` 类，包含 `code` 和 `statusCode`
@@ -114,24 +125,29 @@ So that 导入、移动等写操作能防止数据损坏和路径安全问题。
 ### 已有代码上下文
 
 **已安装的相关依赖（package.json）：**
+
 - `fs-extra` ^11.3.4 — 增强文件操作（ensureDir, remove 等）
 - ⚠️ `async-mutex` **未安装** — Task 1 需要先安装
 
 **已有的工具函数（`server/utils/pathUtils.ts`）：**
+
 - `normalizePath(inputPath)` — POSIX 风格路径归一化
 - `resolveSkillPath(relativePath, skillsRoot)` — 基于 skills/ 根目录解析绝对路径
 - `isSubPath(childPath, parentPath)` — 校验子路径是否在父路径内（**pathValidator 必须复用此函数**）
 - `slugify(filename)` — 文件名转 slug
 
 **已有的错误类型（`server/types/errors.ts`）：**
+
 - `AppError.fileWriteError(message)` — 文件写入错误（ErrorCode.FILE_WRITE_ERROR, 500）
 - `AppError.pathTraversal(message)` — 路径遍历攻击（ErrorCode.PATH_TRAVERSAL, 400）
 
 **已有的常量（`shared/constants.ts`）：**
+
 - `ErrorCode.FILE_WRITE_ERROR` — 文件写入错误码
 - `ErrorCode.PATH_TRAVERSAL` — 路径遍历错误码
 
 **已有的中间件模式（`server/middleware/errorHandler.ts`）：**
+
 ```typescript
 // Express 中间件签名参考
 import type { Request, Response, NextFunction } from "express";
@@ -141,26 +157,28 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
 ### 关键实现细节
 
 **atomicWrite 实现参考（来自 architecture.md）：**
+
 ```typescript
 async function atomicWrite(filePath: string, content: string): Promise<void> {
   const tmpPath = `${filePath}.tmp.${Date.now()}`;
   await fs.ensureDir(path.dirname(filePath));
   try {
-    await fs.writeFile(tmpPath, content, 'utf-8');
+    await fs.writeFile(tmpPath, content, "utf-8");
     await fs.rename(tmpPath, filePath);
   } catch (err) {
     // 清理临时文件
     await fs.remove(tmpPath).catch(() => {});
     throw AppError.fileWriteError(
-      `写入文件失败 [${filePath}]: ${err instanceof Error ? err.message : String(err)}`
+      `写入文件失败 [${filePath}]: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 }
 ```
 
 **safeWrite 并发控制参考（来自 architecture.md）：**
+
 ```typescript
-import { Mutex } from 'async-mutex';
+import { Mutex } from "async-mutex";
 
 // 每个文件路径一个独立 Mutex，不同文件可并行写入
 const mutexMap = new Map<string, Mutex>();
@@ -185,8 +203,9 @@ async function safeWrite(filePath: string, content: string): Promise<void> {
 ```
 
 **pathValidator 中间件设计：**
+
 ```typescript
-import type { RequestHandler } from 'express';
+import type { RequestHandler } from "express";
 
 // 中间件工厂 — 传入白名单目录列表
 export function createPathValidator(allowedRoots: string[]): RequestHandler {
@@ -198,7 +217,10 @@ export function createPathValidator(allowedRoots: string[]): RequestHandler {
 }
 
 // 独立校验函数 — 可在非中间件场景使用
-export function validatePathParam(paramValue: string, allowedRoots: string[]): boolean {
+export function validatePathParam(
+  paramValue: string,
+  allowedRoots: string[],
+): boolean {
   // URL 解码 → 检查 .. → isSubPath 校验
 }
 ```
@@ -214,12 +236,12 @@ export function validatePathParam(paramValue: string, allowedRoots: string[]): b
 
 ### 文件创建清单
 
-| 文件 | 操作 | 说明 |
-|------|------|------|
-| `server/utils/fileUtils.ts` | 新建 | atomicWrite + safeWrite |
-| `server/middleware/pathValidator.ts` | 新建 | 路径遍历防护中间件 |
-| `tests/unit/server/utils/fileUtils.test.ts` | 新建 | fileUtils 单元测试 |
-| `tests/unit/server/middleware/pathValidator.test.ts` | 新建 | pathValidator 单元测试 |
+| 文件                                                 | 操作 | 说明                    |
+| ---------------------------------------------------- | ---- | ----------------------- |
+| `server/utils/fileUtils.ts`                          | 新建 | atomicWrite + safeWrite |
+| `server/middleware/pathValidator.ts`                 | 新建 | 路径遍历防护中间件      |
+| `tests/unit/server/utils/fileUtils.test.ts`          | 新建 | fileUtils 单元测试      |
+| `tests/unit/server/middleware/pathValidator.test.ts` | 新建 | pathValidator 单元测试  |
 
 ### Project Structure Notes
 
@@ -270,14 +292,14 @@ Claude claude-4.6-opus-1m-context (Amelia)
 - Task 3: 实现 safeWrite（基于 async-mutex 的文件级并发控制），每个文件路径独立 Mutex
 - Task 4: 创建 pathValidator.ts 中间件，支持 URL 编码攻击检测、白名单目录校验，复用 isSubPath
 - Task 5: 全量测试通过，无回归
-- 导出 _clearMutexCache() 仅用于测试清理
+- 导出 \_clearMutexCache() 仅用于测试清理
 
 ### File List
 
-| 文件 | 操作 |
-|------|------|
-| server/utils/fileUtils.ts | 新建 |
-| server/middleware/pathValidator.ts | 新建 |
-| tests/unit/server/utils/fileUtils.test.ts | 新建 |
-| tests/unit/server/middleware/pathValidator.test.ts | 新建 |
-| package.json | 修改（添加 async-mutex 依赖）|
+| 文件                                               | 操作                          |
+| -------------------------------------------------- | ----------------------------- |
+| server/utils/fileUtils.ts                          | 新建                          |
+| server/middleware/pathValidator.ts                 | 新建                          |
+| tests/unit/server/utils/fileUtils.test.ts          | 新建                          |
+| tests/unit/server/middleware/pathValidator.test.ts | 新建                          |
+| package.json                                       | 修改（添加 async-mutex 依赖） |
