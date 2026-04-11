@@ -236,3 +236,57 @@ export async function cleanupSourceFiles(
     body: JSON.stringify({ filePaths, scanRoot }),
   });
 }
+
+// ---- Workflow API ----
+
+import type { Workflow } from "../../shared/types";
+
+/** 获取所有工作流列表 */
+export async function fetchWorkflows(): Promise<
+  Array<{ id: string; name: string; description: string; filePath: string }>
+> {
+  return apiCall<
+    Array<{ id: string; name: string; description: string; filePath: string }>
+  >("/api/workflows");
+}
+
+/** 创建新工作流 */
+export async function createWorkflow(
+  workflow: Workflow,
+): Promise<{ id: string; filePath: string }> {
+  return apiCall<{ id: string; filePath: string }>("/api/workflows", {
+    method: "POST",
+    body: JSON.stringify(workflow),
+  });
+}
+
+/** 预览工作流内容（不保存） */
+export async function previewWorkflow(
+  workflow: Workflow,
+): Promise<{ content: string }> {
+  return apiCall<{ content: string }>("/api/workflows/preview", {
+    method: "POST",
+    body: JSON.stringify(workflow),
+  });
+}
+
+/** 更新工作流 */
+export async function updateWorkflow(
+  id: string,
+  workflow: Workflow,
+): Promise<{ id: string; filePath: string }> {
+  return apiCall<{ id: string; filePath: string }>(
+    `/api/workflows/${encodeURIComponent(id)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(workflow),
+    },
+  );
+}
+
+/** 删除工作流 */
+export async function deleteWorkflow(id: string): Promise<void> {
+  return apiCall<void>(`/api/workflows/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}

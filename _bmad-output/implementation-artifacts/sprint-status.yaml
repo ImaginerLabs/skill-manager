@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-11T11:46:00
+last_updated: 2026-04-11T12:23:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -142,11 +142,11 @@ development_status:
   # 用户可以编排多 Skill 工作流，生成标准工作流 .md 文件
   # Dependencies: Epic 1
   # ============================================================
-  epic-3: backlog
-  3-1-workflow-editor-layout-and-skill-selection: backlog
-  3-2-drag-sort-and-step-editing: backlog
-  3-3-workflow-file-generation-and-preview: backlog
-  3-4-workflow-management-edit-and-delete: backlog
+  epic-3: in-progress
+  3-1-workflow-editor-layout-and-skill-selection: done
+  3-2-drag-sort-and-step-editing: done
+  3-3-workflow-file-generation-and-preview: done
+  3-4-workflow-management-edit-and-delete: done
   epic-3-retrospective: optional
 
   # ============================================================

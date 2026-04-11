@@ -9,6 +9,8 @@ export interface WorkflowStore {
   steps: WorkflowStep[];
   workflowName: string;
   workflowDescription: string;
+  /** 编辑模式：正在编辑的工作流 ID（null 表示新建模式） */
+  editingWorkflowId: string | null;
   // actions
   addStep: (skillId: string, skillName: string) => void;
   removeStep: (index: number) => void;
@@ -16,6 +18,13 @@ export interface WorkflowStore {
   updateStepDescription: (index: number, desc: string) => void;
   setWorkflowName: (name: string) => void;
   setWorkflowDescription: (desc: string) => void;
+  /** 加载已有工作流到编排器（编辑模式） */
+  loadWorkflow: (
+    id: string,
+    name: string,
+    description: string,
+    steps: WorkflowStep[],
+  ) => void;
   reset: () => void;
 }
 
@@ -23,6 +32,7 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
   steps: [],
   workflowName: "",
   workflowDescription: "",
+  editingWorkflowId: null,
 
   addStep: (skillId, skillName) =>
     set((state) => ({
@@ -64,5 +74,19 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
   setWorkflowName: (name) => set({ workflowName: name }),
   setWorkflowDescription: (desc) => set({ workflowDescription: desc }),
 
-  reset: () => set({ steps: [], workflowName: "", workflowDescription: "" }),
+  loadWorkflow: (id, name, description, steps) =>
+    set({
+      editingWorkflowId: id,
+      workflowName: name,
+      workflowDescription: description,
+      steps,
+    }),
+
+  reset: () =>
+    set({
+      steps: [],
+      workflowName: "",
+      workflowDescription: "",
+      editingWorkflowId: null,
+    }),
 }));
