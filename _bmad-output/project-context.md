@@ -364,6 +364,14 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - ⚠️ `parseRawFrontmatter()` 是不读文件的解析变体，用于导入场景（调用方已持有文件内容）
 - ⚠️ `lint-staged` 使用 `eslint --max-warnings=0`，提交时零警告容忍
 - ⚠️ `cleanupFiles` 中 `AppError`（路径安全拒绝）直接重新抛出，不计入 failed 统计
+- ⚠️ `pushSync` 同步推送是**扁平化**复制：只取文件名（`path.basename`），不保留分类子目录结构
+- ⚠️ `pushSync` 同名文件默认覆盖，在结果中标注 `overwritten` 状态
+- ⚠️ 工作流文件存储在 `skills/workflows/` 目录，Frontmatter 包含 `type: "workflow"` 和 `category: "workflows"`
+- ⚠️ 工作流创建/更新/删除后自动调用 `refreshSkillCache()` 刷新缓存
+- ⚠️ 同步目标数据存储在 `config/settings.yaml` 的 `sync.targets` 字段中
+- ⚠️ `addSyncTarget` / `updateSyncTarget` 会校验路径必须是绝对路径，且路径不能与已有目标重复（`path.normalize` 对比）
+- ⚠️ `POST /api/workflows/preview` 必须在 `GET /api/workflows/:id` 之前注册（否则 "preview" 被当作 `:id`）
+- ⚠️ `workflowService.findWorkflowFile` 通过 `slugify(file) === id` 匹配文件，区分大小写
 
 ---
 

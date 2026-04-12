@@ -6,7 +6,7 @@ tags:
   - documentation
   - technical-writing
 author: Alex
-version: "1.0.0"
+version: 1.0.0
 ---
 
 # 技术文档写作

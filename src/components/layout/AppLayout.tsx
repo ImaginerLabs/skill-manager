@@ -1,4 +1,3 @@
-import { X } from "lucide-react";
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { useSkillStore } from "../../stores/skill-store";
@@ -6,7 +5,6 @@ import { useUIStore } from "../../stores/ui-store";
 import CommandPalette from "../shared/CommandPalette";
 import ToastContainer from "../shared/Toast";
 import SkillPreview from "../skills/SkillPreview";
-import { Button } from "../ui/button";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import StatusBar from "./StatusBar";
@@ -17,9 +15,8 @@ import StatusBar from "./StatusBar";
  * 中间区域：侧边栏(240px) + 主内容区(flex-1) + 预览面板(400px)
  */
 export default function AppLayout() {
-  const { previewOpen, setPreviewOpen, toggleSidebar, togglePreview } =
-    useUIStore();
-  const { selectedSkillId, selectSkill } = useSkillStore();
+  const { previewOpen, toggleSidebar, togglePreview } = useUIStore();
+  const { selectedSkillId } = useSkillStore();
 
   // 预览面板在有选中 Skill 时自动显示
   const showPreview = previewOpen || !!selectedSkillId;
@@ -73,20 +70,6 @@ export default function AppLayout() {
             className="border-l border-[hsl(var(--border))] bg-[hsl(var(--card))] shrink-0 overflow-hidden animate-slide-in-preview motion-reduce:animate-none relative"
             style={{ width: "var(--preview-width)" }}
           >
-            {/* 关闭按钮 */}
-            <div className="absolute top-2 right-2 z-10">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => {
-                  selectSkill(null);
-                  setPreviewOpen(false);
-                }}
-              >
-                <X size={14} />
-              </Button>
-            </div>
             <SkillPreview />
           </aside>
         )}

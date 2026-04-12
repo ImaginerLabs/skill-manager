@@ -2,7 +2,7 @@
 // components/skills/SkillPreview.tsx — Skill Markdown 预览内容
 // ============================================================
 
-import { Clock, FileText, GitBranch, Pencil, Tag, User } from "lucide-react";
+import { Clock, FileText, GitBranch, Pencil, Tag, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm";
 import type { SkillFull } from "../../../shared/types";
 import { fetchSkillById } from "../../lib/api";
 import { useSkillStore } from "../../stores/skill-store";
+import { useUIStore } from "../../stores/ui-store";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
@@ -19,7 +20,8 @@ import MetadataEditor from "./MetadataEditor";
  * Skill 预览面板内容 — 展示 Frontmatter 元数据 + Markdown 渲染
  */
 export default function SkillPreview() {
-  const { selectedSkillId, fetchSkills } = useSkillStore();
+  const { selectedSkillId, fetchSkills, selectSkill } = useSkillStore();
+  const { setPreviewOpen } = useUIStore();
   const [skill, setSkill] = useState<SkillFull | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +109,18 @@ export default function SkillPreview() {
             title="编辑元数据"
           >
             <Pencil size={14} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              selectSkill(null);
+              setPreviewOpen(false);
+            }}
+            title="关闭预览"
+          >
+            <X size={14} />
           </Button>
         </div>
 
