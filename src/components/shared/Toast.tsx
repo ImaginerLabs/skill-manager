@@ -50,7 +50,7 @@ export default function ToastContainer() {
         return (
           <div
             key={item.id}
-            className={`flex items-start gap-2 p-3 rounded-lg border bg-[hsl(var(--card))] shadow-lg animate-in slide-in-from-right ${BG_MAP[item.type]}`}
+            className={`flex items-start gap-2 p-3 rounded-lg border bg-[hsl(var(--card))] shadow-lg animate-in slide-in-from-right fade-in duration-200 ${BG_MAP[item.type]}`}
             role="alert"
           >
             <Icon
