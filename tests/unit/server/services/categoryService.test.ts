@@ -9,6 +9,7 @@ vi.mock("../../../../server/utils/yamlUtils", () => ({
 // Mock skillService
 vi.mock("../../../../server/services/skillService", () => ({
   getAllSkills: vi.fn(),
+  waitForInitialization: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock fs-extra
