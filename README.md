@@ -152,6 +152,10 @@ npm run test:all      # 运行全部测试
 
 当 `src/`、`server/`、`shared/`、`skills/` 或 `_bmad-output/` 下有文件变更时，**必须同时更新 `README.md`（中文）和 `README.en.md`（英文）**，否则提交将被阻断。
 
+**Project Context 更新提示：**
+
+当业务文件变更时，hook 还会提示是否需要同步更新 `_bmad-output/project-context.md`（AI 代理项目上下文）。若本次变更涉及技术栈、架构模式、目录结构或开发规范，建议使用 `bmad-generate-project-context` 技能重新生成或手动更新该文件。此检查为**非阻断性提示**，不影响提交。
+
 ```bash
 # 如确认无需更新文档，可跳过检查
 git commit --no-verify
