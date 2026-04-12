@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-12T22:16:00
+last_updated: 2026-04-13T00:00:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -164,3 +164,26 @@ development_status:
   4-7-workflow-delete-undo-feature: done
   4-8-story-3-3-and-3-4-backfill-story-files: done
   epic-4-retrospective: done
+
+  # ============================================================
+  # Epic 5: 路径预设管理
+  # 用户可以管理预设路径，同步页和导入页支持快捷选择预设路径
+  # Dependencies: Epic 1, Epic 4
+  # ============================================================
+  epic-5: done
+  5-1-path-preset-backend-infrastructure: done
+  5-2-path-preset-management-page: done
+  5-3-sync-import-preset-integration: done
+  epic-5-retrospective: optional
+
+  # ============================================================
+  # Epic 6: UX 体验全面优化
+  # 基于 Chrome MCP 全页面 UX 审计，修复分类计数、工作流管理、同步引导、搜索增强等体验痛点
+  # Dependencies: Epic 0~5（全部完成）
+  # ============================================================
+  epic-6: done
+  6-1-category-data-consistency-fix: done
+  6-2-workflow-list-management: done
+  6-3-sync-guide-and-import-preset-integration: done
+  6-4-command-palette-search-enhancement: done
+  epic-6-retrospective: optional
