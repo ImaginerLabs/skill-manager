@@ -13,6 +13,7 @@ vi.mock("../../../../server/services/skillService", () => ({
 import {
   createWorkflow,
   deleteWorkflow,
+  getWorkflowById,
   getWorkflows,
   previewWorkflow,
 } from "../../../../server/services/workflowService";
@@ -129,6 +130,60 @@ describe("workflowService", () => {
       const result = await getWorkflows();
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe("测试工作流");
+    });
+  });
+
+  describe("getWorkflowById", () => {
+    it("返回结构化的工作流数据（含 steps）", async () => {
+      vi.mocked(fs.pathExists).mockResolvedValue(true as never);
+      vi.mocked(fs.readdir).mockResolvedValue(["test-workflow.md"] as never);
+      vi.mocked(fs.readFile).mockResolvedValue(
+        [
+          "---",
+          "name: 测试工作流",
+          "description: 测试描述",
+          "category: workflows",
+          "type: workflow",
+          "tags:",
+          "  - workflow",
+          "---",
+          "",
+          "## Step 1",
+          "",
+          "**使用 Skill:** `代码审查`",
+          "",
+          "执行全面审查",
+          "",
+          "## Step 2",
+          "",
+          "**使用 Skill:** `测试覆盖`",
+        ].join("\n") as never,
+      );
+
+      const result = await getWorkflowById("test-workflow");
+
+      expect(result.id).toBe("test-workflow");
+      expect(result.name).toBe("测试工作流");
+      expect(result.description).toBe("测试描述");
+      expect(result.steps).toHaveLength(2);
+      expect(result.steps[0]).toEqual({
+        order: 1,
+        skillId: "代码审查",
+        skillName: "代码审查",
+        description: "执行全面审查",
+      });
+      expect(result.steps[1]).toEqual({
+        order: 2,
+        skillId: "测试覆盖",
+        skillName: "测试覆盖",
+        description: "",
+      });
+    });
+
+    it("工作流不存在时抛出 404", async () => {
+      vi.mocked(fs.pathExists).mockResolvedValue(false as never);
+
+      await expect(getWorkflowById("nonexistent")).rejects.toThrow("未找到");
     });
   });
 

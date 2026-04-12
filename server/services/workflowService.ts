@@ -128,6 +128,48 @@ export async function getWorkflows(): Promise<
 }
 
 /**
+ * 获取单个工作流详情（结构化数据）
+ */
+export async function getWorkflowById(id: string): Promise<{
+  id: string;
+  name: string;
+  description: string;
+  filePath: string;
+  steps: WorkflowStep[];
+}> {
+  const filePath = await findWorkflowFile(id);
+  if (!filePath) {
+    throw AppError.notFound(`工作流 "${id}" 未找到`);
+  }
+
+  const raw = await fs.readFile(filePath, "utf-8");
+  const parsed = matter(raw);
+  const content = parsed.content;
+
+  // 从 Markdown 内容解析步骤
+  const stepRegex =
+    /## Step (\d+)\s*\n\n\*\*使用 Skill:\*\* `([^`]+)`(?:\n\n([\s\S]*?))?(?=\n## Step|\s*$)/g;
+  const steps: WorkflowStep[] = [];
+  let match;
+  while ((match = stepRegex.exec(content)) !== null) {
+    steps.push({
+      order: parseInt(match[1], 10),
+      skillId: match[2].toLowerCase().replace(/\s+/g, "-"),
+      skillName: match[2],
+      description: (match[3] || "").trim(),
+    });
+  }
+
+  return {
+    id,
+    name: (parsed.data.name as string) || path.basename(filePath, ".md"),
+    description: (parsed.data.description as string) || "",
+    filePath: normalizePath(path.relative(SKILLS_ROOT, filePath)),
+    steps,
+  };
+}
+
+/**
  * 更新工作流 — 覆盖已有 .md 文件
  */
 export async function updateWorkflow(

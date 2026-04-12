@@ -8,6 +8,7 @@ import { WorkflowSchema } from "../../shared/schemas.js";
 import {
   createWorkflow,
   deleteWorkflow,
+  getWorkflowById,
   getWorkflows,
   previewWorkflow,
   updateWorkflow,
@@ -80,6 +81,22 @@ workflowRoutes.post(
       }
       const content = previewWorkflow(parsed.data);
       res.json({ success: true, data: { content } });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
+ * GET /api/workflows/:id — 获取单个工作流详情（结构化数据）
+ */
+workflowRoutes.get(
+  "/workflows/:id",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const workflow = await getWorkflowById(id);
+      res.json({ success: true, data: workflow });
     } catch (err) {
       next(err);
     }

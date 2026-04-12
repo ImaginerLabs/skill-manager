@@ -239,7 +239,7 @@ export async function cleanupSourceFiles(
 
 // ---- Workflow API ----
 
-import type { Workflow } from "../../shared/types";
+import type { Workflow, WorkflowStep } from "../../shared/types";
 
 /** 获取所有工作流列表 */
 export async function fetchWorkflows(): Promise<
@@ -248,6 +248,23 @@ export async function fetchWorkflows(): Promise<
   return apiCall<
     Array<{ id: string; name: string; description: string; filePath: string }>
   >("/api/workflows");
+}
+
+/** 获取单个工作流详情（结构化数据，含 steps） */
+export async function fetchWorkflowDetail(id: string): Promise<{
+  id: string;
+  name: string;
+  description: string;
+  filePath: string;
+  steps: WorkflowStep[];
+}> {
+  return apiCall<{
+    id: string;
+    name: string;
+    description: string;
+    filePath: string;
+    steps: WorkflowStep[];
+  }>(`/api/workflows/${encodeURIComponent(id)}`);
 }
 
 /** 创建新工作流 */
