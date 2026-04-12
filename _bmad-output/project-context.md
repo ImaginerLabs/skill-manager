@@ -82,6 +82,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - **路由层薄封装**：路由文件（`server/routes/`）只做请求解析、Zod 校验和响应格式化，业务逻辑全部委托给 service 层
 - **API 前缀**：所有后端路由挂载在 `/api` 下
 - **前端 API 层**：所有前端 fetch 调用必须通过 `src/lib/api.ts` 封装，不在组件/store 中直接调用 `fetch`
+- **路由注册顺序**：`POST /api/workflows/preview` 必须在 `GET /api/workflows/:id` 之前注册；`GET /api/skills/errors` 必须在 `GET /api/skills/:id` 之前注册
 
 ### 错误处理规则
 
@@ -98,6 +99,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
   - `AppError.pathTraversal()` — **400**，code: `PATH_TRAVERSAL`
   - `AppError.scanPathNotFound(scanPath)` — 404，code: `SCAN_PATH_NOT_FOUND`
   - `AppError.scanPermissionDenied(scanPath)` — 403，code: `SCAN_PERMISSION_DENIED`
+  - `AppError.pathPresetNotFound(id)` — 404，code: `PATH_PRESET_NOT_FOUND`
 - **统一响应格式**：所有 API 响应遵循 `ApiResponse<T>` 类型 — 成功时 `{ success: true, data: T }`，失败时 `{ success: false, error: { code, message, details? } }`
 - **错误码常量**：使用 `shared/constants.ts` 中的 `ErrorCode` 常量，**禁止**硬编码错误码字符串
 - **全局错误中间件**：`errorHandler` 中间件在所有路由之后注册，自动将 `AppError` 转为标准 JSON 响应
@@ -107,6 +109,9 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 
 - **Zod safeParse**：路由入口使用 `Schema.safeParse(req.body)` 校验请求体，校验失败时返回 400 + `VALIDATION_ERROR`
 - **Schema 定义位置**：请求体 Schema 定义在 `shared/schemas.ts`（如 `UpdateSkillMetaBodySchema`），**不在路由文件中定义**
+- **同步相关 Schema**：`SyncTargetCreateSchema`（POST /api/sync/targets）、`SyncTargetUpdateSchema`（PUT /api/sync/targets/:id）、`SyncPushRequestSchema`（POST /api/sync/push）
+- **路径预设 Schema**：`PathPresetCreateSchema`（POST /api/path-presets）、`PathPresetUpdateSchema`（PUT /api/path-presets/:id）
+- **`AppConfigSchema`**：包含 `pathPresets: z.array(PathPresetSchema).default([])`，旧版 settings.yaml 无此字段时自动默认 `[]`（向后兼容）
 
 ### 安全规则
 
@@ -132,7 +137,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - **Store 文件位置**：`src/stores/` 目录，kebab-case 命名
 - **完整 Store 列表**：
   - `skill-store.ts` — Skill 列表、分类、搜索、视图模式
-  - `sync-store.ts` — IDE 同步目标、选中 Skill、同步状态
+  - `sync-store.ts` — IDE 同步目标（`targets`）、选中 Skill（`selectedSkillIds`）、同步状态（`syncStatus`：idle/syncing/done/error）、最后同步时间（`lastSyncAt`）
   - `ui-store.ts` — 侧边栏、预览面板、命令面板开关状态
   - `workflow-store.ts` — 工作流步骤编排
 - **异步操作**：在 store action 中处理，使用 `set({ loading: true })` / `set({ loading: false })` 模式
@@ -148,6 +153,10 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
   - Category: `fetchCategories`、`createCategory`、`updateCategory`、`deleteCategory`
   - Skill 管理: `updateSkillMeta`、`moveSkillCategory`、`deleteSkill`
   - Import: `scanDirectory`、`importFiles`、`detectCodeBuddy`、`cleanupSourceFiles`
+  - Workflow: `fetchWorkflows`、`fetchWorkflowDetail`、`createWorkflow`、`previewWorkflow`、`updateWorkflow`、`deleteWorkflow`
+  - Sync Target: `fetchSyncTargets`、`addSyncTarget`、`updateSyncTarget`、`deleteSyncTarget`、`validateSyncPath`
+  - Sync Push: `pushSync(skillIds, targetIds?)`
+  - Path Preset: `fetchPathPresets`、`addPathPreset`、`updatePathPreset`、`deletePathPreset`
 
 ### 组件结构
 
@@ -158,12 +167,13 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - **共享组件**：`src/components/shared/` — `CommandPalette`、`ErrorBoundary`、`Toast`、`toast-store.ts`
 - **自定义 Hooks**：`src/hooks/` — 如 `useSkillSearch.ts`（基于 fuse.js 的模糊搜索）
 - **路由配置**：`src/App.tsx` 使用 `createBrowserRouter`，`AppLayout` 作为根布局组件
-- **路由列表**：`/`（SkillBrowsePage）、`/workflow`、`/sync`、`/import`、`/settings`
+- **路由列表**：`/`（SkillBrowsePage）、`/workflow`（WorkflowPage）、`/sync`（SyncPage）、`/import`（ImportPage）、`/settings`（SettingsPage）、`/paths`（PathsPage，路径预设管理）
 
 ### Toast 通知
 
 - **`toast-store.ts`**：位于 `src/components/shared/`，提供 `toast.success()`、`toast.error()` 等方法
 - `toast.error()` 支持 `{ details: string }` 选项，用于展示多行错误详情
+- `toast.undoable(message, onUndo, onConfirm)` — 乐观 UI 撤销模式：立即执行 UI 更新，5 秒后调用 `onConfirm`（后端操作），撤销时调用 `onUndo` 恢复 UI；`pendingDeleteIds` Set 防止重复触发；`timerMap` 统一管理定时器，`dismissToast` 时正确清除
 
 ### 样式规则
 
@@ -185,6 +195,9 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - `skillRoutes.ts` — Skill CRUD（`/api/skills`、`/api/skills/:id`、`/api/skills/:id/meta`、`/api/skills/:id/category`、`/api/skills/errors`、`POST /api/refresh`）
 - `categoryRoutes.ts` — 分类管理（`/api/categories`、`/api/categories/:name`）
 - `importRoutes.ts` — 导入功能（`/api/import/scan`、`/api/import/execute`、`/api/import/detect-codebuddy`、`/api/import/cleanup`）
+- `syncRoutes.ts` — 同步目标管理（`/api/sync/targets`、`/api/sync/targets/:id`、`POST /api/sync/validate-path`、`POST /api/sync/push`）
+- `workflowRoutes.ts` — 工作流 CRUD（`/api/workflows`、`/api/workflows/:id`、`POST /api/workflows/preview`）
+- `pathPresetRoutes.ts` — 路径预设 CRUD（`/api/path-presets`、`/api/path-presets/:id`）
 
 ### 服务文件列表
 
@@ -193,6 +206,10 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - `importService.ts` — 文件导入（`importFiles`、`cleanupFiles`、`getSkillsRoot`）
 - `categoryService.ts` — 分类 CRUD（基于 `config/categories.yaml`）
 - `configService.ts` — 应用配置读写（基于 `config/settings.yaml`，使用 `js-yaml`）
+- `syncService.ts` — 同步目标 CRUD + 路径校验 + 推送（`getSyncTargets`、`addSyncTarget`、`updateSyncTarget`、`removeSyncTarget`、`validateSyncPath`、`pushSync`）；`pushSync` 是**扁平化**复制，只取 `path.basename`，不保留分类子目录
+- `workflowService.ts` — 工作流 CRUD + Markdown 解析（`getWorkflows`、`getWorkflowById`、`createWorkflow`、`updateWorkflow`、`deleteWorkflow`、`previewWorkflow`）；`getWorkflowById` 返回结构化 `steps`，前端无需自行解析 Markdown
+- `pathPresetService.ts` — 路径预设 CRUD（`getPathPresets`、`addPathPreset`、`updatePathPreset`、`removePathPreset`）；复用 `syncService` 的 `readSettings`/`writeSettings` 模式
+- `pathConfigService.ts` — 路径配置辅助服务（职责与 `pathPresetService` 有重叠，待后续 Epic 明确边界）
 
 ### 工具函数列表
 
@@ -370,8 +387,15 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - ⚠️ 工作流创建/更新/删除后自动调用 `refreshSkillCache()` 刷新缓存
 - ⚠️ 同步目标数据存储在 `config/settings.yaml` 的 `sync.targets` 字段中
 - ⚠️ `addSyncTarget` / `updateSyncTarget` 会校验路径必须是绝对路径，且路径不能与已有目标重复（`path.normalize` 对比）
+- ⚠️ `addPathPreset` / `updatePathPreset` 同样校验绝对路径 + 重复检测（`path.normalize` 对比）
+- ⚠️ 路径预设数据存储在 `config/settings.yaml` 的 `pathPresets` 字段中（与 `sync` 并列）
+- ⚠️ 旧版 `settings.yaml` 无 `pathPresets` 字段时，读取结果默认为 `[]`（向后兼容，`AppConfigSchema` 中 `.default([])`）
+- ⚠️ 路径预设 ID 生成格式：`preset-{ts36}-{rand4}`（`generateId()` 函数，无需引入新依赖）
 - ⚠️ `POST /api/workflows/preview` 必须在 `GET /api/workflows/:id` 之前注册（否则 "preview" 被当作 `:id`）
 - ⚠️ `workflowService.findWorkflowFile` 通过 `slugify(file) === id` 匹配文件，区分大小写
+- ⚠️ `toast.undoable()` 乐观删除模式：立即更新 UI → 5 秒后调用后端 → 失败时恢复；`pendingDeleteIds` Set 防重复触发；`timerMap` 统一管理定时器
+- ⚠️ `SyncStatusIndicator` 相对时间每 30 秒刷新（`setInterval`），组件卸载时必须 `clearInterval`
+- ⚠️ `pathConfigService.ts` 与 `pathPresetService.ts` 职责有重叠，后续 Epic 需明确边界
 
 ---
 
@@ -390,4 +414,4 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - 定期审查移除过时规则
 - 保持精简，聚焦于 LLM 容易遗漏的细节
 
-最后更新：2026-04-11
+最后更新：2026-04-12（Epic 4 完成后更新）

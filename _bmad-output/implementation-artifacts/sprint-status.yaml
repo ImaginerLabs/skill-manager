@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-12T14:35:00
+last_updated: 2026-04-12T22:16:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -163,4 +163,4 @@ development_status:
   4-6-workflow-preview-test-coverage: done
   4-7-workflow-delete-undo-feature: done
   4-8-story-3-3-and-3-4-backfill-story-files: done
-  epic-4-retrospective: optional
+  epic-4-retrospective: done
