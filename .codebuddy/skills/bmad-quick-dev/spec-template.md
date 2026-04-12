@@ -1,8 +1,8 @@
 ---
-title: '{title}'
-type: 'feature' # feature | bugfix | refactor | chore
-created: '{date}'
-status: 'draft' # draft | ready-for-dev | in-progress | in-review | done
+title: "{title}"
+type: "feature" # feature | bugfix | refactor | chore
+created: "{date}"
+status: "draft" # draft | ready-for-dev | in-progress | in-review | done
 context: [] # optional: `{project-root}/`-prefixed paths to project-wide standards/docs the implementation agent should load. Keep short — only what isn't already distilled into the spec body.
 ---
 
@@ -28,6 +28,7 @@ context: [] # optional: `{project-root}/`-prefixed paths to project-wide standar
 **Always:** INVARIANT_RULES
 
 **Ask First:** DECISIONS_REQUIRING_HUMAN_APPROVAL
+
 <!-- Agent: if any of these trigger during execution, HALT and ask the user before proceeding. -->
 
 **Never:** NON_GOALS_AND_FORBIDDEN_APPROACHES
@@ -36,10 +37,10 @@ context: [] # optional: `{project-root}/`-prefixed paths to project-wide standar
 
 <!-- If no meaningful I/O scenarios exist, DELETE THIS ENTIRE SECTION. Do not write "N/A" or "None". -->
 
-| Scenario | Input / State | Expected Output / Behavior | Error Handling |
-|----------|--------------|---------------------------|----------------|
-| HAPPY_PATH | INPUT | OUTCOME | N/A |
-| ERROR_CASE | INPUT | OUTCOME | ERROR_HANDLING |
+| Scenario   | Input / State | Expected Output / Behavior | Error Handling |
+| ---------- | ------------- | -------------------------- | -------------- |
+| HAPPY_PATH | INPUT         | OUTCOME                    | N/A            |
+| ERROR_CASE | INPUT         | OUTCOME                    | ERROR_HANDLING |
 
 </frozen-after-approval>
 
@@ -53,13 +54,23 @@ context: [] # optional: `{project-root}/`-prefixed paths to project-wide standar
 ## Tasks & Acceptance
 
 <!-- Tasks: backtick-quoted file path -- action -- rationale. Prefer one task per file; group tightly-coupled changes when splitting would be artificial. -->
-<!-- If an I/O Matrix is present, include a task to unit-test its edge cases. -->
 <!-- AC covers system-level behaviors not captured by the I/O Matrix. Do not duplicate I/O scenarios here. -->
 
 **Execution:**
+
 - [ ] `FILE` -- ACTION -- RATIONALE
 
+**Tests (MANDATORY — do NOT delete this section):**
+
+<!-- REQUIRED: Every spec MUST include at least one Vitest unit/integration test task AND one Playwright E2E test task. -->
+<!-- Unit/integration: cover the core logic change + I/O Matrix edge cases if present. -->
+<!-- E2E: cover the critical user-facing flow introduced or modified by this change. -->
+
+- [ ] `tests/unit/PATH_TO_TEST.test.ts` -- write Vitest unit/integration tests covering core logic and edge cases -- required by project testing standards
+- [ ] `tests/e2e/PATH_TO_SPEC.spec.ts` -- write Playwright E2E test covering the critical user flow -- required by project testing standards
+
 **Acceptance Criteria:**
+
 - Given PRECONDITION, when ACTION, then EXPECTED_RESULT
 
 ## Spec Change Log
@@ -82,7 +93,9 @@ DESIGN_RATIONALE_AND_EXAMPLES
 <!-- How the agent confirms its own work. Prefer CLI commands. When no CLI check applies, state what to inspect manually. -->
 
 **Commands:**
+
 - `COMMAND` -- expected: SUCCESS_CRITERIA
 
 **Manual checks (if no CLI):**
+
 - WHAT_TO_INSPECT_AND_EXPECTED_STATE

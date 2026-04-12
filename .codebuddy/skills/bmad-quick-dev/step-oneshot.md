@@ -1,5 +1,5 @@
 ---
-deferred_work_file: '{implementation_artifacts}/deferred-work.md'
+deferred_work_file: "{implementation_artifacts}/deferred-work.md"
 ---
 
 # Step One-Shot: Implement, Review, Present
@@ -14,6 +14,25 @@ deferred_work_file: '{implementation_artifacts}/deferred-work.md'
 ### Implement
 
 Implement the clarified intent directly.
+
+### Test (MANDATORY — never skip)
+
+After implementation, write and run tests before proceeding to review. This is not optional.
+
+**Determine test scope** based on what changed:
+
+- **Logic / utilities / services** → Vitest unit tests
+- **React components / hooks / stores** → Vitest + `@testing-library/react`
+- **API routes / integrations** → Vitest integration tests using `supertest`
+- **User-visible flows** → Playwright E2E tests in `tests/e2e/`
+
+**Rules:**
+
+- Write tests in the appropriate `tests/` subdirectory mirroring the source structure
+- Cover: happy path, error cases, and edge cases from the I/O Matrix (if present)
+- Run `npm run test:run` — all tests must pass before continuing
+- If the change touches a user-visible flow, also run `npm run test:e2e` for the relevant spec
+- **HALT** if tests cannot be written (explain why) or if any test fails (fix before proceeding)
 
 ### Review
 
