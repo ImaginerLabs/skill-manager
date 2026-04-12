@@ -1,5 +1,5 @@
+#!/bin/sh
 npx lint-staged
-npm run test:run
 
 # 检测业务文件变更，提醒同步更新 README.md 和 README.en.md
 CHANGED=$(git diff --cached --name-only)
@@ -47,3 +47,5 @@ if [ -n "$BUSINESS_CHANGED" ] && [ -z "$PROJECT_CONTEXT_CHANGED" ]; then
   echo "   可使用 bmad-generate-project-context 技能重新生成，或手动编辑相关章节。"
   echo ""
 fi
+
+npm run test:run

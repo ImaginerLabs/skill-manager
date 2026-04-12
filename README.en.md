@@ -152,6 +152,10 @@ The project uses **Husky** to manage Git hooks, ensuring code quality and docume
 
 When files under `src/`, `server/`, `shared/`, `skills/`, or `_bmad-output/` are changed, **both `README.md` (Chinese) and `README.en.md` (English) must be updated**, otherwise the commit will be blocked.
 
+**Project Context Update Reminder:**
+
+When business files change, the hook also reminds you to consider updating `_bmad-output/project-context.md` (AI agent project context). If the change involves tech stack, architecture patterns, directory structure, or development conventions, it is recommended to regenerate it using the `bmad-generate-project-context` skill or update the relevant sections manually. This check is **non-blocking** and will not prevent the commit.
+
 ```bash
 # Skip the check if you're sure no doc update is needed
 git commit --no-verify
