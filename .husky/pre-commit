@@ -1,1 +1,21 @@
 npx lint-staged
+npm run test:run
+
+# 检测业务文件变更，提醒同步更新 README.md
+CHANGED=$(git diff --cached --name-only)
+BUSINESS_CHANGED=$(echo "$CHANGED" | grep -E '^(src/|server/|shared/|skills/|_bmad-output/)' || true)
+README_CHANGED=$(echo "$CHANGED" | grep -E '^README\.md$' || true)
+
+if [ -n "$BUSINESS_CHANGED" ] && [ -z "$README_CHANGED" ]; then
+  echo ""
+  echo "🚫  提交被阻断：检测到业务文件变更，但 README.md 未同步更新"
+  echo ""
+  echo "   变更文件："
+  echo "$BUSINESS_CHANGED" | sed 's/^/   - /'
+  echo ""
+  echo "   请检查并更新 README.md（功能特性、API、技术栈等受影响章节）"
+  echo "   更新后将 README.md 加入暂存区（git add README.md）再重新提交。"
+  echo "   如确认无需更新，请手动执行：git commit --no-verify"
+  echo ""
+  exit 1
+fi

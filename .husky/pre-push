@@ -1,0 +1,40 @@
+npm run test:e2e
+
+# ─── 自动版本发布（基于 Conventional Commits 语义推导）───────────────────────
+# 仅在 main / master 分支触发
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+if [ "$BRANCH" != "main" ] && [ "$BRANCH" != "master" ]; then
+  echo "ℹ️  非主分支（$BRANCH），跳过自动发版"
+  exit 0
+fi
+
+# 获取上一个 tag；若无 tag 则取全部 commit
+LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+if [ -n "$LAST_TAG" ]; then
+  COMMITS=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s" 2>/dev/null)
+else
+  COMMITS=$(git log --pretty=format:"%s" 2>/dev/null)
+fi
+
+if [ -z "$COMMITS" ]; then
+  echo "ℹ️  无新 commit，跳过自动发版"
+  exit 0
+fi
+
+# 语义分析
+HAS_BREAKING=$(echo "$COMMITS" | grep -E "(BREAKING CHANGE|^[a-z]+(\(.*\))?!:)" | wc -l | tr -d ' ')
+HAS_FEAT=$(echo "$COMMITS" | grep -E "^feat(\(.*\))?:" | wc -l | tr -d ' ')
+HAS_FIX=$(echo "$COMMITS" | grep -E "^fix(\(.*\))?:" | wc -l | tr -d ' ')
+
+if [ "$HAS_BREAKING" -gt 0 ]; then
+  echo "🚀 检测到 BREAKING CHANGE，执行 major 发版..."
+  npm run release:major
+elif [ "$HAS_FEAT" -gt 0 ]; then
+  echo "🚀 检测到 feat commit，执行 minor 发版..."
+  npm run release:minor
+elif [ "$HAS_FIX" -gt 0 ]; then
+  echo "🚀 检测到 fix commit，执行 patch 发版..."
+  npm run release:patch
+else
+  echo "ℹ️  无 feat/fix/BREAKING commit（docs/chore/refactor 等），跳过自动发版"
+fi
