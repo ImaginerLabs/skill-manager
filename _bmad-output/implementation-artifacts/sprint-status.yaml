@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-13T14:09:00
+last_updated: 2026-04-13T15:05:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -220,3 +220,13 @@ development_status:
   bundle-5-5-bundle-apply-activation: done
   bundle-5-6-broken-reference-handling: done
   epic-bundle-retrospective: optional
+
+  # ============================================================
+  # Epic NAV-FIX: 导航交互修复
+  # 修复 Skill 库导航与分类筛选的交互逻辑缺陷
+  # 来源：Chrome MCP 走查 + Party Mode 圆桌讨论（2026-04-13）
+  # Dependencies: None（独立修复，无外部依赖）
+  # ============================================================
+  epic-nav-fix: done
+  nav-01-skill-library-navigation-fix: done
+  epic-nav-fix-retrospective: optional
