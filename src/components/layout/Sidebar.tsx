@@ -4,6 +4,7 @@ import {
   FolderOpen,
   GitBranch,
   RefreshCw,
+  Settings,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -37,6 +38,7 @@ export default function Sidebar() {
     { to: "/sync", icon: RefreshCw, label: t("nav.sync") },
     { to: "/import", icon: Download, label: t("nav.import") },
     { to: "/paths", icon: FolderOpen, label: t("nav.pathConfig") },
+    { to: "/settings", icon: Settings, label: t("nav.settings") },
   ];
 
   // 处理"Skill 库"点击：始终清除分类筛选，若不在 / 则导航过去
