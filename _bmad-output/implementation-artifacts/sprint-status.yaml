@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-13T11:41:00
+last_updated: 2026-04-13T14:09:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -212,11 +212,11 @@ development_status:
   # 用户可以在重组织后的分类页中管理分类和套件，通过套件将常用分类组合保存并一键激活
   # Dependencies: Epic 0~UX-IMPROVEMENT（全部完成）
   # ============================================================
-  epic-bundle: in-progress
-  bundle-5-1-bundle-backend-infrastructure: review
-  bundle-5-2-bundle-api-routes: review
-  bundle-5-3-settings-page-tab-reorganization: review
-  bundle-5-4-bundle-manager-crud-ui: review
-  bundle-5-5-bundle-apply-activation: review
-  bundle-5-6-broken-reference-handling: review
+  epic-bundle: done
+  bundle-5-1-bundle-backend-infrastructure: done
+  bundle-5-2-bundle-api-routes: done
+  bundle-5-3-settings-page-tab-reorganization: done
+  bundle-5-4-bundle-manager-crud-ui: done
+  bundle-5-5-bundle-apply-activation: done
+  bundle-5-6-broken-reference-handling: done
   epic-bundle-retrospective: optional

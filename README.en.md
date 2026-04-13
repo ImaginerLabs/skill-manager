@@ -21,7 +21,8 @@
 | 🔗 Workflow      | Drag-and-drop orchestration, generate workflow `.md`; Tab layout to manage existing workflows; draft auto-saved            |
 | 🔄 Sync          | Push selected Skills to IDE directory (supports CodeBuddy); step-by-step onboarding guide                                  |
 | 📥 Import        | Scan and import Skills from IDE directory                                                                                  |
-| ⚙️ Settings      | Manage IDE paths, category definitions, path presets; batch remove Skills from category                                    |
+| 🗂️ Category      | Tab-based settings page: category management + bundle management; batch remove Skills from category                        |
+| 📦 Bundles       | Save category combinations as bundles; one-click activate to switch entire category config; broken-reference warning       |
 | ⌨️ Hotkeys       | `⌘K` command palette (with description & type groups), `Alt+↑/↓` step reorder                                              |
 | 📋 Quick Actions | Copy Skill path from detail panel; version number auto-synced with `package.json`                                          |
 
@@ -167,17 +168,22 @@ git commit --no-verify
 ### API Overview
 
 ```
-GET    /api/skills              # List all Skills
-GET    /api/skills/:id          # Get Skill detail
-PUT    /api/skills/:id/meta     # Update Skill metadata
-DELETE /api/skills/:id          # Delete Skill
-GET    /api/categories          # List categories
-GET    /api/workflows           # List workflows
-POST   /api/sync/push           # Push to IDE
-POST   /api/sync/import         # Import from IDE
-GET    /api/config              # Get config
-POST   /api/refresh             # Refresh Skill cache
-GET    /api/health              # Health check
+GET    /api/skills                        # List all Skills
+GET    /api/skills/:id                    # Get Skill detail
+PUT    /api/skills/:id/meta               # Update Skill metadata
+DELETE /api/skills/:id                    # Delete Skill
+GET    /api/categories                    # List categories
+GET    /api/workflows                     # List workflows
+POST   /api/sync/push                     # Push to IDE
+POST   /api/sync/import                   # Import from IDE
+GET    /api/config                        # Get config
+POST   /api/refresh                       # Refresh Skill cache
+GET    /api/health                        # Health check
+GET    /api/skill-bundles                 # List all bundles
+POST   /api/skill-bundles                 # Create bundle
+PUT    /api/skill-bundles/:id             # Update bundle
+DELETE /api/skill-bundles/:id             # Delete bundle
+PUT    /api/skill-bundles/:id/apply       # Activate bundle (set activeCategories)
 ```
 
 ---

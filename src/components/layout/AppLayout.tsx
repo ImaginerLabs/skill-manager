@@ -16,8 +16,13 @@ import StatusBar from "./StatusBar";
  */
 export default function AppLayout() {
   const { previewOpen, toggleSidebar, togglePreview } = useUIStore();
-  const { selectedSkillId } = useSkillStore();
+  const { selectedSkillId, fetchSkills } = useSkillStore();
   const location = useLocation();
+
+  // 全局初始化：确保任何页面刷新都能加载分类和 Skill 数据
+  useEffect(() => {
+    fetchSkills();
+  }, [fetchSkills]);
 
   // 预览面板仅在 Skill 浏览页（/）下生效，切换到其他页面自动关闭
   const isSkillBrowsePage = location.pathname === "/";

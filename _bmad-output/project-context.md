@@ -100,7 +100,10 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
   - `AppError.scanPathNotFound(scanPath)` — 404，code: `SCAN_PATH_NOT_FOUND`
   - `AppError.scanPermissionDenied(scanPath)` — 403，code: `SCAN_PERMISSION_DENIED`
   - `AppError.pathPresetNotFound(id)` — 404，code: `PATH_PRESET_NOT_FOUND`
-- **统一响应格式**：所有 API 响应遵循 `ApiResponse<T>` 类型 — 成功时 `{ success: true, data: T }`，失败时 `{ success: false, error: { code, message, details? } }`
+  - `AppError.bundleNotFound(id)` — 404，code: `BUNDLE_NOT_FOUND`
+  - `AppError.bundleLimitExceeded()` — 400，code: `BUNDLE_LIMIT_EXCEEDED`
+  - `AppError.bundleNameDuplicate(name)` — 400，code: `BUNDLE_NAME_DUPLICATE`
+- **统一响应格式**- **统一响应格式**：所有 API 响应遵循 `ApiResponse<T>` 类型 — 成功时 `{ success: true, data: T }`，失败时 `{ success: false, error: { code, message, details? } }`
 - **错误码常量**：使用 `shared/constants.ts` 中的 `ErrorCode` 常量，**禁止**硬编码错误码字符串
 - **全局错误中间件**：`errorHandler` 中间件在所有路由之后注册，自动将 `AppError` 转为标准 JSON 响应
 - **路由中的 try/catch**：每个路由处理器**必须**用 try/catch 包裹，catch 中调用 `next(err)` 传递给全局错误中间件
@@ -112,6 +115,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - **同步相关 Schema**：`SyncTargetCreateSchema`（POST /api/sync/targets）、`SyncTargetUpdateSchema`（PUT /api/sync/targets/:id）、`SyncPushRequestSchema`（POST /api/sync/push）
 - **路径预设 Schema**：`PathPresetCreateSchema`（POST /api/path-presets）、`PathPresetUpdateSchema`（PUT /api/path-presets/:id）
 - **`AppConfigSchema`**：包含 `pathPresets: z.array(PathPresetSchema).default([])`，旧版 settings.yaml 无此字段时自动默认 `[]`（向后兼容）
+- **套件 Schema**：`SkillBundleCreateSchema`（POST /api/skill-bundles）、`SkillBundleUpdateSchema`（PUT /api/skill-bundles/:id）；`SkillBundleSchema` 含 `categoryNames.max(20)` 约束；`AppConfigSchema` 追加 `skillBundles: z.array(SkillBundleSchema).max(50).default([])` 和 `activeCategories: z.array(z.string()).default([])`，旧版 settings.yaml 无此字段时自动默认 `[]`（向后兼容）
 
 ### 安全规则
 
@@ -140,6 +144,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
   - `sync-store.ts` — IDE 同步目标（`targets`）、选中 Skill（`selectedSkillIds`）、同步状态（`syncStatus`：idle/syncing/done/error）、最后同步时间（`lastSyncAt`）
   - `ui-store.ts` — 侧边栏、预览面板、命令面板开关状态
   - `workflow-store.ts` — 工作流步骤编排
+  - `bundle-store.ts` — 套件列表（`bundles`）、加载状态（`bundlesLoading`）、错误状态（`bundlesError`）、当前激活套件 ID（`activeBundleId`）；actions：`fetchBundles`、`createBundle`、`updateBundle`、`deleteBundle`、`applyBundle`
 - **异步操作**：在 store action 中处理，使用 `set({ loading: true })` / `set({ loading: false })` 模式
 - **并行请求**：使用 `Promise.all()` 并行获取多个数据源
 
@@ -157,6 +162,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
   - Sync Target: `fetchSyncTargets`、`addSyncTarget`、`updateSyncTarget`、`deleteSyncTarget`、`validateSyncPath`
   - Sync Push: `pushSync(skillIds, targetIds?)`
   - Path Preset: `fetchPathPresets`、`addPathPreset`、`updatePathPreset`、`deletePathPreset`
+  - Skill Bundle: `fetchSkillBundles`、`createSkillBundle`、`updateSkillBundle`、`deleteSkillBundle`、`applySkillBundle`
 
 ### 组件结构
 
@@ -167,7 +173,8 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - **共享组件**：`src/components/shared/` — `CommandPalette`、`ErrorBoundary`、`Toast`、`toast-store.ts`
 - **自定义 Hooks**：`src/hooks/` — 如 `useSkillSearch.ts`（基于 fuse.js 的模糊搜索）
 - **路由配置**：`src/App.tsx` 使用 `createBrowserRouter`，`AppLayout` 作为根布局组件
-- **路由列表**：`/`（SkillBrowsePage）、`/workflow`（WorkflowPage）、`/sync`（SyncPage）、`/import`（ImportPage）、`/settings`（SettingsPage）、`/paths`（PathsPage，路径预设管理）
+- **路由列表**：`/`（SkillBrowsePage）、`/workflow`（WorkflowPage）、`/sync`（SyncPage）、`/import`（ImportPage）、`/settings`（SettingsPage，Tab 化：「分类设置」+ 「套件管理」）、`/paths`（PathsPage，路径预设管理）
+- **侧边栏导航**：「设置」导航项已重命名为「分类」，路由 `/settings` 保持不变
 
 ### Toast 通知
 
@@ -198,6 +205,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - `syncRoutes.ts` — 同步目标管理（`/api/sync/targets`、`/api/sync/targets/:id`、`POST /api/sync/validate-path`、`POST /api/sync/push`）
 - `workflowRoutes.ts` — 工作流 CRUD（`/api/workflows`、`/api/workflows/:id`、`POST /api/workflows/preview`）
 - `pathPresetRoutes.ts` — 路径预设 CRUD（`/api/path-presets`、`/api/path-presets/:id`）
+- `bundleRoutes.ts` — 套件 CRUD + 激活（`GET/POST /api/skill-bundles`、`PUT/DELETE /api/skill-bundles/:id`、`PUT /api/skill-bundles/:id/apply`、`GET /api/skill-bundles/export`（501 占位）、`POST /api/skill-bundles/import`（501 占位））
 
 ### 服务文件列表
 
@@ -210,6 +218,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - `workflowService.ts` — 工作流 CRUD + Markdown 解析（`getWorkflows`、`getWorkflowById`、`createWorkflow`、`updateWorkflow`、`deleteWorkflow`、`previewWorkflow`）；`getWorkflowById` 返回结构化 `steps`，前端无需自行解析 Markdown
 - `pathPresetService.ts` — 路径预设 CRUD（`getPathPresets`、`addPathPreset`、`updatePathPreset`、`removePathPreset`）；复用 `syncService` 的 `readSettings`/`writeSettings` 模式
 - `pathConfigService.ts` — 路径配置辅助服务（职责与 `pathPresetService` 有重叠，待后续 Epic 明确边界）
+- `bundleService.ts` — 套件 CRUD + 激活（`getBundles`、`addBundle`、`updateBundle`、`removeBundle`、`applyBundle`）；`getBundles()` 注入 `brokenCategoryNames` 字段（与 `categoryService.getCategories()` 做 diff）；`applyBundle` 以覆盖模式写入 `activeCategories`，跳过已删除分类引用，返回 `{ applied: string[], skipped: string[] }`
 
 ### 工具函数列表
 
@@ -391,6 +400,15 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - ⚠️ 路径预设数据存储在 `config/settings.yaml` 的 `pathPresets` 字段中（与 `sync` 并列）
 - ⚠️ 旧版 `settings.yaml` 无 `pathPresets` 字段时，读取结果默认为 `[]`（向后兼容，`AppConfigSchema` 中 `.default([])`）
 - ⚠️ 路径预设 ID 生成格式：`preset-{ts36}-{rand4}`（`generateId()` 函数，无需引入新依赖）
+- ⚠️ 套件 ID 生成格式：`bundle-{ts36}-{rand4}`（同 `generateId()` 模式）
+- ⚠️ 套件名称正则校验：`/^[a-z0-9-]+$/`（与 `importService` 的 `VALID_CATEGORY_RE` 一致，防路径注入）
+- ⚠️ 套件数量上限 50 个（`BUNDLE_LIMIT = 50`）；每个套件 `categoryNames` 最多 20 个
+- ⚠️ `GET /api/skill-bundles/export` 必须在 `GET /api/skill-bundles/:id` 之前注册（防止 "export" 被当作 `:id`）
+- ⚠️ `bundleService` 不感知 `categoryService` 的删除操作（职责分离）；损坏引用在 `getBundles()` 读取时动态计算，不阻断分类删除
+- ⚠️ `applyBundle` 激活套件时以**覆盖模式**写入 `activeCategories`（不叠加），自动跳过已删除分类
+- ⚠️ 套件数据存储在 `config/settings.yaml` 的 `skillBundles` 字段；`activeCategories` 字段记录当前激活的分类列表
+- ⚠️ `SettingsPage.tsx` 使用 shadcn/ui `Tabs` 组件实现 Tab 化，「分类设置」Tab 渲染 `CategoryManager`（零改动），「套件管理」Tab 渲染 `BundleManager`
+- ⚠️ `bundle-store.ts` 的 `activeBundleId` 为前端本地状态，激活后通过 `set({ activeBundleId: id })` 更新，用于控制套件卡片的「已激活」视觉标识
 - ⚠️ `POST /api/workflows/preview` 必须在 `GET /api/workflows/:id` 之前注册（否则 "preview" 被当作 `:id`）
 - ⚠️ `workflowService.findWorkflowFile` 通过 `slugify(file) === id` 匹配文件，区分大小写
 - ⚠️ `toast.undoable()` 乐观删除模式：立即更新 UI → 5 秒后调用后端 → 失败时恢复；`pendingDeleteIds` Set 防重复触发；`timerMap` 统一管理定时器
@@ -414,4 +432,4 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - 定期审查移除过时规则
 - 保持精简，聚焦于 LLM 容易遗漏的细节
 
-最后更新：2026-04-12（Epic 4 完成后更新）
+最后更新：2026-04-13（Epic BUNDLE 完成后更新）

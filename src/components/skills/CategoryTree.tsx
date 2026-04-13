@@ -5,6 +5,7 @@
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { ChevronRight, Folder, FolderOpen } from "lucide-react";
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSkillStore } from "../../stores/skill-store";
 import { Badge } from "../ui/badge";
 
@@ -14,8 +15,18 @@ import { Badge } from "../ui/badge";
 export default function CategoryTree() {
   const { categories, selectedCategory, setCategory, skills } = useSkillStore();
   const [isOpen, setIsOpen] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const totalCount = skills.length;
+
+  // 点击分类时：更新筛选状态，若不在 Skill 库页面则自动导航过去
+  const handleSelectCategory = (category: string | null) => {
+    setCategory(category);
+    if (location.pathname !== "/") {
+      navigate("/");
+    }
+  };
 
   return (
     <div className="py-2">
@@ -34,7 +45,7 @@ export default function CategoryTree() {
           {/* "全部" 选项 */}
           <button
             data-testid="category-all"
-            onClick={() => setCategory(null)}
+            onClick={() => handleSelectCategory(null)}
             className={`flex items-center gap-2 w-full px-4 py-1.5 text-sm transition-colors duration-200 cursor-pointer ${
               selectedCategory === null
                 ? "border-l-2 border-[hsl(var(--primary))] bg-[hsl(var(--accent))] text-[hsl(var(--primary))] font-medium pl-[14px]"
@@ -57,7 +68,7 @@ export default function CategoryTree() {
               <button
                 key={cat.name}
                 data-testid={`category-${cat.name}`}
-                onClick={() => setCategory(cat.name)}
+                onClick={() => handleSelectCategory(cat.name)}
                 className={`flex items-center gap-2 w-full px-4 py-1.5 text-sm transition-colors duration-200 cursor-pointer ${
                   selectedCategory === cat.name
                     ? "border-l-2 border-[hsl(var(--primary))] bg-[hsl(var(--accent))] text-[hsl(var(--primary))] font-medium pl-[14px]"

@@ -22,6 +22,7 @@
 | 🔄 IDE 同步   | 将选中 Skill 推送到 IDE 目录（支持 CodeBuddy）；分步引导新用户配置                         |
 | 📥 IDE 导入   | 从 IDE 目录扫描并导入 Skill 到仓库                                                         |
 | ⚙️ 配置管理   | 管理 IDE 路径、分类定义、路径预设；分类批量操作（多选移出）                                |
+| 📦 套件管理   | 将常用分类组合保存为套件，一键激活整套分类配置；损坏引用自动警告                           |
 | ⌨️ 键盘快捷键 | `⌘K` 全局搜索（含描述摘要 + 类型分组），`Alt+↑/↓` 步骤排序                                 |
 | 📋 快捷操作   | Skill 详情侧边栏支持一键复制路径；版本号与 `package.json` 自动同步                         |
 
@@ -178,6 +179,11 @@ POST   /api/sync/import         # 从 IDE 导入
 GET    /api/config              # 读取配置
 POST   /api/refresh             # 刷新 Skill 缓存
 GET    /api/health              # 健康检查
+GET    /api/skill-bundles       # 获取套件列表
+POST   /api/skill-bundles       # 创建套件
+PUT    /api/skill-bundles/:id   # 更新套件
+DELETE /api/skill-bundles/:id   # 删除套件
+PUT    /api/skill-bundles/:id/apply  # 一键激活套件
 ```
 
 ---
