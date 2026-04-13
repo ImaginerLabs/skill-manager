@@ -7,6 +7,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import SkillGrid from "../components/skills/SkillGrid";
 import SkillListView from "../components/skills/SkillListView";
@@ -32,6 +33,7 @@ export default function SkillBrowsePage() {
     setViewMode,
     selectedCategory,
   } = useSkillStore();
+  const { t } = useTranslation();
 
   const navigate = useNavigate();
   const [coldStart, setColdStart] = useState<{
@@ -86,12 +88,15 @@ export default function SkillBrowsePage() {
       {/* 顶部工具栏 */}
       <div className="flex items-center gap-3 mb-4">
         <h1 className="text-xl font-bold font-[var(--font-code)] text-[hsl(var(--foreground))]">
-          Skill 库
+          {t("skillBrowse.title")}
         </h1>
         <span className="text-sm text-[hsl(var(--muted-foreground))]">
           {filteredSkills.length === skills.length
-            ? `${skills.length} 个 Skill`
-            : `${filteredSkills.length} / ${skills.length} 个 Skill`}
+            ? t("skillBrowse.skillCount", { count: skills.length })
+            : t("skillBrowse.skillCountFiltered", {
+                filtered: filteredSkills.length,
+                total: skills.length,
+              })}
         </span>
 
         {/* 搜索框 */}
@@ -103,7 +108,7 @@ export default function SkillBrowsePage() {
           <Input
             data-testid="search-input"
             type="text"
-            placeholder="筛选 Skill..."
+            placeholder={t("skillBrowse.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -120,7 +125,7 @@ export default function SkillBrowsePage() {
             size="icon"
             onClick={() => handleViewModeChange("grid")}
             className={`h-9 w-9 rounded-none ${viewMode === "grid" ? "text-[hsl(var(--primary))]" : ""}`}
-            title="卡片视图"
+            title={t("skillBrowse.cardView")}
           >
             <LayoutGrid size={16} />
           </Button>
@@ -129,7 +134,7 @@ export default function SkillBrowsePage() {
             size="icon"
             onClick={() => handleViewModeChange("list")}
             className={`h-9 w-9 rounded-none ${viewMode === "list" ? "text-[hsl(var(--primary))]" : ""}`}
-            title="列表视图"
+            title={t("skillBrowse.listView")}
           >
             <List size={16} />
           </Button>
@@ -141,7 +146,7 @@ export default function SkillBrowsePage() {
           size="icon"
           onClick={handleRefresh}
           disabled={loading}
-          title="刷新 Skill 列表"
+          title={t("skillBrowse.refresh")}
         >
           <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
         </Button>
@@ -153,20 +158,21 @@ export default function SkillBrowsePage() {
           <div className="flex items-center gap-2 mb-2">
             <Zap size={20} className="text-[hsl(var(--primary))]" />
             <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">
-              检测到 CodeBuddy IDE Skill 文件
+              {t("skillBrowse.coldStartDetected")}
             </h2>
             <Badge variant="default" className="text-xs">
-              {coldStart.fileCount} 个文件
+              {t("skillBrowse.coldStartFiles", { count: coldStart.fileCount })}
             </Badge>
           </div>
           <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3">
-            在{" "}
             <code className="text-xs bg-[hsl(var(--surface-elevated))] px-1 py-0.5 rounded">
               {coldStart.path}
             </code>{" "}
-            中发现 Skill 文件，点击下方按钮开始导入。
+            {t("skillBrowse.coldStartLocation")}
           </p>
-          <Button onClick={() => navigate("/import")}>开始导入 →</Button>
+          <Button onClick={() => navigate("/import")}>
+            {t("skillBrowse.coldStartImport")}
+          </Button>
         </div>
       )}
 
@@ -180,17 +186,16 @@ export default function SkillBrowsePage() {
               className="mx-auto text-[hsl(var(--muted-foreground))] mb-3 opacity-40"
             />
             <p className="text-[hsl(var(--muted-foreground))] text-lg mb-2">
-              暂无 Skill
+              {t("skillBrowse.emptyTitle")}
             </p>
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              前往{" "}
               <button
                 onClick={() => navigate("/import")}
                 className="text-[hsl(var(--primary))] hover:underline"
               >
-                导入页面
+                {t("skillBrowse.emptyImportLink")}
               </button>{" "}
-              从 IDE 导入 Skill 文件
+              {t("skillBrowse.emptyHint")}
             </p>
           </div>
         )}
@@ -210,7 +215,7 @@ export default function SkillBrowsePage() {
             className="animate-spin text-[hsl(var(--primary))]"
           />
           <span className="ml-3 text-[hsl(var(--muted-foreground))]">
-            加载中...
+            {t("skillBrowse.loadingText")}
           </span>
         </div>
       ) : (

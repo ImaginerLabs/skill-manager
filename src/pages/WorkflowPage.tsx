@@ -4,6 +4,7 @@
 
 import { Edit2, Plus, Trash2, Zap } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "../components/shared/toast-store";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -36,6 +37,7 @@ export default function WorkflowPage() {
   const pendingDeleteIds = useRef<Set<string>>(new Set());
   const { loadWorkflow, reset } = useWorkflowStore();
   const { fetchSkills } = useSkillStore();
+  const { t } = useTranslation();
 
   const loadWorkflows = useCallback(async () => {
     setLoadingList(true);
@@ -63,9 +65,11 @@ export default function WorkflowPage() {
         const detail = await fetchWorkflowDetail(workflow.id);
         loadWorkflow(detail.id, detail.name, detail.description, detail.steps);
         setMode("editor");
-        toast.success(`已加载工作流「${workflow.name}」到编排器`);
+        toast.success(t("toast.workflowLoaded", { name: workflow.name }));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "加载工作流失败");
+        toast.error(
+          err instanceof Error ? err.message : t("toast.workflowLoadFailed"),
+        );
       }
     },
     [loadWorkflow],
@@ -79,14 +83,18 @@ export default function WorkflowPage() {
       setWorkflows((prev) => prev.filter((wf) => wf.id !== workflow.id));
 
       toast.undoable(
-        `工作流「${workflow.name}」已删除`,
+        t("toast.workflowDeleted", { name: workflow.name }),
         async () => {
           pendingDeleteIds.current.delete(workflow.id);
           try {
             await apiDeleteWorkflow(workflow.id);
             await fetchSkills();
           } catch (err) {
-            toast.error(err instanceof Error ? err.message : "删除工作流失败");
+            toast.error(
+              err instanceof Error
+                ? err.message
+                : t("toast.workflowDeleteFailed"),
+            );
             await loadWorkflows();
           }
         },
@@ -96,7 +104,7 @@ export default function WorkflowPage() {
             if (prev.some((wf) => wf.id === workflow.id)) return prev;
             return [...prev, workflow];
           });
-          toast.success(`已撤销删除工作流「${workflow.name}」`);
+          toast.success(t("toast.workflowUndoDelete", { name: workflow.name }));
         },
         5000,
       );
@@ -130,7 +138,7 @@ export default function WorkflowPage() {
           }`}
         >
           <Zap size={14} />
-          已有工作流
+          {t("workflow.tabList")}
           {workflows.length > 0 && (
             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]">
               {workflows.length}
@@ -147,7 +155,7 @@ export default function WorkflowPage() {
           }`}
         >
           <Plus size={14} />
-          新建工作流
+          {t("workflow.tabNew")}
         </button>
       </div>
 
@@ -158,7 +166,7 @@ export default function WorkflowPage() {
           <div className="h-full flex flex-col p-4">
             {loadingList ? (
               <div className="flex-1 flex items-center justify-center text-sm text-[hsl(var(--muted-foreground))]">
-                加载中...
+                {t("workflow.loading")}
               </div>
             ) : workflows.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
@@ -167,10 +175,10 @@ export default function WorkflowPage() {
                   className="text-[hsl(var(--muted-foreground))] opacity-30"
                 />
                 <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                  还没有工作流
+                  {t("workflow.empty")}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  点击「新建工作流」开始创建
+                  {t("workflow.emptyHint")}
                 </p>
                 <Button
                   variant="outline"
@@ -179,7 +187,7 @@ export default function WorkflowPage() {
                   className="gap-1.5 mt-2"
                 >
                   <Plus size={14} />
-                  新建工作流
+                  {t("workflow.createNew")}
                 </Button>
               </div>
             ) : (
@@ -211,7 +219,9 @@ export default function WorkflowPage() {
                           size="icon"
                           className="h-7 w-7"
                           onClick={() => handleEdit(wf)}
-                          aria-label={`编辑 ${wf.name}`}
+                          aria-label={t("workflow.editAriaLabel", {
+                            name: wf.name,
+                          })}
                           data-testid={`edit-workflow-${wf.id}`}
                         >
                           <Edit2 size={13} />
@@ -221,7 +231,9 @@ export default function WorkflowPage() {
                           size="icon"
                           className="h-7 w-7 text-[hsl(var(--destructive))]"
                           onClick={() => handleDelete(wf)}
-                          aria-label={`删除 ${wf.name}`}
+                          aria-label={t("workflow.deleteAriaLabel", {
+                            name: wf.name,
+                          })}
                           data-testid={`delete-workflow-${wf.id}`}
                         >
                           <Trash2 size={13} />

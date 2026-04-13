@@ -2,6 +2,7 @@
 // pages/SyncPage.tsx — IDE 同步管理页面
 // ============================================================
 
+import { useTranslation } from "react-i18next";
 import SyncExecutor from "../components/sync/SyncExecutor";
 import SyncSkillSelector from "../components/sync/SyncSkillSelector";
 import SyncTargetManager from "../components/sync/SyncTargetManager";
@@ -12,14 +13,15 @@ import SyncTargetManager from "../components/sync/SyncTargetManager";
  * 底部：同步执行与结果日志
  */
 export default function SyncPage() {
+  const { t } = useTranslation();
   return (
     <div className="h-full flex flex-col">
       <div className="shrink-0 p-6 pb-4">
         <h1 className="text-2xl font-bold font-[var(--font-code)] text-[hsl(var(--foreground))] mb-1">
-          IDE 同步
+          {t("sync.title")}
         </h1>
         <p className="text-sm text-[hsl(var(--muted-foreground))]">
-          选择 Skill 并配置同步目标路径，将 Skill 一键同步到 IDE 项目目录
+          {t("sync.subtitle")}
         </p>
       </div>
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 px-6 gap-6">
