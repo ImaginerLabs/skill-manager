@@ -101,7 +101,7 @@ export const useSyncStore = create<SyncStore>((set) => ({
   executePush: async (targetIds) => {
     const { selectedSkillIds } = useSyncStore.getState();
     if (selectedSkillIds.length === 0) {
-      throw new Error("请先选择要同步的 Skill");
+      throw new Error("SYNC_NO_SKILL_SELECTED");
     }
     set({ syncStatus: "syncing", syncResult: null });
     try {
@@ -116,7 +116,7 @@ export const useSyncStore = create<SyncStore>((set) => ({
     } catch (err) {
       set({
         syncStatus: "error",
-        lastSyncError: err instanceof Error ? err.message : "同步失败",
+        lastSyncError: err instanceof Error ? err.message : "SYNC_FAILED",
       });
       throw err;
     }

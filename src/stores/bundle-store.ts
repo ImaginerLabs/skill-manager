@@ -44,7 +44,7 @@ export const useBundleStore = create<BundleStore>((set) => ({
       set({ bundles });
     } catch (err) {
       set({
-        bundlesError: err instanceof Error ? err.message : "加载套件失败",
+        bundlesError: err instanceof Error ? err.message : "LOAD_FAILED",
       });
     } finally {
       set({ bundlesLoading: false });
@@ -54,6 +54,7 @@ export const useBundleStore = create<BundleStore>((set) => ({
   createBundle: async (data) => {
     const newBundle = await apiCreateBundle(data);
     set((state) => ({ bundles: [...state.bundles, newBundle] }));
+    // Toast 消息由调用方（BundleManager.tsx）处理
   },
 
   updateBundle: async (id, data) => {
@@ -61,6 +62,7 @@ export const useBundleStore = create<BundleStore>((set) => ({
     set((state) => ({
       bundles: state.bundles.map((b) => (b.id === id ? updated : b)),
     }));
+    // Toast 消息由调用方（BundleManager.tsx）处理
   },
 
   deleteBundle: async (id) => {
@@ -68,6 +70,7 @@ export const useBundleStore = create<BundleStore>((set) => ({
     set((state) => ({
       bundles: state.bundles.filter((b) => b.id !== id),
     }));
+    // Toast 消息由调用方（BundleManager.tsx）处理
   },
 
   applyBundle: async (id) => {

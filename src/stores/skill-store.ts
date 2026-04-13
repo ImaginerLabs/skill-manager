@@ -49,7 +49,7 @@ export const useSkillStore = create<SkillStore>((set) => ({
       set({ skills, categories, loading: false });
     } catch (err) {
       set({
-        error: err instanceof Error ? err.message : "加载 Skill 列表失败",
+        error: err instanceof Error ? err.message : "LOAD_FAILED",
         loading: false,
       });
     }
