@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Category, SkillMeta } from "../../../shared/types";
 import {
   createCategory as apiCreateCategory,
@@ -48,6 +49,7 @@ export default function CategoryManager() {
   const [allSkills, setAllSkills] = useState<SkillMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   // 新建表单
   const [showAddForm, setShowAddForm] = useState(false);
@@ -85,7 +87,7 @@ export default function CategoryManager() {
       setAllSkills(skills);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载数据失败");
+      setError(err instanceof Error ? err.message : t("category.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -158,7 +160,7 @@ export default function CategoryManager() {
       await Promise.all(
         ids.map((id) => moveSkillCategory(id, "uncategorized")),
       );
-      toast.success(`已将 ${ids.length} 个 Skill 移出分类`);
+      toast.success(t("category.batchRemoveSuccess", { count: ids.length }));
       // 清除选中并刷新数据
       setSelectedSkills((prev) => {
         const ns = { ...prev };
@@ -167,7 +169,9 @@ export default function CategoryManager() {
       });
       await loadData();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "批量操作失败");
+      toast.error(
+        err instanceof Error ? err.message : t("category.batchRemoveFailed"),
+      );
     } finally {
       setBatchLoading(null);
     }
@@ -188,7 +192,7 @@ export default function CategoryManager() {
       setNewDescription("");
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "创建分类失败");
+      setError(err instanceof Error ? err.message : t("category.createFailed"));
     }
   };
 
@@ -202,7 +206,7 @@ export default function CategoryManager() {
       setEditingName(null);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "更新分类失败");
+      setError(err instanceof Error ? err.message : t("category.updateFailed"));
     }
   };
 
@@ -212,7 +216,7 @@ export default function CategoryManager() {
       await apiDeleteCategory(name);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "删除分类失败");
+      setError(err instanceof Error ? err.message : t("category.deleteFailed"));
     }
   };
 
@@ -224,20 +228,26 @@ export default function CategoryManager() {
   };
 
   if (loading) {
-    return <div className="text-[hsl(var(--muted-foreground))]">加载中...</div>;
+    return (
+      <div className="text-[hsl(var(--muted-foreground))]">
+        {t("common.loading")}
+      </div>
+    );
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold font-[var(--font-code)]">分类管理</h2>
+        <h2 className="text-lg font-bold font-[var(--font-code)]">
+          {t("category.title")}
+        </h2>
         <Button
           onClick={() => setShowAddForm(true)}
           size="sm"
           className="gap-1"
         >
           <Plus size={14} />
-          新建分类
+          {t("category.createNew")}
         </Button>
       </div>
 
@@ -261,24 +271,24 @@ export default function CategoryManager() {
         <div className="mb-4 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
           <div className="grid gap-3">
             <Input
-              placeholder="分类标识（英文，如 coding）"
+              placeholder={t("category.namePlaceholder")}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
             />
             <Input
-              placeholder="显示名称（如 编程开发）"
+              placeholder={t("category.displayNamePlaceholder")}
               value={newDisplayName}
               onChange={(e) => setNewDisplayName(e.target.value)}
             />
             <Input
-              placeholder="描述（可选）"
+              placeholder={t("category.descriptionPlaceholder")}
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
             />
             <div className="flex gap-2">
               <Button onClick={handleCreate} size="sm" className="gap-1">
                 <Check size={14} />
-                创建
+                {t("category.createButton")}
               </Button>
               <Button
                 variant="outline"
@@ -287,7 +297,7 @@ export default function CategoryManager() {
                 className="gap-1"
               >
                 <X size={14} />
-                取消
+                {t("common.cancel")}
               </Button>
             </div>
           </div>
@@ -297,8 +307,8 @@ export default function CategoryManager() {
       {/* 分类列表 */}
       {categories.length === 0 ? (
         <div className="py-8 text-center text-[hsl(var(--muted-foreground))]">
-          <p className="mb-2">暂无分类</p>
-          <p className="text-xs">点击"新建分类"开始创建</p>
+          <p className="mb-2">{t("category.empty")}</p>
+          <p className="text-xs">{t("category.emptyHint")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -329,7 +339,7 @@ export default function CategoryManager() {
                       <Input
                         value={editDescription}
                         onChange={(e) => setEditDescription(e.target.value)}
-                        placeholder="描述"
+                        placeholder={t("category.descriptionLabel")}
                         className="h-8 text-sm"
                       />
                       <div className="flex gap-2">
@@ -358,7 +368,11 @@ export default function CategoryManager() {
                       <button
                         onClick={() => toggleExpand(cat.name)}
                         className="shrink-0 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
-                        aria-label={isExpanded ? "折叠" : "展开"}
+                        aria-label={
+                          isExpanded
+                            ? t("category.collapse")
+                            : t("category.expand")
+                        }
                       >
                         {isExpanded ? (
                           <ChevronDown size={16} />
@@ -398,7 +412,7 @@ export default function CategoryManager() {
                         size="icon"
                         onClick={() => startEdit(cat)}
                         className="h-8 w-8"
-                        title="编辑"
+                        title={t("common.edit")}
                       >
                         <Pencil size={14} />
                       </Button>
@@ -409,24 +423,30 @@ export default function CategoryManager() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--destructive))]"
-                            title="删除"
+                            title={t("common.delete")}
                           >
                             <Trash2 size={14} />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>确认删除</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              {t("category.deleteConfirmTitle")}
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              确定要删除分类 &quot;{cat.name}&quot; 吗？
+                              {t("category.deleteConfirmDesc", {
+                                name: cat.name,
+                              })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>取消</AlertDialogCancel>
+                            <AlertDialogCancel>
+                              {t("common.cancel")}
+                            </AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDelete(cat.name)}
                             >
-                              确认删除
+                              {t("category.deleteConfirmTitle")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -440,7 +460,7 @@ export default function CategoryManager() {
                   <div className="border-t border-[hsl(var(--border))] bg-[hsl(var(--background))]">
                     {catSkills.length === 0 ? (
                       <p className="px-4 py-3 text-xs text-[hsl(var(--muted-foreground))]">
-                        该分类下暂无 Skill
+                        {t("category.noSkills")}
                       </p>
                     ) : (
                       <>
@@ -456,8 +476,10 @@ export default function CategoryManager() {
                             className="text-xs text-[hsl(var(--muted-foreground))] cursor-pointer select-none"
                           >
                             {selectedCount > 0
-                              ? `已选 ${selectedCount} 个`
-                              : "全选"}
+                              ? t("category.selectedCount", {
+                                  count: selectedCount,
+                                })
+                              : t("category.selectAllLabel")}
                           </label>
                           {selectedCount > 0 && (
                             <Button
@@ -468,8 +490,10 @@ export default function CategoryManager() {
                               disabled={batchLoading === cat.name}
                             >
                               {batchLoading === cat.name
-                                ? "处理中..."
-                                : `移出此分类 (${selectedCount})`}
+                                ? t("category.processing")
+                                : t("category.batchRemoveButton", {
+                                    count: selectedCount,
+                                  })}
                             </Button>
                           )}
                         </div>

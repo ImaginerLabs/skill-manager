@@ -3,6 +3,7 @@
 // ============================================================
 
 import { FileText, GitBranch } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { SkillMeta } from "../../../shared/types";
 import { useSkillStore } from "../../stores/skill-store";
 import { Badge } from "../ui/badge";
@@ -17,6 +18,7 @@ interface SkillCardProps {
  */
 export default function SkillCard({ skill }: SkillCardProps) {
   const { selectedSkillId, selectSkill } = useSkillStore();
+  const { t } = useTranslation();
   const isSelected = selectedSkillId === skill.id;
 
   return (
@@ -55,7 +57,7 @@ export default function SkillCard({ skill }: SkillCardProps) {
         data-testid="skill-description"
         className="text-xs text-[hsl(var(--muted-foreground))] line-clamp-2 mb-3 min-h-[2.5em]"
       >
-        {skill.description || "暂无描述"}
+        {skill.description || t("common.noDescription")}
       </p>
 
       {/* 底部标签 */}
@@ -72,7 +74,7 @@ export default function SkillCard({ skill }: SkillCardProps) {
         {/* 类型标识 */}
         {skill.type === "workflow" && (
           <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-            工作流
+            {t("skillList.workflowBadge")}
           </Badge>
         )}
 

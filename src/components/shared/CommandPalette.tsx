@@ -13,18 +13,10 @@ import {
   Settings,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSkillStore } from "../../stores/skill-store";
 import { useUIStore } from "../../stores/ui-store";
-
-/** 页面跳转项 */
-const PAGE_ITEMS = [
-  { path: "/", label: "Skill 库", icon: BookOpen },
-  { path: "/workflow", label: "工作流", icon: GitBranch },
-  { path: "/sync", label: "同步", icon: RefreshCw },
-  { path: "/import", label: "导入", icon: Download },
-  { path: "/settings", label: "设置", icon: Settings },
-];
 
 /**
  * Command Palette — ⌘K 全局搜索
@@ -34,6 +26,19 @@ export default function CommandPalette() {
   const { commandPaletteOpen, setCommandPaletteOpen } = useUIStore();
   const { skills, selectSkill } = useSkillStore();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  /** 页面跳转项（组件内动态生成，使用 t()） */
+  const PAGE_ITEMS = useMemo(
+    () => [
+      { path: "/", label: t("nav.skillLibrary"), icon: BookOpen },
+      { path: "/workflow", label: t("nav.workflow"), icon: GitBranch },
+      { path: "/sync", label: t("nav.sync"), icon: RefreshCw },
+      { path: "/import", label: t("nav.import"), icon: Download },
+      { path: "/settings", label: t("nav.settings"), icon: Settings },
+    ],
+    [t],
+  );
 
   // 按类型分组 Skill
   const { regularSkills, workflowSkills } = useMemo(
@@ -97,7 +102,7 @@ export default function CommandPalette() {
           <div className="flex items-center gap-2 px-3 border-b border-[hsl(var(--border))]">
             <Search size={16} className="text-[hsl(var(--muted-foreground))]" />
             <Command.Input
-              placeholder="搜索 Skill、页面..."
+              placeholder={t("commandPalette.placeholder")}
               className="flex-1 py-3 bg-transparent text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] outline-none"
             />
             <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(var(--surface-elevated))] text-[hsl(var(--muted-foreground))] font-[var(--font-code)]">
@@ -108,12 +113,12 @@ export default function CommandPalette() {
           {/* 搜索结果 */}
           <Command.List className="max-h-[400px] overflow-auto p-2">
             <Command.Empty className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">
-              未找到匹配结果
+              {t("commandPalette.noResults")}
             </Command.Empty>
 
             {/* Skill 搜索结果 */}
             <Command.Group
-              heading="Skills"
+              heading={t("commandPalette.groupSkills")}
               className="text-xs text-[hsl(var(--muted-foreground))] px-2 py-1"
             >
               {regularSkills.map((skill) => (
@@ -149,7 +154,7 @@ export default function CommandPalette() {
             {/* 工作流搜索结果（仅当有工作流时显示） */}
             {workflowSkills.length > 0 && (
               <Command.Group
-                heading="工作流"
+                heading={t("commandPalette.groupWorkflows")}
                 className="text-xs text-[hsl(var(--muted-foreground))] px-2 py-1"
               >
                 {workflowSkills.map((skill) => (
@@ -185,7 +190,7 @@ export default function CommandPalette() {
 
             {/* 页面跳转 */}
             <Command.Group
-              heading="页面"
+              heading={t("commandPalette.groupPages")}
               className="text-xs text-[hsl(var(--muted-foreground))] px-2 py-1"
             >
               {PAGE_ITEMS.map(({ path, label, icon: Icon }) => (

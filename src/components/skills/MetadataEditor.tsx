@@ -4,6 +4,7 @@
 
 import { FolderInput, Save, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { SkillMeta } from "../../../shared/types";
 import { deleteSkill, moveSkillCategory, updateSkillMeta } from "../../lib/api";
 import { cn } from "../../lib/utils";
@@ -38,6 +39,7 @@ export default function MetadataEditor({
   onUpdated,
 }: MetadataEditorProps) {
   const { selectSkill } = useSkillStore();
+  const { t } = useTranslation();
   const [name, setName] = useState(skill.name);
   const [description, setDescription] = useState(skill.description);
   const [tags, setTags] = useState(skill.tags.join(", "));
@@ -60,7 +62,7 @@ export default function MetadataEditor({
       });
       onUpdated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存失败");
+      setError(err instanceof Error ? err.message : t("metadata.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -74,7 +76,7 @@ export default function MetadataEditor({
       onUpdated();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "删除失败");
+      setError(err instanceof Error ? err.message : t("metadata.deleteFailed"));
     }
   };
 
@@ -86,7 +88,7 @@ export default function MetadataEditor({
       setMoveCategory("");
       onUpdated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "移动失败");
+      setError(err instanceof Error ? err.message : t("metadata.moveFailed"));
     }
   };
 
@@ -94,14 +96,14 @@ export default function MetadataEditor({
     <div className="p-4 border-t border-[hsl(var(--border))] bg-[hsl(var(--background))]">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold font-[var(--font-code)]">
-          编辑元数据
+          {t("metadata.title")}
         </h3>
         <Button
           variant="ghost"
           size="icon"
           onClick={onClose}
           className="h-7 w-7"
-          aria-label="关闭编辑面板"
+          aria-label={t("metadata.closePanel")}
         >
           <X size={14} />
         </Button>
@@ -120,7 +122,7 @@ export default function MetadataEditor({
             htmlFor="meta-name"
             className="block text-xs text-[hsl(var(--muted-foreground))] mb-1"
           >
-            名称
+            {t("metadata.fieldName")}
           </label>
           <Input
             id="meta-name"
@@ -137,7 +139,7 @@ export default function MetadataEditor({
             htmlFor="meta-description"
             className="block text-xs text-[hsl(var(--muted-foreground))] mb-1"
           >
-            描述
+            {t("metadata.fieldDescription")}
           </label>
           <textarea
             id="meta-description"
@@ -157,7 +159,7 @@ export default function MetadataEditor({
             htmlFor="meta-tags"
             className="block text-xs text-[hsl(var(--muted-foreground))] mb-1"
           >
-            标签（逗号分隔）
+            {t("metadata.fieldTags")}
           </label>
           <Input
             id="meta-tags"
@@ -175,7 +177,7 @@ export default function MetadataEditor({
             htmlFor="meta-move-category"
             className="block text-xs text-[hsl(var(--muted-foreground))] mb-1"
           >
-            移动到分类
+            {t("metadata.fieldMoveCategory")}
           </label>
           <div className="flex gap-2">
             <Input
@@ -183,7 +185,7 @@ export default function MetadataEditor({
               name="meta-move-category"
               value={moveCategory}
               onChange={(e) => setMoveCategory(e.target.value)}
-              placeholder="目标分类名称"
+              placeholder={t("metadata.movePlaceholder")}
               className="h-8 text-sm flex-1"
             />
             <Button
@@ -194,7 +196,7 @@ export default function MetadataEditor({
               className="gap-1"
             >
               <FolderInput size={12} />
-              移动
+              {t("metadata.moveButton")}
             </Button>
           </div>
         </div>
@@ -208,27 +210,29 @@ export default function MetadataEditor({
             className="gap-1"
           >
             <Save size={14} />
-            {saving ? "保存中..." : "保存"}
+            {saving ? t("common.saving") : t("common.save")}
           </Button>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" className="gap-1">
                 <Trash2 size={14} />
-                删除
+                {t("common.delete")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>确认删除</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {t("metadata.deleteConfirmTitle")}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  确定要删除 &quot;{skill.name}&quot; 吗？此操作不可撤销。
+                  {t("metadata.deleteConfirmDesc")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDelete}>
-                  确认删除
+                  {t("metadata.deleteConfirmTitle")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

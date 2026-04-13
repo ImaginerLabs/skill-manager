@@ -13,6 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { SkillBundleWithStatus, SkillMeta } from "../../../shared/types";
 import { useSkillSearch } from "../../hooks/useSkillSearch";
 import { fetchSkillBundles } from "../../lib/api";
@@ -35,6 +36,7 @@ export default function SyncSkillSelector() {
     selectByCategory,
     clearSelection,
   } = useSyncStore();
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   // 套件相关状态
   const [bundles, setBundles] = useState<SkillBundleWithStatus[]>([]);
@@ -233,11 +235,11 @@ export default function SyncSkillSelector() {
         <div className="flex items-center gap-2">
           <CheckSquare size={18} className="text-[hsl(var(--primary))]" />
           <h3 className="text-sm font-medium text-[hsl(var(--foreground))]">
-            选择 Skill
+            {t("sync.selectSkills")}
           </h3>
           {selectedSkillIds.length > 0 && (
             <Badge variant="default" className="text-[10px] px-1.5 py-0">
-              已选 {selectedSkillIds.length}
+              {t("sync.selectedCount", { count: selectedSkillIds.length })}
             </Badge>
           )}
         </div>
@@ -246,7 +248,7 @@ export default function SyncSkillSelector() {
             onClick={clearSelection}
             className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
           >
-            清除选择
+            {t("sync.clearSelection")}
           </button>
         )}
       </div>
@@ -259,7 +261,7 @@ export default function SyncSkillSelector() {
         >
           <Layers size={14} className="text-[hsl(var(--primary))] shrink-0" />
           <span className="text-xs font-medium text-[hsl(var(--foreground))] flex-1">
-            按套件选择
+            {t("sync.bundleSelect")}
           </span>
           {bundleSectionOpen ? (
             <ChevronDown
@@ -278,11 +280,11 @@ export default function SyncSkillSelector() {
           <div className="p-2">
             {bundlesLoading ? (
               <p className="text-xs text-[hsl(var(--muted-foreground))] px-1 py-1">
-                加载中...
+                {t("common.loading")}
               </p>
             ) : bundles.length === 0 ? (
               <p className="text-xs text-[hsl(var(--muted-foreground))] px-1 py-1">
-                暂无套件，可在套件管理中创建
+                {t("bundle.empty")}
               </p>
             ) : (
               <div className="flex flex-wrap gap-1.5">

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { FileText, GitBranch } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { SkillMeta } from "../../../shared/types";
 import { useSkillStore } from "../../stores/skill-store";
 import { Badge } from "../ui/badge";
@@ -14,6 +15,7 @@ interface SkillListItemProps {
 /** 单行列表项 */
 function SkillListItem({ skill }: SkillListItemProps) {
   const { selectedSkillId, selectSkill } = useSkillStore();
+  const { t } = useTranslation();
   const isSelected = selectedSkillId === skill.id;
 
   return (
@@ -39,7 +41,7 @@ function SkillListItem({ skill }: SkillListItemProps) {
 
       {/* 描述 */}
       <span className="flex-1 text-xs text-[hsl(var(--muted-foreground))] truncate">
-        {skill.description || "暂无描述"}
+        {skill.description || t("common.noDescription")}
       </span>
 
       {/* 分类 */}
@@ -50,7 +52,7 @@ function SkillListItem({ skill }: SkillListItemProps) {
       {/* 标签数量 */}
       {skill.tags.length > 0 && (
         <Badge variant="outline" className="h-5 px-1.5 text-[10px] shrink-0">
-          {skill.tags.length} 标签
+          {t("skillList.tagCount", { count: skill.tags.length })}
         </Badge>
       )}
     </button>

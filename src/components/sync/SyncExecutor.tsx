@@ -12,6 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import type { SyncDetail } from "../../../shared/types";
 import { useSyncStore } from "../../stores/sync-store";
 import { toast } from "../shared/toast-store";
@@ -32,6 +33,7 @@ export default function SyncExecutor() {
     setSyncStatus,
     setSyncResult,
   } = useSyncStore();
+  const { t } = useTranslation();
 
   const enabledTargets = targets.filter((t) => t.enabled);
   const canSync = selectedSkillIds.length > 0 && enabledTargets.length > 0;
@@ -41,16 +43,16 @@ export default function SyncExecutor() {
     try {
       const result = await executePush();
       if (result.failed > 0) {
-        toast.error(`同步完成，${result.failed} 个文件失败`, {
-          details: `成功 ${result.success}，覆盖 ${result.overwritten}，失败 ${result.failed}`,
+        toast.error(t("sync.syncPartialFail", { failed: result.failed }), {
+          details: `${t("sync.successCount", { count: result.success })}，${t("sync.overwrittenCount", { count: result.overwritten })}，${t("sync.failedCount", { count: result.failed })}`,
         });
       } else {
         toast.success(
-          `同步完成！${result.success + result.overwritten} 个文件已同步`,
+          t("sync.syncSuccess", { count: result.success + result.overwritten }),
         );
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "同步失败");
+      toast.error(err instanceof Error ? err.message : t("sync.syncFailed"));
     }
   }, [executePush]);
 
@@ -95,19 +97,18 @@ export default function SyncExecutor() {
           ) : (
             <Play size={16} />
           )}
-          {isSyncing ? "同步中..." : "开始同步"}
+          {isSyncing ? t("sync.syncing") : t("sync.startSync")}
         </Button>
 
         {/* 同步信息摘要 */}
         <div className="text-xs text-[hsl(var(--muted-foreground))]">
           {selectedSkillIds.length === 0 ? (
-            "请先选择要同步的 Skill"
+            t("sync.noSkillSelected")
           ) : enabledTargets.length === 0 ? (
-            "请先添加并启用同步目标"
+            t("sync.noTargetEnabled")
           ) : (
             <span>
-              {selectedSkillIds.length} 个 Skill → {enabledTargets.length}{" "}
-              个目标
+              {selectedSkillIds.length} Skill → {enabledTargets.length} targets
             </span>
           )}
         </div>
@@ -121,7 +122,7 @@ export default function SyncExecutor() {
             className="gap-1.5 ml-auto"
           >
             <RefreshCw size={14} />
-            清除结果
+            {t("sync.clearResults")}
           </Button>
         )}
       </div>
@@ -144,17 +145,19 @@ export default function SyncExecutor() {
             )}
             <div className="flex items-center gap-3 text-sm">
               <span className="font-medium text-[hsl(var(--foreground))]">
-                同步完成
+                {t("sync.syncComplete")}
               </span>
               <Badge variant="default" className="text-[10px] px-1.5 py-0">
-                成功 {syncResult.success}
+                {t("sync.successCount", { count: syncResult.success })}
               </Badge>
               {syncResult.overwritten > 0 && (
                 <Badge
                   variant="secondary"
                   className="text-[10px] px-1.5 py-0 bg-yellow-500/15 text-yellow-500"
                 >
-                  覆盖 {syncResult.overwritten}
+                  {t("sync.overwrittenCount", {
+                    count: syncResult.overwritten,
+                  })}
                 </Badge>
               )}
               {syncResult.failed > 0 && (
@@ -162,7 +165,7 @@ export default function SyncExecutor() {
                   variant="destructive"
                   className="text-[10px] px-1.5 py-0"
                 >
-                  失败 {syncResult.failed}
+                  {t("sync.failedCount", { count: syncResult.failed })}
                 </Badge>
               )}
             </div>
@@ -205,10 +208,10 @@ export default function SyncExecutor() {
                     }`}
                   >
                     {detail.status === "success"
-                      ? "新建"
+                      ? t("sync.statusNew")
                       : detail.status === "overwritten"
-                        ? "覆盖"
-                        : "失败"}
+                        ? t("sync.statusOverwritten")
+                        : t("sync.statusFailed")}
                   </Badge>
                 </div>
               ))}

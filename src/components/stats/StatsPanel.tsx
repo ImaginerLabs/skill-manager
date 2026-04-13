@@ -34,7 +34,10 @@ export default function StatsPanel() {
     <div className="px-3 py-2" data-testid="stats-panel">
       <div className="grid grid-cols-3 gap-1">
         {stats.map(({ icon: Icon, count, label }) => (
-          <div key={label} className="flex flex-col items-center py-2">
+          <div
+            key={label}
+            className="flex flex-col items-center py-2 rounded-md bg-[hsl(var(--accent)/0.5)]"
+          >
             <Icon
               size={12}
               className="text-[hsl(var(--muted-foreground))] mb-1"

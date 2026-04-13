@@ -3,6 +3,7 @@
 // ============================================================
 
 import { Download, FolderOpen, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 
@@ -15,6 +16,7 @@ interface EmptyStateProps {
  * 空状态引导 — 无 Skill 时提示从 IDE 导入，搜索无结果时提示调整条件
  */
 export default function EmptyState({ hasSkills }: EmptyStateProps) {
+  const { t } = useTranslation();
   if (hasSkills) {
     // 有 Skill 但筛选/搜索无结果
     return (
@@ -27,10 +29,10 @@ export default function EmptyState({ hasSkills }: EmptyStateProps) {
           className="text-[hsl(var(--muted-foreground))] mb-4 opacity-40"
         />
         <h3 className="text-lg font-medium font-[var(--font-code)] text-[hsl(var(--foreground))] mb-2">
-          未找到匹配的 Skill
+          {t("skillBrowse.emptyTitle")}
         </h3>
         <p className="text-sm text-[hsl(var(--muted-foreground))] max-w-md">
-          尝试调整搜索关键词或切换分类筛选条件
+          {t("skillBrowse.searchPlaceholder")}
         </p>
       </div>
     );
@@ -47,16 +49,15 @@ export default function EmptyState({ hasSkills }: EmptyStateProps) {
         className="text-[hsl(var(--primary))] mb-4 opacity-60"
       />
       <h3 className="text-lg font-medium font-[var(--font-code)] text-[hsl(var(--foreground))] mb-2">
-        还没有 Skill
+        {t("skillBrowse.emptyTitle")}
       </h3>
       <p className="text-sm text-[hsl(var(--muted-foreground))] max-w-md mb-4">
-        从 CodeBuddy IDE 导入你的 Skill 文件，或在 skills/ 目录中手动添加 .md
-        文件
+        {t("skillBrowse.emptyHint")}
       </p>
       <Button asChild>
         <Link to="/import" className="gap-2">
           <Download size={16} />
-          开始导入
+          {t("skillBrowse.coldStartImport")}
         </Link>
       </Button>
     </div>

@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Category } from "../../../shared/types";
 import { fetchCategories } from "../../lib/api";
 import { useBundleStore } from "../../stores/bundle-store";
@@ -52,6 +53,7 @@ export default function BundleManager() {
     applyBundle,
     activeBundleId,
   } = useBundleStore();
+  const { t } = useTranslation();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -93,7 +95,7 @@ export default function BundleManager() {
       const [cats] = await Promise.all([fetchCategories(), fetchBundles()]);
       setCategories(cats);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "加载数据失败");
+      toast.error(err instanceof Error ? err.message : t("bundle.loadFailed"));
     } finally {
       setCategoriesLoading(false);
     }
@@ -120,7 +122,7 @@ export default function BundleManager() {
   const handleNameChange = (value: string) => {
     setNewName(value);
     if (value && !VALID_BUNDLE_NAME_RE.test(value)) {
-      setNameError("名称只能包含小写字母、数字和连字符");
+      setNameError(t("bundle.nameError"));
     } else {
       setNameError(null);
     }
@@ -143,7 +145,7 @@ export default function BundleManager() {
         description: newDescription.trim() || undefined,
         categoryNames: newSelectedCategories,
       });
-      toast.success("套件创建成功");
+      toast.success(t("bundle.createSuccess"));
       setShowAddForm(false);
       setNewName("");
       setNewDisplayName("");
@@ -152,7 +154,9 @@ export default function BundleManager() {
       setNewCategorySearch("");
       setNameError(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "创建套件失败");
+      toast.error(
+        err instanceof Error ? err.message : t("bundle.createFailed"),
+      );
     } finally {
       setCreating(false);
     }
@@ -179,10 +183,12 @@ export default function BundleManager() {
         description: editDescription.trim() || undefined,
         categoryNames: editSelectedCategories,
       });
-      toast.success("套件更新成功");
+      toast.success(t("bundle.updateSuccess"));
       setEditingId(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "更新套件失败");
+      toast.error(
+        err instanceof Error ? err.message : t("bundle.updateFailed"),
+      );
     } finally {
       setUpdating(false);
     }
@@ -192,9 +198,11 @@ export default function BundleManager() {
   const handleDelete = async (id: string) => {
     try {
       await deleteBundle(id);
-      toast.success("套件已删除");
+      toast.success(t("bundle.deleteSuccess"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "删除套件失败");
+      toast.error(
+        err instanceof Error ? err.message : t("bundle.deleteFailed"),
+      );
     }
   };
 
@@ -205,11 +213,16 @@ export default function BundleManager() {
       const result = await applyBundle(id);
       const msg =
         result.skipped.length > 0
-          ? `已激活 ${result.applied.length} 个分类，跳过 ${result.skipped.length} 个已删除分类`
-          : `已激活 ${result.applied.length} 个分类`;
+          ? t("bundle.activateSuccess_withSkipped", {
+              applied: result.applied.length,
+              skipped: result.skipped.length,
+            })
+          : t("bundle.activateSuccess", { applied: result.applied.length });
       toast.success(msg);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "激活失败");
+      toast.error(
+        err instanceof Error ? err.message : t("bundle.activateFailed"),
+      );
     } finally {
       setApplying(null);
     }
@@ -239,7 +252,7 @@ export default function BundleManager() {
   if (bundlesLoading || categoriesLoading) {
     return (
       <div className="text-[hsl(var(--muted-foreground))] text-sm py-4">
-        加载中...
+        {t("common.loading")}
       </div>
     );
   }
@@ -256,7 +269,9 @@ export default function BundleManager() {
     <div>
       {/* 标题栏 */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold font-[var(--font-code)]">套件管理</h2>
+        <h2 className="text-lg font-bold font-[var(--font-code)]">
+          {t("bundle.title")}
+        </h2>
         <Button
           onClick={() => setShowAddForm(true)}
           size="sm"
@@ -264,7 +279,7 @@ export default function BundleManager() {
           disabled={showAddForm}
         >
           <Plus size={14} />
-          新建套件
+          {t("bundle.createNew")}
         </Button>
       </div>
 
@@ -274,7 +289,7 @@ export default function BundleManager() {
           <div className="grid gap-3">
             <div>
               <Input
-                placeholder="套件标识（英文，如 frontend-dev）"
+                placeholder={t("bundle.namePlaceholder")}
                 value={newName}
                 onChange={(e) => handleNameChange(e.target.value)}
               />
@@ -285,19 +300,19 @@ export default function BundleManager() {
               )}
             </div>
             <Input
-              placeholder="显示名称（如 前端日常开发）"
+              placeholder={t("bundle.displayNamePlaceholder")}
               value={newDisplayName}
               onChange={(e) => setNewDisplayName(e.target.value)}
             />
             <Input
-              placeholder="描述（可选）"
+              placeholder={t("bundle.descriptionPlaceholder")}
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
             />
             {/* 分类选择器 */}
             <div>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mb-2">
-                选择分类（至少 1 个）
+                {t("bundle.selectCategories")}
               </p>
               <div className="relative mb-2">
                 <Search
@@ -305,7 +320,7 @@ export default function BundleManager() {
                   className="absolute left-2.5 top-2.5 text-[hsl(var(--muted-foreground))]"
                 />
                 <Input
-                  placeholder="搜索分类..."
+                  placeholder={t("bundle.searchCategories")}
                   value={newCategorySearch}
                   onChange={(e) => setNewCategorySearch(e.target.value)}
                   className="pl-8 h-8 text-sm"
@@ -335,13 +350,15 @@ export default function BundleManager() {
                 ))}
                 {filteredCategories(newCategorySearch).length === 0 && (
                   <p className="text-xs text-[hsl(var(--muted-foreground))] text-center py-2">
-                    无匹配分类
+                    {t("bundle.noMatchCategories")}
                   </p>
                 )}
               </div>
               {newSelectedCategories.length > 0 && (
                 <p className="text-xs text-[hsl(var(--primary))] mt-1">
-                  已选 {newSelectedCategories.length} 个分类
+                  {t("bundle.selectedCount", {
+                    count: newSelectedCategories.length,
+                  })}
                 </p>
               )}
             </div>
@@ -359,7 +376,7 @@ export default function BundleManager() {
                 }
               >
                 <Check size={14} />
-                {creating ? "创建中..." : "确认创建"}
+                {creating ? t("common.creating") : t("bundle.confirmCreate")}
               </Button>
               <Button
                 variant="outline"
@@ -375,7 +392,7 @@ export default function BundleManager() {
                 className="gap-1"
               >
                 <X size={14} />
-                取消
+                {t("common.cancel")}
               </Button>
             </div>
           </div>
@@ -386,8 +403,8 @@ export default function BundleManager() {
       {bundles.length === 0 ? (
         <div className="py-12 text-center text-[hsl(var(--muted-foreground))]">
           <Package size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm font-medium mb-1">暂无套件</p>
-          <p className="text-xs">套件是分类的组合，点击「新建套件」开始创建</p>
+          <p className="text-sm font-medium mb-1">{t("bundle.empty")}</p>
+          <p className="text-xs">{t("bundle.emptyHint")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -412,13 +429,13 @@ export default function BundleManager() {
                       <Input
                         value={editDisplayName}
                         onChange={(e) => setEditDisplayName(e.target.value)}
-                        placeholder="显示名称"
+                        placeholder={t("bundle.displayNameLabel")}
                         className="h-8 text-sm"
                       />
                       <Input
                         value={editDescription}
                         onChange={(e) => setEditDescription(e.target.value)}
-                        placeholder="描述（可选）"
+                        placeholder={t("bundle.descriptionPlaceholder")}
                         className="h-8 text-sm"
                       />
                       {/* 编辑分类选择器 */}
@@ -429,7 +446,7 @@ export default function BundleManager() {
                             className="absolute left-2.5 top-2 text-[hsl(var(--muted-foreground))]"
                           />
                           <Input
-                            placeholder="搜索分类..."
+                            placeholder={t("bundle.searchCategories")}
                             value={editCategorySearch}
                             onChange={(e) =>
                               setEditCategorySearch(e.target.value)
@@ -491,7 +508,9 @@ export default function BundleManager() {
                       <button
                         onClick={() => toggleExpand(bundle.id)}
                         className="shrink-0 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
-                        aria-label={isExpanded ? "折叠" : "展开"}
+                        aria-label={
+                          isExpanded ? t("common.collapse") : t("common.expand")
+                        }
                       >
                         {isExpanded ? (
                           <ChevronDown size={16} />
@@ -516,14 +535,16 @@ export default function BundleManager() {
                             variant="outline"
                             className="h-5 px-1.5 text-[10px]"
                           >
-                            {bundle.categoryNames.length} 个分类
+                            {t("category.skillCount", {
+                              count: bundle.categoryNames.length,
+                            })}
                           </Badge>
                           {activeBundleId === bundle.id && (
                             <Badge
                               variant="default"
                               className="h-5 px-1.5 text-[10px]"
                             >
-                              已激活
+                              {t("bundle.activated")}
                             </Badge>
                           )}
                           {bundle.brokenCategoryNames.length > 0 && (
@@ -531,8 +552,9 @@ export default function BundleManager() {
                               variant="outline"
                               className="h-5 px-1.5 text-[10px] border-yellow-500 text-yellow-500"
                             >
-                              包含 {bundle.brokenCategoryNames.length}{" "}
-                              个已删除分类
+                              {t("bundle.brokenRef", {
+                                count: bundle.brokenCategoryNames.length,
+                              })}
                             </Badge>
                           )}
                         </div>
@@ -551,13 +573,13 @@ export default function BundleManager() {
                         onClick={() => handleApply(bundle.id)}
                         disabled={applying === bundle.id}
                         className="h-7 text-xs px-2 shrink-0"
-                        title="激活套件"
+                        title={t("bundle.activate")}
                       >
                         {applying === bundle.id
-                          ? "激活中..."
+                          ? t("common.processing")
                           : activeBundleId === bundle.id
-                            ? "已激活"
-                            : "激活"}
+                            ? t("bundle.activated")
+                            : t("bundle.activate")}
                       </Button>
 
                       <Button
@@ -565,7 +587,7 @@ export default function BundleManager() {
                         size="icon"
                         onClick={() => startEdit(bundle.id)}
                         className="h-8 w-8"
-                        title="编辑"
+                        title={t("bundle.edit")}
                       >
                         <Pencil size={14} />
                       </Button>
@@ -576,25 +598,30 @@ export default function BundleManager() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--destructive))]"
-                            title="删除"
+                            title={t("bundle.delete")}
                           >
                             <Trash2 size={14} />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>确认删除</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              {t("metadata.deleteConfirmTitle")}
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              确定要删除套件 &quot;{bundle.displayName}&quot;
-                              吗？此操作不会影响套件中引用的分类。
+                              {t("category.deleteConfirmDesc", {
+                                name: bundle.displayName,
+                              })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>取消</AlertDialogCancel>
+                            <AlertDialogCancel>
+                              {t("common.cancel")}
+                            </AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDelete(bundle.id)}
                             >
-                              确认删除
+                              {t("metadata.deleteConfirmTitle")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -621,7 +648,7 @@ export default function BundleManager() {
                             }`}
                           >
                             {catName}
-                            {isBroken && " (已删除)"}
+                            {isBroken && " (deleted)"}
                           </Badge>
                         );
                       })}
