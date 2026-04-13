@@ -9,6 +9,19 @@
 
 - **WorkflowPage undo 恢复顺序不保证原位置** — `src/pages/WorkflowPage.tsx:98`，撤销删除时工作流被追加到列表末尾而非原位置。UX 可接受（刷新后顺序恢复正确），推迟处理。
 
+## Deferred from: code review of 7-3-settings-tab-slider-animation (2026-04-13)
+
+- **隐藏 Tab 内容子组件仍挂载** — `TabsContent` 使用 `hidden` 属性而非条件渲染，隐藏 Tab 中的子组件（含 `useEffect`）仍会挂载并执行副作用。这是 shadcn/ui 的预存在设计决策，非本次引入。若后续某个 Tab 内容有昂贵的初始化逻辑，可考虑改为条件渲染。
+
+## Deferred from: code review of 7-2-sidebar-stats-panel-and-activity-heatmap (2026-04-13)
+
+- **ActivityHeatmap useEffect 无卸载清理** — `src/components/stats/ActivityHeatmap.tsx:32`，`fetchActivityStats` 请求返回前若组件卸载会触发 setState，React 18 已不报错但属于潜在问题。建议后续用 AbortController 或 useRef 标记卸载状态。属于预存在模式，非本次引入。
+
+## Deferred from: code review of 7-1-secondary-sidebar-category-navigation (2026-04-13)
+
+- **CategoryTree 无 ErrorBoundary 包裹** — `src/components/layout/SecondarySidebar.tsx` 中 `CategoryTree` 若抛出异常会导致整个布局崩溃，建议后续在 SecondarySidebar 或 AppLayout 层添加 ErrorBoundary。属于预存在问题，非本次引入。
+- **isSkillBrowsePage 精确匹配 "/" 未来扩展性有限** — `src/components/layout/AppLayout.tsx:33`，若未来路由扩展为子路径（如 `/skills/xxx`），条件会失效。当前路由结构固定，可接受，推迟处理。
+
 ## Completed: 目录结构审计与清理 (2026-04-11)
 
 **已完成的清理工作：**

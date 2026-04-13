@@ -1,6 +1,6 @@
 # Story 7.2: Sidebar 系统状态面板 + 活跃度热力图
 
-Status: review
+Status: done
 
 ## Story
 
@@ -349,3 +349,10 @@ claude-4.6-sonnet-1m-context
 - `tests/unit/components/stats/StatsPanel.test.tsx` — 新建
 - `tests/unit/components/stats/ActivityHeatmap.test.tsx` — 新建
 - `tests/unit/components/layout/Sidebar.test.tsx` — 修改：添加 StatsPanel/ActivityHeatmap mock
+
+### Review Findings
+
+- [x] [Review][Decision] ActivityHeatmap 布局方向歧义 — Spec AC-4 描述"7 列（周一至周日）× 12 行（12 周）"，实现采用"12 列（12 周）× 7 行"转置布局。两种方案豆点总数相同（84），但视觉方向不同：Spec 方案每列是一天（纵向），实现方案每列是一周（横向，类 GitHub 贡献图）。需确认采用哪种方向。
+- [x] [Review][Patch] 豆点尺寸不符合 Spec：实现用 aspectRatio:1/maxHeight:12/gap:3px，Spec AC-8 要求固定 8px×8px，间距 2px [src/components/stats/ActivityHeatmap.tsx:88]
+- [x] [Review][Patch] StatsPanel 统计项缺少背景色，Spec 参考实现中每项有 bg-[hsl(var(--accent)/0.5)] [src/components/stats/StatsPanel.tsx:40]
+- [x] [Review][Defer] ActivityHeatmap useEffect 无卸载清理（React 18 已不报错）[src/components/stats/ActivityHeatmap.tsx:32] — deferred, pre-existing

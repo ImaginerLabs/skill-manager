@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-13T15:24:35
+last_updated: 2026-04-13T17:04:54
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -236,8 +236,21 @@ development_status:
   # Sidebar 升级为系统状态仪表盘：分类迁移至二级 Sidebar，新增统计面板 + 热力图，Tab 滑块动画
   # Dependencies: Epic 1（CategoryTree）、Epic 5（SettingsPage Tab 结构）
   # ============================================================
-  epic-7: in-progress
+  epic-7: done
   7-1-secondary-sidebar-category-navigation: review
-  7-2-sidebar-stats-panel-and-activity-heatmap: review
-  7-3-settings-tab-slider-animation: review
+  7-2-sidebar-stats-panel-and-activity-heatmap: done
+  7-3-settings-tab-slider-animation: done
   epic-7-retrospective: optional
+
+  # ============================================================
+  # Epic N18: 国际化（i18n）— 中英文双语支持
+  # 支持中文（zh）和英文（en）双语，语言跟随浏览器设置，支持手动切换并持久化
+  # 来源：DD-4 升级为正式实现（架构决策 AD-26~AD-30）
+  # Dependencies: Epic 0~7（全部完成）
+  # ============================================================
+  epic-n18: in-progress
+  n18-1-i18n-infrastructure: ready-for-dev
+  n18-2-layout-i18n: ready-for-dev
+  n18-3-pages-i18n: ready-for-dev
+  n18-4-components-i18n: ready-for-dev
+  epic-n18-retrospective: optional

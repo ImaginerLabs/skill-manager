@@ -1,6 +1,6 @@
 # Story 7.3: 分类管理 Tab 滑块平移动画
 
-Status: review
+Status: done
 
 ## Story
 
@@ -209,3 +209,10 @@ claude-4.6-sonnet-1m-context
 
 - `src/components/ui/tabs.tsx` — 修改：TabsList 添加滑块动画层，TabsTrigger 移除激活背景样式
 - `tests/unit/components/ui/tabs.test.tsx` — 新建
+
+### Review Findings
+
+- [x] [Review][Dismiss] prefersReducedMotion 不响应运行时切换——刷新后生效，可接受
+- [x] [Review][Dismiss] TabsContent 用 hidden 属性而非条件渲染——shadcn/ui 标准模式，Spec 意图已满足
+- [x] [Review][Dismiss] TabsList 的 mb-4 影响所有使用场景——目前只有 SettingsPage 使用，可控
+- [x] [Review][Defer] 隐藏 Tab 内容子组件仍挂载（副作用可能执行）——预存在设计决策，非本次引入

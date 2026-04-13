@@ -15,7 +15,7 @@ lastStep: 8
 status: "updated"
 completedAt: "2026-04-10"
 lastUpdatedAt: "2026-04-13"
-updateReason: "Epic UX-IMPROVEMENT 实施后补充 AD-13~AD-16 及架构审查结果；新增分类设置页重组织 & 套件功能 AD-17~AD-21；Epic NAV-FIX 完成后补充 AD-22 导航交互修复模式；新增 Sidebar 重设计 AD-23~AD-25（二级 Sidebar、系统状态面板 + 热力图、Tab 滑块动画）"
+updateReason: "Epic UX-IMPROVEMENT 实施后补充 AD-13~AD-16 及架构审查结果；新增分类设置页重组织 & 套件功能 AD-17~AD-21；Epic NAV-FIX 完成后补充 AD-22 导航交互修复模式；新增 Sidebar 重设计 AD-23~AD-25（二级 Sidebar、系统状态面板 + 热力图、Tab 滑块动画）；DD-4 升级为正式决策：N18 国际化（中英文 + 浏览器语言检测）AD-26~AD-30"
 ---
 
 # Architecture Decision Document — Skill Manager
@@ -1784,3 +1784,493 @@ style={{
 | ------------------------------------------------- | ----------------------------------------- |
 | `src/pages/SettingsPage.tsx`                      | 将现有 Tab 切换逻辑替换为带滑块动画的实现 |
 | `src/components/settings/AnimatedTabSwitcher.tsx` | 可选：抽取为独立组件，供其他页面复用      |
+
+---
+
+## N18 国际化架构决策（DD-4 升级）
+
+> **背景：** 原 DD-4「国际化 (i18n) — V1 仅中文界面」现升级为正式实现。目标：支持中文（zh）和英文（en）双语，语言跟随用户浏览器设置，支持手动切换并持久化。
+
+---
+
+### AD-26: i18n 技术方案选型
+
+**决策：** 采用 `i18next` + `react-i18next` + `i18next-browser-languagedetector` 作为国际化技术栈。
+
+**选项对比：**
+
+| 方案 | 优点 | 缺点 | 适合场景 |
+|------|------|------|----------|
+| **i18next + react-i18next** ✅ | 生态最成熟、TypeScript 支持完善、插值/复数/命名空间全支持、与 Vite/React 19 完全兼容 | 包体积略大（~30KB gzip） | 中大型项目，需要完整 i18n 能力 |
+| react-intl (FormatJS) | 标准化 ICU 格式、国际化规范完整 | API 较繁琐、Provider 模式侵入性强 | 企业级多语言项目 |
+| 手写 Context + JSON | 零依赖、完全可控 | 需自行实现插值、复数、语言检测 | 极简场景，<20 个字符串 |
+| lingui | 编译时提取、性能最优 | 需要 Babel 插件，与 Vite 集成复杂 | 性能敏感的大型应用 |
+
+**选择理由：**
+- 项目已有 ~350 处中文 UI 字符串，需要完整的插值（`{{count}} 个 Skill`）和复数支持
+- `react-i18next` 的 `useTranslation` Hook 与项目现有函数组件 + Hooks 架构完全一致
+- `i18next-browser-languagedetector` 开箱即用的浏览器语言检测，无需自行实现
+- TypeScript 类型安全：通过 `i18next` 的类型声明文件可实现翻译键的编译时检查
+
+**版本锁定：**
+
+```json
+{
+  "i18next": "^24.x",
+  "react-i18next": "^15.x",
+  "i18next-browser-languagedetector": "^8.x"
+}
+```
+
+---
+
+### AD-27: 语言检测与持久化策略
+
+**决策：** 语言优先级链：`localStorage` 手动设置 → 浏览器 `navigator.language` → 默认 `zh`。
+
+**检测优先级链（从高到低）：**
+
+```
+1. localStorage["skill-manager-lang"]  ← 用户手动切换后持久化
+2. navigator.language / navigator.languages  ← 浏览器首选语言
+3. fallbackLng: "zh"  ← 兜底默认中文
+```
+
+**语言映射规则：**
+
+| 浏览器语言值 | 映射到 | 说明 |
+|-------------|--------|------|
+| `zh`, `zh-CN`, `zh-TW`, `zh-HK` | `zh` | 所有中文变体统一映射到 zh |
+| `en`, `en-US`, `en-GB`, `en-*` | `en` | 所有英文变体统一映射到 en |
+| 其他（`ja`, `ko`, `fr`...） | `zh`（fallback） | 不支持的语言降级到中文 |
+
+**i18next 初始化配置：**
+
+```typescript
+// src/i18n/index.ts
+import i18next from "i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+import { initReactI18next } from "react-i18next";
+import { zh } from "./locales/zh";
+import { en } from "./locales/en";
+
+i18next
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources: { zh: { translation: zh }, en: { translation: en } },
+    supportedLngs: ["zh", "en"],
+    fallbackLng: "zh",
+    interpolation: { escapeValue: false }, // React 已处理 XSS
+    detection: {
+      order: ["localStorage", "navigator"],
+      lookupLocalStorage: "skill-manager-lang",
+      caches: ["localStorage"],
+    },
+  });
+
+export default i18next;
+```
+
+**关键约束：**
+- `supportedLngs: ["zh", "en"]` 确保不支持的语言自动 fallback，不会出现空白 UI
+- `escapeValue: false`：React 已做 XSS 防护，无需 i18next 二次转义
+- localStorage key 使用项目命名空间前缀 `skill-manager-lang`，避免与其他应用冲突
+
+---
+
+### AD-28: 翻译资源文件组织结构
+
+**决策：** 单命名空间（`translation`）+ 按功能域分组的扁平键结构，存放于 `src/i18n/locales/`。
+
+**目录结构：**
+
+```
+src/
+└── i18n/
+    ├── index.ts          # i18next 初始化
+    ├── types.ts          # TypeScript 类型声明（翻译键类型安全）
+    └── locales/
+        ├── zh.ts         # 中文翻译（主语言，作为 source of truth）
+        └── en.ts         # 英文翻译（与 zh.ts 结构完全镜像）
+```
+
+**翻译键命名规范（按功能域分组）：**
+
+```typescript
+// src/i18n/locales/zh.ts（节选）
+export const zh = {
+  // ── 导航 ──────────────────────────────────────
+  nav: {
+    skillLibrary: "Skill 库",
+    workflow: "工作流",
+    sync: "同步",
+    import: "导入",
+    pathConfig: "路径配置",
+  },
+
+  // ── 通用 UI ────────────────────────────────────
+  common: {
+    loading: "加载中...",
+    save: "保存",
+    cancel: "取消",
+    delete: "删除",
+    confirm: "确认",
+    edit: "编辑",
+    create: "新建",
+    search: "搜索",
+    noDescription: "暂无描述",
+    saving: "保存中...",
+    creating: "创建中...",
+    close: "关闭",
+  },
+
+  // ── Skill 浏览页 ───────────────────────────────
+  skillBrowse: {
+    title: "Skill 库",
+    skillCount: "{{count}} 个 Skill",
+    skillCountFiltered: "{{filtered}} / {{total}} 个 Skill",
+    searchPlaceholder: "筛选 Skill...",
+    cardView: "卡片视图",
+    listView: "列表视图",
+    refresh: "刷新 Skill 列表",
+    emptyTitle: "暂无 Skill",
+    emptyAction: "从 IDE 导入 Skill 文件",
+    coldStartDetected: "检测到 CodeBuddy IDE Skill 文件",
+    coldStartFiles: "{{count}} 个文件",
+    coldStartImport: "开始导入 →",
+  },
+
+  // ── 同步页 ─────────────────────────────────────
+  sync: {
+    title: "IDE 同步",
+    subtitle: "选择 Skill 并配置同步目标路径，将 Skill 一键同步到 IDE 项目目录",
+    selectSkills: "选择 Skill",
+    selectedCount: "已选 {{count}}",
+    clearSelection: "清除选择",
+    startSync: "开始同步",
+    syncing: "同步中...",
+    clearResults: "清除结果",
+    syncComplete: "同步完成",
+    syncSuccess: "同步完成！{{count}} 个文件已同步",
+    syncFailed: "同步失败",
+    noSkillSelected: "请先选择要同步的 Skill",
+    noTargetEnabled: "请先添加并启用同步目标",
+    successCount: "成功 {{count}}",
+    overwrittenCount: "覆盖 {{count}}",
+    failedCount: "失败 {{count}}",
+    statusNew: "新建",
+    statusOverwritten: "覆盖",
+    statusFailed: "失败",
+  },
+
+  // ── 设置页 ─────────────────────────────────────
+  settings: {
+    title: "分类管理",
+    tabCategories: "分类设置",
+    tabBundles: "套件管理",
+  },
+
+  // ── 套件管理 ───────────────────────────────────
+  bundle: {
+    title: "套件管理",
+    createNew: "新建套件",
+    empty: "暂无套件",
+    emptyHint: "套件是分类的组合，点击「新建套件」开始创建",
+    namePlaceholder: "套件标识（英文，如 frontend-dev）",
+    displayNamePlaceholder: "显示名称（如 前端日常开发）",
+    descriptionPlaceholder: "描述（可选）",
+    selectCategories: "选择分类（至少 1 个）",
+    searchCategories: "搜索分类...",
+    noMatchCategories: "无匹配分类",
+    selectedCount: "已选 {{count}} 个分类",
+    confirmCreate: "确认创建",
+    nameError: "名称只能包含小写字母、数字和连字符",
+    createSuccess: "套件创建成功",
+    createFailed: "创建套件失败",
+    updateSuccess: "套件更新成功",
+    updateFailed: "更新套件失败",
+    deleteSuccess: "套件已删除",
+    deleteFailed: "删除套件失败",
+    activateSuccess_withSkipped: "已激活 {{applied}} 个分类，跳过 {{skipped}} 个已删除分类",
+    activateSuccess: "已激活 {{applied}} 个分类",
+    activateFailed: "激活失败",
+  },
+
+  // ── 元数据编辑器 ───────────────────────────────
+  metadata: {
+    title: "编辑元数据",
+    fieldName: "名称",
+    fieldDescription: "描述",
+    fieldTags: "标签（逗号分隔）",
+    fieldMoveCategory: "移动到分类",
+    movePlaceholder: "目标分类名称",
+    moveButton: "移动",
+    deleteConfirmTitle: "确认删除",
+    saveFailed: "保存失败",
+    deleteFailed: "删除失败",
+    moveFailed: "移动失败",
+  },
+
+  // ── Header ─────────────────────────────────────
+  header: {
+    searchPlaceholder: "⌘K 搜索 Skill...",
+    searchAriaLabel: "全局搜索",
+    toggleTheme: "切换主题",
+    switchLanguage: "切换语言",
+  },
+
+  // ── Toast 消息 ─────────────────────────────────
+  toast: {
+    loadFailed: "加载数据失败",
+    loadSkillsFailed: "加载 Skill 列表失败",
+    loadBundlesFailed: "加载套件失败",
+    syncNoSkill: "请先选择要同步的 Skill",
+    syncFailed: "同步失败",
+  },
+} as const;
+```
+
+**TypeScript 类型安全：**
+
+```typescript
+// src/i18n/types.ts
+import { zh } from "./locales/zh";
+
+// 从 zh.ts 推导类型，确保 en.ts 结构完全一致
+export type TranslationKeys = typeof zh;
+
+// 声明模块类型，启用 useTranslation 的键类型检查
+declare module "i18next" {
+  interface CustomTypeOptions {
+    defaultNS: "translation";
+    resources: { translation: TranslationKeys };
+  }
+}
+```
+
+**关键约束：**
+- `zh.ts` 是 source of truth，`en.ts` 必须与其结构完全镜像（TypeScript 类型强制保证）
+- 使用 `as const` 确保键名不被意外修改
+- 禁止在组件中硬编码中文字符串，所有 UI 文本必须通过 `t()` 调用
+
+---
+
+### AD-29: 组件层 i18n 集成模式
+
+**决策：** 组件使用 `useTranslation` Hook；Store 中的 Toast 消息提升到组件层调用；语言切换按钮集成到 Header。
+
+**组件使用模式：**
+
+```typescript
+// 标准用法
+import { useTranslation } from "react-i18next";
+
+export default function SkillBrowsePage() {
+  const { t } = useTranslation();
+
+  return (
+    <h1>{t("skillBrowse.title")}</h1>
+    <span>{t("skillBrowse.skillCount", { count: skills.length })}</span>
+  );
+}
+```
+
+**Store 中 Toast 消息的处理策略：**
+
+Store（Zustand）无法使用 React Hook，因此 Toast 消息必须提升到组件层：
+
+```typescript
+// ❌ 禁止：在 store action 中直接写中文
+// sync-store.ts
+lastSyncError: "同步失败",  // 不可翻译
+
+// ✅ 正确：store 抛出错误，组件层捕获并翻译
+// sync-store.ts — store 只存储错误对象或错误码
+catch (err) {
+  set({ syncStatus: "error", lastSyncError: err instanceof Error ? err.message : "SYNC_FAILED" });
+  throw err;  // 重新抛出，让组件层处理 Toast
+}
+
+// SyncExecutor.tsx — 组件层捕获并显示翻译后的 Toast
+try {
+  await pushSync(selectedSkillIds);
+} catch (err) {
+  toast.error(t("toast.syncFailed"));
+}
+```
+
+**语言切换 UI（Header 集成）：**
+
+```tsx
+// src/components/layout/Header.tsx
+import { useTranslation } from "react-i18next";
+
+export default function Header() {
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language.startsWith("zh") ? "zh" : "en";
+
+  const toggleLanguage = () => {
+    const next = currentLang === "zh" ? "en" : "zh";
+    i18n.changeLanguage(next);
+    // i18next-browser-languagedetector 自动持久化到 localStorage
+  };
+
+  return (
+    <header>
+      {/* ... 现有内容 ... */}
+      <button
+        type="button"
+        aria-label={t("header.switchLanguage")}
+        onClick={toggleLanguage}
+        className="..."
+      >
+        {currentLang === "zh" ? "EN" : "中"}
+      </button>
+    </header>
+  );
+}
+```
+
+**`main.tsx` 初始化：**
+
+```typescript
+// src/main.tsx
+import "./i18n/index";  // 必须在 React 渲染前导入，确保 i18next 初始化完成
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+
+**关键约束：**
+- `import "./i18n/index"` 必须是 `main.tsx` 中的第一个 import（在 React 之前），确保同步初始化
+- Store 中禁止直接写中文 Toast 消息，统一提升到组件层
+- 语言切换无需页面刷新，`react-i18next` 的响应式机制自动触发组件重渲染
+
+---
+
+### AD-30: i18n 实施边界与约束
+
+**决策：** 明确 i18n 的覆盖范围、不覆盖范围，以及实施顺序。
+
+**覆盖范围（必须翻译）：**
+
+| 类型 | 示例 | 处理方式 |
+|------|------|----------|
+| 导航标签 | "Skill 库"、"工作流" | `t("nav.skillLibrary")` |
+| 页面标题 | "IDE 同步"、"分类管理" | `t("sync.title")` |
+| 按钮文字 | "保存"、"取消"、"新建套件" | `t("common.save")` |
+| 表单标签 | "名称"、"描述"、"标签" | `t("metadata.fieldName")` |
+| 占位符文字 | "筛选 Skill..." | `t("skillBrowse.searchPlaceholder")` |
+| 状态文本 | "加载中..."、"同步中..." | `t("common.loading")` |
+| Toast 消息 | "套件创建成功" | `t("bundle.createSuccess")` |
+| 空状态文本 | "暂无 Skill" | `t("skillBrowse.emptyTitle")` |
+| 错误提示 | "名称只能包含小写字母..." | `t("bundle.nameError")` |
+| aria-label | "全局搜索"、"关闭" | `t("header.searchAriaLabel")` |
+
+**不覆盖范围（保持原样）：**
+
+| 类型 | 原因 |
+|------|------|
+| Skill 文件内容（Markdown 正文） | 用户自己创建的内容，不属于 UI 文本 |
+| Skill 的 `name`、`description` 字段 | 用户数据，不翻译 |
+| 分类名称（`displayName`） | 用户自定义数据 |
+| 代码注释 | 不影响用户界面 |
+| 错误码（`SKILL_NOT_FOUND` 等） | 技术标识符，不面向用户 |
+| 后端 API 响应中的 `message` 字段 | 后端不做 i18n，前端根据 `code` 显示翻译后的消息 |
+
+**后端错误消息处理策略：**
+
+```typescript
+// ✅ 正确：前端根据错误码显示翻译消息，不依赖后端 message 字段
+catch (err) {
+  if (err instanceof ApiError) {
+    // 根据 code 映射到翻译键
+    const msgKey = ERROR_CODE_TO_I18N_KEY[err.code] ?? "common.unknownError";
+    toast.error(t(msgKey));
+  }
+}
+
+// src/i18n/locales/zh.ts — 错误码映射
+errors: {
+  SKILL_NOT_FOUND: "Skill 不存在",
+  VALIDATION_ERROR: "输入数据格式有误",
+  BUNDLE_LIMIT_EXCEEDED: "套件数量已达上限（50 个）",
+  BUNDLE_NAME_DUPLICATE: "套件名称已存在",
+  // ...
+}
+```
+
+**实施顺序（按模块优先级）：**
+
+```
+Phase 1 — 基础设施（无 UI 变更）
+  1. 安装依赖：i18next、react-i18next、i18next-browser-languagedetector
+  2. 创建 src/i18n/index.ts（初始化）
+  3. 创建 src/i18n/locales/zh.ts（提取所有中文字符串）
+  4. 创建 src/i18n/locales/en.ts（英文翻译）
+  5. 创建 src/i18n/types.ts（TypeScript 类型声明）
+  6. 修改 src/main.tsx（导入 i18n 初始化）
+
+Phase 2 — Layout 层（影响全局）
+  7. Header.tsx — 语言切换按钮 + 搜索框文本
+  8. Sidebar.tsx — 导航标签
+  9. SecondarySidebar.tsx — 分类管理链接
+
+Phase 3 — 页面层（按使用频率）
+  10. SkillBrowsePage.tsx — 主页面
+  11. SyncPage.tsx + SyncExecutor.tsx + SyncSkillSelector.tsx
+  12. SettingsPage.tsx + BundleManager.tsx + CategoryManager.tsx
+  13. WorkflowPage.tsx + 子组件
+  14. PathsPage.tsx + PathPresetManager.tsx
+  15. ImportPage + 子组件
+
+Phase 4 — 共享组件
+  16. CommandPalette.tsx
+  17. MetadataEditor.tsx
+  18. EmptyState.tsx、SkillCard.tsx、SkillList.tsx
+  19. Toast 消息（Store 层提升到组件层）
+  20. dialog.tsx 中的 sr-only 关闭按钮文本
+```
+
+**文件变更清单：**
+
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| `package.json` | 新增依赖 | `i18next`、`react-i18next`、`i18next-browser-languagedetector` |
+| `src/i18n/index.ts` | 新建 | i18next 初始化配置 |
+| `src/i18n/types.ts` | 新建 | TypeScript 类型声明 |
+| `src/i18n/locales/zh.ts` | 新建 | 中文翻译资源（~350 个键） |
+| `src/i18n/locales/en.ts` | 新建 | 英文翻译资源（与 zh.ts 结构镜像） |
+| `src/main.tsx` | 修改 | 首行导入 `./i18n/index` |
+| `src/components/layout/Header.tsx` | 修改 | 添加语言切换按钮，文本 i18n 化 |
+| `src/components/layout/Sidebar.tsx` | 修改 | 导航标签 i18n 化 |
+| `src/components/layout/SecondarySidebar.tsx` | 修改 | 文本 i18n 化 |
+| `src/pages/SkillBrowsePage.tsx` | 修改 | 全页面文本 i18n 化 |
+| `src/pages/SyncPage.tsx` | 修改 | 文本 i18n 化 |
+| `src/pages/SettingsPage.tsx` | 修改 | Tab 标签 i18n 化 |
+| `src/pages/WorkflowPage.tsx` | 修改 | 文本 i18n 化 |
+| `src/pages/PathsPage.tsx` | 修改 | 文本 i18n 化 |
+| `src/pages/import/index.tsx` 等 | 修改 | 导入流程文本 i18n 化 |
+| `src/components/settings/BundleManager.tsx` | 修改 | 全组件文本 i18n 化 |
+| `src/components/settings/CategoryManager.tsx` | 修改 | 全组件文本 i18n 化 |
+| `src/components/settings/PathPresetManager.tsx` | 修改 | 全组件文本 i18n 化 |
+| `src/components/sync/SyncExecutor.tsx` | 修改 | 文本 i18n 化 + Toast 提升 |
+| `src/components/sync/SyncSkillSelector.tsx` | 修改 | 文本 i18n 化 |
+| `src/components/sync/SyncTargetManager.tsx` | 修改 | 文本 i18n 化 |
+| `src/components/skills/MetadataEditor.tsx` | 修改 | 文本 i18n 化 |
+| `src/components/skills/SkillCard.tsx` | 修改 | 文本 i18n 化 |
+| `src/components/skills/SkillList.tsx` | 修改 | 文本 i18n 化 |
+| `src/components/skills/EmptyState.tsx` | 修改 | 文本 i18n 化 |
+| `src/components/shared/CommandPalette.tsx` | 修改 | 文本 i18n 化 |
+| `src/components/ui/dialog.tsx` | 修改 | sr-only 关闭按钮文本 i18n 化 |
+| `src/components/workflow/` 子组件 | 修改 | 文本 i18n 化 |
+| `src/stores/sync-store.ts` | 修改 | 移除中文 Toast 消息，改为抛出错误 |
+| `src/stores/bundle-store.ts` | 修改 | 移除中文 Toast 消息，改为抛出错误 |
+| `src/stores/skill-store.ts` | 修改 | 移除中文错误消息，改为错误码 |

@@ -1,6 +1,6 @@
 # Story 7.1: 分类导航迁移至 Skill 库二级 Sidebar
 
-Status: review
+Status: done
 
 ## Story
 
@@ -181,3 +181,11 @@ claude-4.6-sonnet-1m-context
 - `tests/unit/components/layout/Sidebar.test.tsx` — 修改：更新测试反映导航项变更
 - `tests/unit/components/layout/SecondarySidebar.test.tsx` — 新建
 - `tests/unit/components/layout/AppLayout.test.tsx` — 新建
+
+### Review Findings
+
+- [x] [Review][Patch] SecondarySidebar 宽度 220px 与 Spec 要求的 180px 不符 [src/components/layout/SecondarySidebar.tsx:27]
+- [x] [Review][Patch] 未添加 CSS 变量 `--secondary-sidebar-width`，Task 2.4 要求写入 index.css [src/index.css]
+- [x] [Review][Patch] sidebarOpen=false 时主 Sidebar 隐藏但 SecondarySidebar 仍显示，AppLayout 需同步判断 sidebarOpen [src/components/layout/AppLayout.tsx:65]
+- [x] [Review][Defer] CategoryTree 无 ErrorBoundary 包裹 [src/components/layout/SecondarySidebar.tsx] — deferred, pre-existing
+- [x] [Review][Defer] isSkillBrowsePage 精确匹配 "/" 未来扩展性有限 [src/components/layout/AppLayout.tsx:33] — deferred, pre-existing
