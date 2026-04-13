@@ -1,13 +1,15 @@
 ---
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
-inputDocuments: ["product-brief-skill-package.md", "prd.md", "ux-design-specification.md"]
+inputDocuments: ["product-brief-skill-package.md", "prd.md", "ux-design-specification.md", "epic-ux-improvement.md"]
 workflowType: 'architecture'
 project_name: 'skill-package'
 user_name: 'Alex'
 date: '2026-04-10'
 lastStep: 8
-status: 'complete'
+status: 'updated'
 completedAt: '2026-04-10'
+lastUpdatedAt: '2026-04-13'
+updateReason: 'Epic UX-IMPROVEMENT 实施后补充 AD-13~AD-16 及架构审查结果；新增分类设置页重组织 & 套件功能 AD-17~AD-21'
 ---
 
 # Architecture Decision Document — Skill Manager
@@ -1057,7 +1059,374 @@ graph LR
 
 ---
 
-## Implementation Handoff
+## Architecture Updates — Epic UX-IMPROVEMENT (2026-04-13)
+
+> 本节记录 Epic UX-IMPROVEMENT 实施后对原始架构的补充与修订。所有变更均已在代码中落地并通过全量测试（603/603）。
+
+### 新增架构决策
+
+| # | 决策 | 选择 | 理由 |
+|---|------|------|------|
+| AD-13 | Zustand Store 草稿持久化 | localStorage 手动读写（非 zustand/middleware persist） | 避免引入额外中间件依赖；`workflow-store` 在每个 action 后同步写入 `localStorage`，初始化时读取恢复，`reset()` 时清除 |
+| AD-14 | 构建时版本注入 | Vite `define: { __APP_VERSION__ }` 读取 `package.json` | 零运行时开销；构建产物中版本号为字面量；测试环境通过 `vitest.config.ts` 的 `define` 注入 `"test"` 占位值 |
+| AD-15 | 禁用按钮 Tooltip 模式 | `TooltipProvider` 包裹 `<span>` 再包裹 `disabled` 按钮 | HTML 规范中 `disabled` 元素不触发鼠标事件；必须用 `<span>` 作为 Tooltip 触发代理；`disabledReason` 为 `null` 时不渲染 `TooltipContent` |
+| AD-16 | 分类批量操作数据加载 | `CategoryManager` 组件内并行加载分类列表 + 全量 Skill 列表 | 使用 `Promise.all([fetchCategories(), fetchSkills()])` 并行请求；前端按 `category.toLowerCase()` 过滤，与 `SkillListView` 保持一致的大小写不敏感匹配逻辑 |
+
+### 新增实现模式
+
+#### Zustand Store 草稿持久化模式
+
+适用于需要跨页面刷新保留编辑状态的 Store（如工作流编排）：
+
+```typescript
+// 固定 key 常量
+const DRAFT_KEY = "workflow-draft";
+
+// 读取草稿（容错：JSON 解析失败返回空对象）
+function loadDraft(): Partial<WorkflowDraft> {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as WorkflowDraft) : {};
+  } catch { return {}; }
+}
+
+// 写入草稿（容错：隐私模式下 localStorage 不可用）
+function saveDraft(draft: WorkflowDraft) {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); }
+  catch { /* ignore */ }
+}
+
+// 清除草稿（reset 时调用）
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); }
+  catch { /* ignore */ }
+}
+
+// Store 初始化时从草稿恢复
+const draft = loadDraft();
+export const useWorkflowStore = create<WorkflowStore>((set) => ({
+  steps: draft.steps ?? [],
+  workflowName: draft.workflowName ?? "",
+  // ...每个 action 在 set 后调用 saveDraft(...)
+  reset: () => { clearDraft(); set({ steps: [], workflowName: "", ... }); },
+}));
+```
+
+**规则：**
+- 草稿 key 使用模块级常量，禁止硬编码字符串散落在 action 中
+- 所有读写操作必须包裹 `try/catch`，防止隐私模式或存储配额异常
+- `reset()` 必须调用 `clearDraft()`，防止草稿污染下次新建流程
+
+#### Vite 构建时版本注入模式
+
+```typescript
+// vite.config.ts — 读取 package.json 注入版本号
+import { readFileSync } from "fs";
+import { dirname, resolve } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(resolve(__dirname, "package.json"), "utf-8")) as { version: string };
+
+export default defineConfig({
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  // ...
+});
+
+// src/vite-env.d.ts — 类型声明（必须，否则 tsc 报错）
+declare const __APP_VERSION__: string;
+
+// vitest.config.ts — 测试环境注入占位值
+export default defineConfig({
+  define: { __APP_VERSION__: JSON.stringify("test") },
+  // ...
+});
+
+// 使用方式（组件中直接引用全局常量）
+<span>v{__APP_VERSION__}</span>
+```
+
+**规则：**
+- `__APP_VERSION__` 是构建时替换的字面量，不是运行时变量，禁止通过 `import.meta.env` 方式访问
+- 测试文件中断言版本号时，期望值应为 `"test"`（与 `vitest.config.ts` 中的 `define` 值一致）
+
+#### 禁用按钮 Tooltip 代理模式
+
+```tsx
+// ❌ 错误：disabled 按钮不触发鼠标事件，Tooltip 不会显示
+<Tooltip>
+  <TooltipTrigger asChild>
+    <Button disabled>操作</Button>
+  </TooltipTrigger>
+  <TooltipContent>原因说明</TooltipContent>
+</Tooltip>
+
+// ✅ 正确：用 <span> 作为代理触发器
+<Tooltip>
+  <TooltipTrigger asChild>
+    <span className="inline-flex">   {/* span 接收鼠标事件 */}
+      <Button disabled={!canAct}>操作</Button>
+    </span>
+  </TooltipTrigger>
+  {disabledReason && (              /* 仅在有原因时渲染 */}
+    <TooltipContent side="top">
+      <p>{disabledReason}</p>
+    </TooltipContent>
+  )}
+</Tooltip>
+```
+
+**规则：**
+- 所有 `disabled` 按钮的 Tooltip 必须使用 `<span className="inline-flex">` 代理
+- `disabledReason` 为 `null`（按钮可用）时，不渲染 `TooltipContent`，避免空 Tooltip 闪烁
+- `TooltipProvider` 必须包裹整个操作区域（不必每个按钮单独包裹）
+
+### 架构审查发现（[R] 审查结果）
+
+基于 Epic UX-IMPROVEMENT 实施后的代码状态，对原始架构进行全面审查，发现以下问题：
+
+| # | 类型 | 发现 | 严重度 | 状态 |
+|---|------|------|--------|------|
+| R-01 | 📋 文档缺失 | 原架构未记录 localStorage 草稿持久化模式，Dev Agent 可能重复发明或使用不一致方案 | 🟡 中 | ✅ 已补充（AD-13） |
+| R-02 | 📋 文档缺失 | 原架构未记录 Vite `define` 版本注入模式，测试环境 `define` 配置缺失会导致测试失败 | 🟡 中 | ✅ 已补充（AD-14） |
+| R-03 | 📋 文档缺失 | 原架构未记录禁用按钮 Tooltip 代理模式，是 HTML 规范的常见陷阱 | 🟡 中 | ✅ 已补充（AD-15） |
+| R-04 | 📋 文档缺失 | 原架构未记录分类批量操作的数据加载策略（并行请求 + 前端过滤） | 🟢 低 | ✅ 已补充（AD-16） |
+| R-05 | ⚠️ 流程缺口 | Epic UX-IMPROVEMENT 所有 Story 直接标记为 `done`，跳过了 `qa` 和 `review` 阶段 | 🔴 高 | ⚠️ 待处理（见下方说明） |
+| R-06 | ⚠️ 架构漂移 | `workflow-store.ts` 原架构定义的 `WorkflowStore` 接口未包含 `editingWorkflowId` 字段，实际实现已扩展 | 🟢 低 | ✅ 已在数据模型中存在，无需修改 |
+| R-07 | ✅ 验证通过 | `CategoryManager` 批量操作使用 `moveSkillCategory(id, "uncategorized")`，与 `syncService.pushSync` 扁平化复制策略一致 | — | ✅ 无问题 |
+| R-08 | ✅ 验证通过 | `__APP_VERSION__` 全局常量声明在 `src/vite-env.d.ts`，符合 Vite 官方推荐位置 | — | ✅ 无问题 |
+| R-09 | ✅ 验证通过 | localStorage 草稿持久化未使用 `zustand/middleware`，避免了额外依赖，符合项目"无额外依赖"原则 | — | ✅ 无问题 |
+| R-10 | ✅ 验证通过 | 全量测试 603/603 通过，TypeScript 零错误，代码质量符合架构规范 | — | ✅ 无问题 |
+
+**R-05 说明（流程缺口）：**
+
+Epic UX-IMPROVEMENT 的 Story 实施后直接标记为 `done`，未经过 `qa`（集成/E2E 测试）和 `review`（代码审查）阶段。根据架构文档中的强制流程规则（Enforcement Guideline #8、#9、#10），这是一个流程违规。
+
+**建议后续补充：**
+1. 对 4 个实际实现的 Story（1.2、1.3、2.4、3.1、3.4）运行 `bmad-qa-generate-e2e-tests` 补充 E2E 测试
+2. 运行 `bmad-code-review` 对变更代码进行对抗式审查
+3. 或由 Alex 明确豁免本 Epic 的 qa/review 阶段（需在 sprint-status 中注明豁免理由）
+
+### 更新后的架构状态
+
+| 维度 | 原始状态（2026-04-10） | 当前状态（2026-04-13） |
+|------|----------------------|----------------------|
+| 核心架构决策 | 12 个（AD-1 ~ AD-12） | 16 个（新增 AD-13 ~ AD-16） |
+| 实现模式 | 原子写入、并发控制、Loading 状态、错误处理 | 新增：草稿持久化、版本注入、禁用按钮 Tooltip 代理、批量操作数据加载 |
+| Epic 完成度 | Epic 0~6 全部 done | Epic 0~6 + UX-IMPROVEMENT 全部 done |
+| 测试覆盖 | — | 603 单元/集成测试全部通过 |
+| 待处理事项 | — | R-05：UX-IMPROVEMENT Epic 的 qa/review 阶段待补充或豁免 |
+
+---
+
+## 架构决策补充：分类设置页重组织 & 套件功能
+
+> **更新时间：** 2026-04-13
+> **来源 PRD：** [prd-category-settings-and-bundles.md](./prd-category-settings-and-bundles.md)
+> **讨论来源：** Party Mode（John + Sally + Winston）
+
+### AD-17: 套件数据存储策略
+
+**决策：** 套件（SkillBundle）数据存储在 `config/settings.yaml` 的 `skillBundles` 字段，激活状态存储在 `activeCategories` 字段。
+
+**理由：**
+- 套件是"配置性引用关系"，不是独立的内容实体，与 `pathPresets`、`sync.targets` 数据性质一致
+- 避免引入第三个配置文件，减少文件碎片化
+- `AppConfigSchema` 已有 `.default([])` 向后兼容模式，直接复用
+- 与 `pathPresetService` 完全对称，实现模式可无损复用
+
+**数据模型（`shared/types.ts`）：**
+
+```typescript
+interface SkillBundle {
+  id: string;              // 格式：bundle-{ts36}-{rand4}
+  name: string;            // 英文标识，唯一，/^[a-z0-9-]+$/
+  displayName: string;     // 显示名称
+  description?: string;
+  categoryNames: string[]; // 引用分类的 name（英文标识）
+  createdAt: string;       // ISO 8601
+  updatedAt: string;
+}
+```
+
+**`AppConfig` 扩展：**
+
+```typescript
+interface AppConfig {
+  // ...现有字段...
+  skillBundles: SkillBundle[];    // 新增，默认 []
+  activeCategories: string[];     // 新增，默认 []
+}
+```
+
+**Schema 约束（`shared/schemas.ts`）：**
+
+```typescript
+const SkillBundleSchema = z.object({
+  id: z.string(),
+  name: z.string().regex(/^[a-z0-9-]+$/),
+  displayName: z.string().min(1),
+  description: z.string().optional(),
+  categoryNames: z.array(z.string()).min(1).max(20),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+// AppConfigSchema 追加：
+skillBundles: z.array(SkillBundleSchema).max(50).default([]),
+activeCategories: z.array(z.string()).default([]),
+```
+
+---
+
+### AD-18: 套件 API 设计
+
+**决策：** 套件 API 挂载在 `/api/skill-bundles`，共 7 个端点（5 个实现 + 2 个 501 占位）。
+
+**端点列表：**
+
+```
+GET    /api/skill-bundles              — 获取所有套件（含 brokenCategoryNames 注入）
+POST   /api/skill-bundles              — 创建套件
+PUT    /api/skill-bundles/:id          — 更新套件
+DELETE /api/skill-bundles/:id          — 删除套件
+PUT    /api/skill-bundles/:id/apply    — 一键激活套件（写入 activeCategories）
+
+GET    /api/skill-bundles/export       — 501 占位（未来导出功能）
+POST   /api/skill-bundles/import       — 501 占位（未来导入功能）
+```
+
+**注意：** `GET /api/skill-bundles/export` 必须在 `GET /api/skill-bundles/:id` 之前注册，防止 "export" 被当作 `:id` 处理（与 `skills/errors` 路由注册顺序规则一致）。
+
+**`GET /api/skill-bundles` 响应增强：** 后端注入 `brokenCategoryNames` 字段（与 `categoryService.getCategories()` 做 diff），前端无需自行计算。
+
+---
+
+### AD-19: 套件服务层设计
+
+**决策：** 新建 `server/services/bundleService.ts`，完全复用 `pathPresetService` 的函数式导出模式。
+
+**函数签名：**
+
+```typescript
+export async function getBundles(): Promise<SkillBundle[]>
+export async function addBundle(data: SkillBundleCreate): Promise<SkillBundle>
+export async function updateBundle(id: string, data: SkillBundleUpdate): Promise<SkillBundle>
+export async function removeBundle(id: string): Promise<void>
+export async function applyBundle(id: string): Promise<ApplyResult>
+```
+
+**`applyBundle` 核心逻辑：**
+
+```typescript
+async function applyBundle(id: string): Promise<ApplyResult> {
+  const settings = await readSettings();
+  const bundle = settings.skillBundles?.find(b => b.id === id);
+  if (!bundle) throw AppError.notFound(`Bundle ${id} not found`);
+
+  const categories = await categoryService.getCategories();
+  const validNames = bundle.categoryNames.filter(
+    name => categories.some(c => c.name === name)
+  );
+
+  settings.activeCategories = validNames;  // 覆盖写入（不叠加）
+  await writeSettings(settings);
+
+  return {
+    applied: validNames,
+    skipped: bundle.categoryNames.filter(n => !validNames.includes(n))
+  };
+}
+```
+
+**关键约束：**
+- `name` 唯一性校验（大小写不敏感）
+- `categoryNames` 引用的分类必须存在（创建时校验，激活时宽松跳过）
+- ID 生成格式：`bundle-{ts36}-{rand4}`（复用 `generateId()` 函数）
+- 所有写操作通过 `safeWrite()` 保证原子性和并发安全
+
+---
+
+### AD-20: 套件前端状态管理
+
+**决策：** 新建 `src/stores/bundle-store.ts`，不扩展现有 store。
+
+**理由：**
+- `skill-store.ts` 已管理 Skill 列表、分类、搜索、视图模式，职责已满
+- 套件是设置页专属状态，生命周期与 Skill 列表解耦
+- 与 `sync-store.ts` 独立管理同步状态的模式对称
+
+**Store 接口：**
+
+```typescript
+interface BundleStore {
+  bundles: SkillBundle[];
+  bundlesLoading: boolean;
+  bundlesError: string | null;
+
+  fetchBundles: () => Promise<void>;
+  createBundle: (data: SkillBundleCreate) => Promise<void>;
+  updateBundle: (id: string, data: SkillBundleUpdate) => Promise<void>;
+  deleteBundle: (id: string) => Promise<void>;
+  applyBundle: (id: string) => Promise<ApplyResult>;
+}
+```
+
+**`src/lib/api.ts` 新增函数：**
+
+```typescript
+fetchSkillBundles()
+createSkillBundle(data)
+updateSkillBundle(id, data)
+deleteSkillBundle(id)
+applySkillBundle(id)
+```
+
+---
+
+### AD-21: 设置页 Tab 化重组织
+
+**决策：** `SettingsPage.tsx` 改造为顶部 Tab 结构，使用 shadcn/ui `Tabs` 组件，侧边栏导航入口从"设置"重命名为"分类"。
+
+**Tab 结构：**
+
+```
+/settings（路由不变）
+  Tab[分类设置]  → CategoryManager（现有，零改动）
+  Tab[套件管理]  → BundleManager（新建）
+```
+
+**实现要点：**
+- 使用现有 `src/components/ui/` 中的 `Tabs` 组件（shadcn/ui 风格）
+- 默认激活"分类设置" Tab
+- 侧边栏 `AppLayout` 中的"设置"导航文字改为"分类"（图标保持 `⚙️` 或改为 `🗂️`）
+- 路由 `/settings` 保持不变，避免破坏性变更
+
+**损坏引用处理规则：**
+- 后端 `GET /api/skill-bundles` 注入 `brokenCategoryNames`
+- 前端套件卡片：`brokenCategoryNames.length > 0` 时显示黄色警告 Badge
+- 激活损坏套件时自动跳过，Toast 提示跳过数量
+- 删除分类时不反向扫描套件（`categoryService` 不感知 `bundleService`）
+
+**文件变更清单（零破坏性）：**
+
+| 文件 | 操作 |
+|------|------|
+| `shared/types.ts` | 新增 `SkillBundle`，`AppConfig` 追加字段 |
+| `shared/schemas.ts` | 新增 `SkillBundleSchema`，`AppConfigSchema` 扩展 |
+| `shared/constants.ts` | 新增错误码常量 |
+| `server/services/bundleService.ts` | **新建** |
+| `server/routes/bundleRoutes.ts` | **新建** |
+| `server/app.ts` | 注册 bundleRoutes |
+| `src/lib/api.ts` | 新增 5 个 API 函数 |
+| `src/stores/bundle-store.ts` | **新建** |
+| `src/components/settings/BundleManager.tsx` | **新建** |
+| `src/pages/SettingsPage.tsx` | 改造：加顶部 Tab |
+| `src/components/layout/AppLayout.tsx` | 修改：导航"设置"→"分类" |
+
+**零改动文件：** `CategoryManager.tsx`、`categoryService.ts`、`categoryRoutes.ts`
+
+---
 
 **AI Agent Guidelines:**
 

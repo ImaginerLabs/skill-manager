@@ -5,6 +5,10 @@
 - **ImportPage 组件过大（386行），缺少组件拆分** — `src/pages/ImportPage.tsx` 承载了扫描、勾选、分类选择、导入、清理确认等所有逻辑，建议后续拆分为 `ScanSection`、`ImportWizard`、`CleanupDialog` 等子组件。Story 2-2 明确说"不要创建新的组件文件"，属于已有架构决策。
 - **SKILLS_ROOT 硬编码为相对路径** — `server/services/importService.ts` 中 `SKILLS_ROOT` 通过 `__dirname` 相对计算，在测试或部署路径变化时可能不稳定。建议后续通过配置注入。
 
+## Deferred from: code review of Epic UX-IMPROVEMENT (2026-04-13)
+
+- **WorkflowPage undo 恢复顺序不保证原位置** — `src/pages/WorkflowPage.tsx:98`，撤销删除时工作流被追加到列表末尾而非原位置。UX 可接受（刷新后顺序恢复正确），推迟处理。
+
 ## Completed: 目录结构审计与清理 (2026-04-11)
 
 **已完成的清理工作：**
