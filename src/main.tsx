@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { ErrorBoundary } from "./components/shared/ErrorBoundary";
+import "./i18n/index"; // i18n 必须在所有其他 import 之前初始化
 import "./index.css";
 
 // 同步初始化主题，防止首屏闪烁（FOUC）
