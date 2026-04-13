@@ -1,13 +1,13 @@
-import { Search, Zap } from "lucide-react";
+import { Moon, Search, Sun, Zap } from "lucide-react";
 import { useUIStore } from "../../stores/ui-store";
 import SyncStatusIndicator from "../sync/SyncStatusIndicator";
 
 /**
- * 顶部栏 — Logo + 全局搜索入口 + 同步状态
+ * 顶部栏 — Logo + 全局搜索入口 + 主题切换 + 同步状态
  * 固定高度 48px，固定在页面顶部
  */
 export default function Header() {
-  const { setCommandPaletteOpen } = useUIStore();
+  const { setCommandPaletteOpen, theme, toggleTheme } = useUIStore();
 
   return (
     <header className="flex items-center justify-between h-12 px-4 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))] shrink-0">
@@ -33,8 +33,18 @@ export default function Header() {
         </kbd>
       </button>
 
-      {/* 右侧：同步状态指示器 */}
-      <SyncStatusIndicator />
+      {/* 右侧：主题切换 + 同步状态指示器 */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="切换主题"
+          onClick={toggleTheme}
+          className="flex items-center justify-center w-8 h-8 rounded-md text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] transition-colors duration-200"
+        >
+          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+        <SyncStatusIndicator />
+      </div>
     </header>
   );
 }
