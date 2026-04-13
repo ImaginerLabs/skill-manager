@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import type { Category, ScanResultItem } from "../../../shared/types";
 import { Button } from "../../components/ui/button";
 import { Checkbox } from "../../components/ui/checkbox";
@@ -35,6 +36,7 @@ export const ImportFileList = memo(function ImportFileList({
   onImport,
   onCleanupAfterImportChange,
 }: ImportFileListProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       {/* 工具栏：全选 + 已选统计 + 分类选择 + 导入按钮 */}
@@ -48,11 +50,11 @@ export const ImportFileList = memo(function ImportFileList({
               onChange={onToggleAll}
               className="h-4 w-4 rounded border border-[hsl(var(--border))] accent-[hsl(var(--primary))] cursor-pointer"
             />
-            <span className="text-sm">全选</span>
+            <span className="text-sm">{t("common.selectAll")}</span>
           </label>
           {/* 已选统计 */}
           <span className="text-sm text-[hsl(var(--muted-foreground))]">
-            已选 {selectedPaths.size} / {items.length} 个文件
+            {selectedPaths.size} / {items.length}
           </span>
         </div>
 
@@ -64,7 +66,7 @@ export const ImportFileList = memo(function ImportFileList({
             onChange={(e) => onCategoryChange(e.target.value)}
             className="h-9 w-[180px] rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm text-[hsl(var(--foreground))] cursor-pointer"
           >
-            <option value="">选择分类...</option>
+            <option value="">{t("category.empty")}</option>
             {categories.map((cat) => (
               <option key={cat.name} value={cat.name}>
                 {cat.displayName}
@@ -78,7 +80,9 @@ export const ImportFileList = memo(function ImportFileList({
             disabled={!canImport || importing}
             size="sm"
           >
-            {importing ? "导入中..." : `导入选中 (${selectedPaths.size})`}
+            {importing
+              ? t("common.loading")
+              : `${t("common.confirm")} (${selectedPaths.size})`}
           </Button>
         </div>
       </div>
@@ -91,7 +95,9 @@ export const ImportFileList = memo(function ImportFileList({
             onCleanupAfterImportChange(checked === true)
           }
         />
-        导入后删除源文件（不可撤销）
+        {t("import.subtitle").includes("扫描")
+          ? "导入后删除源文件（不可撤销）"
+          : t("import.subtitle")}
       </label>
 
       {/* 文件列表 */}
@@ -113,7 +119,7 @@ export const ImportFileList = memo(function ImportFileList({
                 <span className="font-medium truncate">{item.name}</span>
                 {item.parseStatus === "failed" && (
                   <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400">
-                    解析失败
+                    {t("import.scanFailed")}
                   </span>
                 )}
               </div>

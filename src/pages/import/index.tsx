@@ -1,10 +1,12 @@
 import { FolderOpen, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { CleanupConfirmDialog } from "./CleanupConfirmDialog";
 import { ImportFileList } from "./ImportFileList";
 import { ScanPathInput } from "./ScanPathInput";
 import { useImport } from "./useImport";
 
 export default function ImportPage() {
+  const { t } = useTranslation();
   const {
     scanPath,
     setScanPath,
@@ -33,9 +35,9 @@ export default function ImportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold mb-2">导入管理</h1>
+        <h1 className="text-2xl font-bold mb-2">{t("import.title")}</h1>
         <p className="text-[hsl(var(--muted-foreground))]">
-          从 CodeBuddy IDE 目录扫描并导入 Skill 文件
+          {t("import.subtitle")}
         </p>
       </div>
 
@@ -51,7 +53,9 @@ export default function ImportPage() {
       {/* 错误状态 */}
       {scanState.status === "error" && (
         <div className="rounded-md border border-[hsl(var(--destructive))/0.3] bg-[hsl(var(--destructive))/0.1] p-4">
-          <p className="text-[hsl(var(--destructive))] font-medium">扫描失败</p>
+          <p className="text-[hsl(var(--destructive))] font-medium">
+            {t("import.scanFailed")}
+          </p>
           <p className="text-[hsl(var(--destructive))] text-sm mt-1 opacity-80">
             {scanState.message}
           </p>
@@ -66,11 +70,11 @@ export default function ImportPage() {
             className="mx-auto text-[hsl(var(--muted-foreground))] mb-2 opacity-60"
           />
           <p className="text-[hsl(var(--muted-foreground))] text-lg">
-            目录为空
+            {t("import.emptyDir")}
           </p>
           <p className="text-[hsl(var(--muted-foreground))] text-sm mt-2">
-            在 <code className="text-xs">{scanState.data.scanPath}</code>{" "}
-            中未发现 .md 文件
+            {t("import.emptyDirHint")}{" "}
+            <code className="text-xs">{scanState.data.scanPath}</code>
           </p>
         </div>
       )}
@@ -102,12 +106,11 @@ export default function ImportPage() {
             className="mx-auto text-[hsl(var(--muted-foreground))] mb-2 opacity-60"
           />
           <p className="text-[hsl(var(--muted-foreground))] text-lg">
-            开始扫描
+            {t("import.idleTitle")}
           </p>
           <p className="text-[hsl(var(--muted-foreground))] text-sm mt-2">
-            输入 CodeBuddy IDE 的 Skill
-            目录路径，点击&quot;扫描&quot;按钮发现可导入的文件
-          </p>
+            {t("import.idleHint")}
+          </p>{" "}
         </div>
       )}
 

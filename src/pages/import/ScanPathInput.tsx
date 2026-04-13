@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import type { PathPreset } from "../../../shared/types";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -21,6 +22,7 @@ export const ScanPathInput = memo(function ScanPathInput({
   onScanPathChange,
   onScan,
 }: ScanPathInputProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex gap-3 items-end">
       <div className="flex-1">
@@ -28,7 +30,7 @@ export const ScanPathInput = memo(function ScanPathInput({
           htmlFor="scan-path"
           className="block text-sm font-medium mb-1.5 text-[hsl(var(--foreground))]"
         >
-          扫描路径
+          {t("import.scanPath")}
         </label>
         <div className="flex gap-2">
           <Input
@@ -45,9 +47,9 @@ export const ScanPathInput = memo(function ScanPathInput({
               onChange={(e) => {
                 if (e.target.value) onScanPathChange(e.target.value);
               }}
-              title="从预设选择"
+              title={t("common.search")}
             >
-              <option value="">从预设选择</option>
+              <option value="">{t("common.search")}</option>
               {pathPresets.map((p) => (
                 <option key={p.id} value={p.path}>
                   {p.label ? `${p.label} (${p.path})` : p.path}
@@ -61,10 +63,10 @@ export const ScanPathInput = memo(function ScanPathInput({
         {scanState.status === "loading" ? (
           <span className="flex items-center gap-2">
             <Loader2 size={16} className="animate-spin" />
-            扫描中...
+            {t("common.loading")}
           </span>
         ) : (
-          "扫描"
+          t("common.search")
         )}
       </Button>
     </div>
