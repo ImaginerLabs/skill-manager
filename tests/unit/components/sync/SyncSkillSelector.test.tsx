@@ -212,4 +212,102 @@ describe("SyncSkillSelector", () => {
       expect(screen.getByText("暂无可用 Skill")).toBeInTheDocument();
     });
   });
+
+  describe("分类折叠/展开", () => {
+    it("初始状态下分类内容默认折叠，Skill 不可见", () => {
+      render(<SyncSkillSelector />);
+
+      // Skill 列表容器有 hidden class，内容不可见
+      const skillA = screen.getByText("Skill A");
+      expect(skillA.closest(".hidden")).not.toBeNull();
+    });
+
+    it("点击折叠箭头可展开分类，Skill 变为可见", async () => {
+      const user = userEvent.setup();
+      render(<SyncSkillSelector />);
+
+      // 点击"通用"分类的展开箭头
+      await user.click(screen.getByLabelText("展开 通用"));
+
+      // Skill A 所在容器不再有 hidden class
+      const skillA = screen.getByText("Skill A");
+      expect(skillA.closest(".hidden")).toBeNull();
+    });
+
+    it("展开后再次点击折叠箭头可重新折叠", async () => {
+      const user = userEvent.setup();
+      render(<SyncSkillSelector />);
+
+      // 先展开
+      await user.click(screen.getByLabelText("展开 通用"));
+      // 再折叠
+      await user.click(screen.getByLabelText("折叠 通用"));
+
+      const skillA = screen.getByText("Skill A");
+      expect(skillA.closest(".hidden")).not.toBeNull();
+    });
+
+    it("搜索时自动展开所有分类，Skill 变为可见", async () => {
+      const user = userEvent.setup();
+      render(<SyncSkillSelector />);
+
+      const searchInput = screen.getByPlaceholderText("搜索 Skill...");
+      await user.type(searchInput, "Skill");
+
+      // 搜索后分类展开，Skill A 可见
+      const skillA = screen.getByText("Skill A");
+      expect(skillA.closest(".hidden")).toBeNull();
+    });
+
+    it("清空搜索词后分类重新折叠", async () => {
+      const user = userEvent.setup();
+      render(<SyncSkillSelector />);
+
+      const searchInput = screen.getByPlaceholderText("搜索 Skill...");
+      // 先输入搜索词展开
+      await user.type(searchInput, "Skill");
+      // 再清空
+      await user.clear(searchInput);
+
+      const skillA = screen.getByText("Skill A");
+      expect(skillA.closest(".hidden")).not.toBeNull();
+    });
+
+    it("折叠箭头和分类勾选是独立的按钮", () => {
+      render(<SyncSkillSelector />);
+
+      // 折叠箭头按钮
+      expect(screen.getByLabelText("展开 通用")).toBeInTheDocument();
+      // 勾选按钮
+      expect(
+        screen.getByLabelText("选择分类 通用 下所有 Skill"),
+      ).toBeInTheDocument();
+    });
+
+    it("折叠状态下点击分类勾选按钮仍可批量选中该分类 Skill", async () => {
+      const user = userEvent.setup();
+      render(<SyncSkillSelector />);
+
+      // 不展开，直接点击勾选区
+      await user.click(screen.getByLabelText("选择分类 通用 下所有 Skill"));
+
+      expect(mockSelectByCategory).toHaveBeenCalled();
+      const calledWith = mockSelectByCategory.mock.calls[0][0] as string[];
+      expect(calledWith).toContain("skill-a");
+      expect(calledWith).toContain("skill-b");
+    });
+
+    it("多个分类可独立展开/折叠", async () => {
+      const user = userEvent.setup();
+      render(<SyncSkillSelector />);
+
+      // 只展开"通用"
+      await user.click(screen.getByLabelText("展开 通用"));
+
+      // 通用分类下 Skill 可见
+      expect(screen.getByText("Skill A").closest(".hidden")).toBeNull();
+      // 工作流分类下 Skill 仍折叠
+      expect(screen.getByText("Workflow 1").closest(".hidden")).not.toBeNull();
+    });
+  });
 });

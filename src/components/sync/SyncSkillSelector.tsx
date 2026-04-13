@@ -2,10 +2,20 @@
 // components/sync/SyncSkillSelector.tsx — Skill 勾选选择列表
 // ============================================================
 
-import { CheckSquare, Minus, Search, Square, Zap } from "lucide-react";
+import {
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
+  Layers,
+  Minus,
+  Search,
+  Square,
+  Zap,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { SkillMeta } from "../../../shared/types";
+import type { SkillBundleWithStatus, SkillMeta } from "../../../shared/types";
 import { useSkillSearch } from "../../hooks/useSkillSearch";
+import { fetchSkillBundles } from "../../lib/api";
 import { useSkillStore } from "../../stores/skill-store";
 import { useSyncStore } from "../../stores/sync-store";
 import { Badge } from "../ui/badge";
@@ -26,14 +36,53 @@ export default function SyncSkillSelector() {
     clearSelection,
   } = useSyncStore();
   const [query, setQuery] = useState("");
+  // 套件相关状态
+  const [bundles, setBundles] = useState<SkillBundleWithStatus[]>([]);
+  const [bundlesLoading, setBundlesLoading] = useState(false);
+  const [bundleSectionOpen, setBundleSectionOpen] = useState(true);
+  // 分类折叠状态：默认全部折叠
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(),
+  );
 
   const filteredSkills = useSkillSearch(skills, query);
+
+  // 搜索时自动展开所有分类，清空搜索时重新折叠
+  useEffect(() => {
+    if (query.trim()) {
+      // 展开所有分类
+      setExpandedCategories(new Set(skills.map((s) => s.category)));
+    } else {
+      setExpandedCategories(new Set());
+    }
+  }, [query, skills]);
+
+  const toggleCategoryExpand = useCallback((categoryName: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryName)) {
+        next.delete(categoryName);
+      } else {
+        next.add(categoryName);
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (skills.length === 0 && !loading) {
       fetchSkills();
     }
   }, [skills.length, loading, fetchSkills]);
+
+  // 加载套件列表
+  useEffect(() => {
+    setBundlesLoading(true);
+    fetchSkillBundles()
+      .then(setBundles)
+      .catch(() => setBundles([]))
+      .finally(() => setBundlesLoading(false));
+  }, []);
 
   // 按分类分组
   const groupedSkills = useMemo(() => {
@@ -47,6 +96,17 @@ export default function SyncSkillSelector() {
     }
     return groups;
   }, [filteredSkills]);
+
+  // 分类名 -> 该分类下所有 skill id（基于全量 skills，不受搜索过滤影响）
+  const categorySkillIdsMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const skill of skills) {
+      const cat = skill.category;
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(skill.id);
+    }
+    return map;
+  }, [skills]);
 
   // 分类显示名映射
   const categoryDisplayNames = useMemo(() => {
@@ -74,7 +134,6 @@ export default function SyncSkillSelector() {
     if (allSelected) {
       clearSelection();
     } else {
-      // 选中所有当前筛选结果
       const newIds = new Set([...selectedSkillIds, ...allFilteredIds]);
       selectByCategory([...newIds]);
     }
@@ -96,11 +155,9 @@ export default function SyncSkillSelector() {
       );
 
       if (allCatSelected) {
-        // 取消该分类所有选中
         const catIdSet = new Set(categorySkillIds);
         selectByCategory(selectedSkillIds.filter((id) => !catIdSet.has(id)));
       } else {
-        // 选中该分类所有
         const newIds = new Set([...selectedSkillIds, ...categorySkillIds]);
         selectByCategory([...newIds]);
       }
@@ -122,6 +179,51 @@ export default function SyncSkillSelector() {
       return "none";
     },
     [groupedSkills, selectedSkillIds],
+  );
+
+  // 点击套件：将套件下所有分类的 Skill 追加到已选中
+  const handleSelectBundle = useCallback(
+    (bundle: SkillBundleWithStatus) => {
+      // 收集套件下所有有效分类的 skill id
+      const bundleSkillIds: string[] = [];
+      for (const catName of bundle.categoryNames) {
+        const ids = categorySkillIdsMap.get(catName) ?? [];
+        bundleSkillIds.push(...ids);
+      }
+      if (bundleSkillIds.length === 0) return;
+
+      // 判断是否已全部选中 → 切换逻辑
+      const allBundleSelected = bundleSkillIds.every((id) =>
+        selectedSkillIds.includes(id),
+      );
+      if (allBundleSelected) {
+        const bundleIdSet = new Set(bundleSkillIds);
+        selectByCategory(selectedSkillIds.filter((id) => !bundleIdSet.has(id)));
+      } else {
+        const newIds = new Set([...selectedSkillIds, ...bundleSkillIds]);
+        selectByCategory([...newIds]);
+      }
+    },
+    [categorySkillIdsMap, selectedSkillIds, selectByCategory],
+  );
+
+  // 判断套件选中状态
+  const getBundleCheckState = useCallback(
+    (bundle: SkillBundleWithStatus): "all" | "some" | "none" => {
+      const bundleSkillIds: string[] = [];
+      for (const catName of bundle.categoryNames) {
+        const ids = categorySkillIdsMap.get(catName) ?? [];
+        bundleSkillIds.push(...ids);
+      }
+      if (bundleSkillIds.length === 0) return "none";
+      const selectedCount = bundleSkillIds.filter((id) =>
+        selectedSkillIds.includes(id),
+      ).length;
+      if (selectedCount === bundleSkillIds.length) return "all";
+      if (selectedCount > 0) return "some";
+      return "none";
+    },
+    [categorySkillIdsMap, selectedSkillIds],
   );
 
   return (
@@ -146,6 +248,76 @@ export default function SyncSkillSelector() {
           >
             清除选择
           </button>
+        )}
+      </div>
+
+      {/* 套件快速选择区域 */}
+      <div className="rounded-md border border-[hsl(var(--border))] overflow-hidden">
+        <button
+          onClick={() => setBundleSectionOpen((v) => !v)}
+          className="flex items-center gap-2 w-full px-3 py-2 bg-[hsl(var(--muted)/0.4)] hover:bg-[hsl(var(--muted)/0.6)] transition-colors text-left"
+        >
+          <Layers size={14} className="text-[hsl(var(--primary))] shrink-0" />
+          <span className="text-xs font-medium text-[hsl(var(--foreground))] flex-1">
+            按套件选择
+          </span>
+          {bundleSectionOpen ? (
+            <ChevronDown
+              size={14}
+              className="text-[hsl(var(--muted-foreground))]"
+            />
+          ) : (
+            <ChevronRight
+              size={14}
+              className="text-[hsl(var(--muted-foreground))]"
+            />
+          )}
+        </button>
+
+        {bundleSectionOpen && (
+          <div className="p-2">
+            {bundlesLoading ? (
+              <p className="text-xs text-[hsl(var(--muted-foreground))] px-1 py-1">
+                加载中...
+              </p>
+            ) : bundles.length === 0 ? (
+              <p className="text-xs text-[hsl(var(--muted-foreground))] px-1 py-1">
+                暂无套件，可在套件管理中创建
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {bundles.map((bundle) => {
+                  const state = getBundleCheckState(bundle);
+                  return (
+                    <button
+                      key={bundle.id}
+                      onClick={() => handleSelectBundle(bundle)}
+                      title={bundle.description ?? bundle.displayName}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                        state === "all"
+                          ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]"
+                          : state === "some"
+                            ? "bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))] border-[hsl(var(--primary)/0.4)]"
+                            : "bg-transparent text-[hsl(var(--muted-foreground))] border-[hsl(var(--border))] hover:border-[hsl(var(--primary)/0.5)] hover:text-[hsl(var(--foreground))]"
+                      }`}
+                    >
+                      {state === "all" ? (
+                        <CheckSquare size={11} className="shrink-0" />
+                      ) : state === "some" ? (
+                        <Minus size={11} className="shrink-0" />
+                      ) : (
+                        <Square size={11} className="shrink-0" />
+                      )}
+                      {bundle.displayName}
+                      {bundle.brokenCategoryNames.length > 0 && (
+                        <span className="opacity-60 text-[10px]">(!)</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -214,41 +386,62 @@ export default function SyncSkillSelector() {
 
                 return (
                   <div key={categoryName} className="space-y-1">
-                    {/* 分类标题（可点击批量选择） */}
-                    <button
-                      onClick={() => handleToggleCategory(categoryName)}
-                      className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-[hsl(var(--accent))] transition-colors"
-                      aria-label={`${checkState === "all" ? "取消选择" : "选择"}分类 ${displayName} 下所有 Skill`}
-                    >
-                      {checkState === "all" ? (
-                        <CheckSquare
-                          size={14}
-                          className="text-[hsl(var(--primary))] shrink-0"
-                        />
-                      ) : checkState === "some" ? (
-                        <Minus
-                          size={14}
-                          className="text-[hsl(var(--primary))] shrink-0"
-                        />
-                      ) : (
-                        <Square
-                          size={14}
-                          className="text-[hsl(var(--muted-foreground))] shrink-0"
-                        />
-                      )}
-                      <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
-                        {displayName}
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] px-1.5 py-0 ml-auto"
+                    {/* 分类标题：左侧折叠箭头，右侧勾选区 */}
+                    <div className="flex items-center gap-1 rounded-md hover:bg-[hsl(var(--accent))] transition-colors">
+                      {/* 折叠/展开箭头 */}
+                      <button
+                        onClick={() => toggleCategoryExpand(categoryName)}
+                        className="flex items-center justify-center w-6 h-7 shrink-0 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                        aria-label={
+                          expandedCategories.has(categoryName)
+                            ? `折叠 ${displayName}`
+                            : `展开 ${displayName}`
+                        }
                       >
-                        {categorySkills.length}
-                      </Badge>
-                    </button>
+                        {expandedCategories.has(categoryName) ? (
+                          <ChevronDown size={13} />
+                        ) : (
+                          <ChevronRight size={13} />
+                        )}
+                      </button>
+                      {/* 勾选区（点击批量选择该分类） */}
+                      <button
+                        onClick={() => handleToggleCategory(categoryName)}
+                        className="flex items-center gap-2 flex-1 py-1.5 pr-2"
+                        aria-label={`${checkState === "all" ? "取消选择" : "选择"}分类 ${displayName} 下所有 Skill`}
+                      >
+                        {checkState === "all" ? (
+                          <CheckSquare
+                            size={14}
+                            className="text-[hsl(var(--primary))] shrink-0"
+                          />
+                        ) : checkState === "some" ? (
+                          <Minus
+                            size={14}
+                            className="text-[hsl(var(--primary))] shrink-0"
+                          />
+                        ) : (
+                          <Square
+                            size={14}
+                            className="text-[hsl(var(--muted-foreground))] shrink-0"
+                          />
+                        )}
+                        <span className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+                          {displayName}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1.5 py-0 ml-auto"
+                        >
+                          {categorySkills.length}
+                        </Badge>
+                      </button>
+                    </div>
 
-                    {/* 分类下的 Skill 列表 */}
-                    <div className="pl-2 space-y-0.5">
+                    {/* 分类下的 Skill 列表（折叠时隐藏） */}
+                    <div
+                      className={`pl-2 space-y-0.5 ${expandedCategories.has(categoryName) ? "" : "hidden"}`}
+                    >
                       {categorySkills.map((skill) => {
                         const isSelected = selectedSkillIds.includes(skill.id);
                         return (
