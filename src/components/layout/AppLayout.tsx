@@ -26,9 +26,9 @@ export default function AppLayout() {
     fetchSkills();
   }, [fetchSkills]);
 
-  // 预览面板仅在 Skill 浏览页（/）下生效，切换到其他页面自动关闭
+  // 预览面板仅在 Skill 浏览页（/）下生效，且始终打开不可关闭
   const isSkillBrowsePage = location.pathname === "/";
-  const showPreview = isSkillBrowsePage && (previewOpen || !!selectedSkillId);
+  const showPreview = isSkillBrowsePage;
 
   // 全局键盘快捷键
   useEffect(() => {

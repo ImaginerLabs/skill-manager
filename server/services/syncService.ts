@@ -195,20 +195,19 @@ export async function validateSyncPath(
 }
 
 /**
- * 执行同步推送 — 将选定的 Skill 文件扁平化复制到启用的同步目标目录
+ * 执行同步推送 — 将选定的 Skill 整个文件夹复制到启用的同步目标目录
  *
  * 流程：
  * 1. 获取启用的同步目标列表
- * 2. 对每个目标目录，将选定 Skill 文件复制过去（扁平化，不保留分类子目录）
- * 3. 同名文件默认覆盖，在结果中标注 overwritten
- * 4. 文件写入使用 safeWrite（原子写入 + 并发安全）
+ * 2. 从 meta.filePath（如 "coding/explore/SKILL.md"）推导出 Skill 文件夹路径
+ * 3. 将整个 Skill 文件夹复制到 {target.path}/{folderName}/
+ * 4. 同名文件夹默认覆盖，在结果中标注 overwritten
  */
 export async function pushSync(
   skillIds: string[],
   targetIds?: string[],
 ): Promise<SyncResult> {
   const { getSkillMeta, getSkillsRoot } = await import("./skillService.js");
-  const { safeWrite } = await import("../utils/fileUtils.js");
 
   if (skillIds.length === 0) {
     throw AppError.validationError("至少选择一个 Skill");
@@ -235,7 +234,7 @@ export async function pushSync(
   let overwrittenCount = 0;
   let failedCount = 0;
 
-  // 对每个 Skill × 每个目标执行复制
+  // 对每个 Skill × 每个目标执行文件夹复制
   for (const skillId of skillIds) {
     const meta = getSkillMeta(skillId);
     if (!meta) {
@@ -253,30 +252,28 @@ export async function pushSync(
       continue;
     }
 
-    const sourceFile = path.join(skillsRoot, meta.filePath);
-    // 扁平化：只取文件名，不保留分类子目录
-    const fileName = path.basename(meta.filePath);
+    // 从 meta.filePath（如 "coding/explore/SKILL.md"）推导出 Skill 文件夹
+    const skillRelDir = path.dirname(meta.filePath); // "coding/explore"
+    const sourceDir = path.join(skillsRoot, skillRelDir); // 源文件夹绝对路径
+    const folderName = path.basename(skillRelDir); // "explore" — Skill 文件夹名
 
     for (const target of targets) {
-      const destFile = path.join(target.path, fileName);
+      const destDir = path.join(target.path, folderName);
       try {
-        // 确保目标目录存在
+        // 确保目标父目录存在
         await fs.ensureDir(target.path);
 
-        // 检查目标文件是否已存在（判断是否为覆盖）
-        const existed = await fs.pathExists(destFile);
+        // 检查目标文件夹是否已存在（判断是否为覆盖）
+        const existed = await fs.pathExists(destDir);
 
-        // 读取源文件内容
-        const content = await fs.readFile(sourceFile, "utf-8");
-
-        // 使用 safeWrite 原子写入
-        await safeWrite(destFile, content);
+        // 复制整个 Skill 文件夹（overwrite: true 覆盖已有内容）
+        await fs.copy(sourceDir, destDir, { overwrite: true });
 
         if (existed) {
           details.push({
             skillId: meta.id,
             skillName: meta.name,
-            targetPath: destFile,
+            targetPath: destDir,
             status: "overwritten",
           });
           overwrittenCount++;
@@ -284,7 +281,7 @@ export async function pushSync(
           details.push({
             skillId: meta.id,
             skillName: meta.name,
-            targetPath: destFile,
+            targetPath: destDir,
             status: "success",
           });
           successCount++;
@@ -293,7 +290,7 @@ export async function pushSync(
         details.push({
           skillId: meta.id,
           skillName: meta.name,
-          targetPath: destFile,
+          targetPath: destDir,
           status: "failed",
           error: err instanceof Error ? err.message : String(err),
         });

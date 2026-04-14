@@ -12,7 +12,6 @@ import {
   Pencil,
   Tag,
   User,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,7 +21,6 @@ import remarkGfm from "remark-gfm";
 import type { SkillFull } from "../../../shared/types";
 import { fetchSkillById } from "../../lib/api";
 import { useSkillStore } from "../../stores/skill-store";
-import { useUIStore } from "../../stores/ui-store";
 import { toast } from "../shared/toast-store";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -34,8 +32,7 @@ import MetadataEditor from "./MetadataEditor";
  * 外部 Skill（readonly: true）显示来源信息区域，元数据编辑和删除按钮禁用
  */
 export default function SkillPreview() {
-  const { selectedSkillId, fetchSkills, selectSkill } = useSkillStore();
-  const { setPreviewOpen } = useUIStore();
+  const { selectedSkillId, fetchSkills } = useSkillStore();
   const { t } = useTranslation();
   const [skill, setSkill] = useState<SkillFull | null>(null);
   const [loading, setLoading] = useState(false);
@@ -168,19 +165,6 @@ export default function SkillPreview() {
             disabled={isReadonly}
           >
             <Pencil size={14} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => {
-              selectSkill(null);
-              setPreviewOpen(false);
-            }}
-            title="关闭预览"
-            aria-label="关闭预览"
-          >
-            <X size={14} />
           </Button>
         </div>
 

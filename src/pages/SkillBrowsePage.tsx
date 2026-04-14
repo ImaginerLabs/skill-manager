@@ -32,6 +32,8 @@ export default function SkillBrowsePage() {
     viewMode,
     setViewMode,
     selectedCategory,
+    selectSkill,
+    selectedSkillId,
   } = useSkillStore();
   const { t } = useTranslation();
 
@@ -50,10 +52,19 @@ export default function SkillBrowsePage() {
     : skills;
   const filteredSkills = useSkillSearch(categoryFiltered, searchQuery);
 
+  const { selectSkill, selectedSkillId } = useSkillStore();
+
   // 首次加载时获取 Skill 列表
   useEffect(() => {
     fetchSkills();
   }, [fetchSkills]);
+
+  // skills 加载完成后，若未选中任何 skill，自动选中第一个
+  useEffect(() => {
+    if (!loading && skills.length > 0 && !selectedSkillId) {
+      selectSkill(skills[0].id);
+    }
+  }, [loading, skills, selectedSkillId, selectSkill]);
 
   // 冷启动检测：skills 为空时检测 CodeBuddy 目录
   useEffect(() => {

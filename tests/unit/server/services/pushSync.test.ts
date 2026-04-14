@@ -4,9 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock 依赖
 vi.mock("fs-extra");
-vi.mock("../../../../server/utils/fileUtils", () => ({
-  safeWrite: vi.fn(),
-}));
 vi.mock("../../../../server/utils/yamlUtils", () => ({
   readYaml: vi.fn(),
   writeYaml: vi.fn(),
@@ -22,7 +19,6 @@ import {
   getSkillsRoot,
 } from "../../../../server/services/skillService";
 import { pushSync } from "../../../../server/services/syncService";
-import { safeWrite } from "../../../../server/utils/fileUtils";
 import { readYaml } from "../../../../server/utils/yamlUtils";
 
 describe("syncService — pushSync", () => {
@@ -53,24 +49,21 @@ describe("syncService — pushSync", () => {
     vi.mocked(getSkillsRoot).mockReturnValue("/mock/skills");
     vi.mocked(fs.ensureDir).mockResolvedValue(undefined);
     vi.mocked(fs.pathExists).mockResolvedValue(false as never);
-    vi.mocked(fs.readFile).mockResolvedValue(
-      "---\nname: Test\n---\ncontent" as never,
-    );
-    vi.mocked(safeWrite).mockResolvedValue(undefined);
+    vi.mocked(fs.copy).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("成功同步单个 Skill 到启用的目标", async () => {
+  it("成功同步单个 Skill 文件夹到启用的目标", async () => {
     vi.mocked(getSkillMeta).mockReturnValue({
       id: "skill-1",
       name: "Skill 1",
       description: "desc",
       category: "general",
       tags: [],
-      filePath: "general/skill-1.md",
+      filePath: "general/skill-1/SKILL.md",
       fileSize: 100,
       lastModified: new Date().toISOString(),
     });
@@ -84,19 +77,23 @@ describe("syncService — pushSync", () => {
     expect(result.details[0].skillName).toBe("Skill 1");
     expect(result.details[0].status).toBe("success");
     expect(result.details[0].targetPath).toBe(
-      path.join("/tmp/project-a/skills", "skill-1.md"),
+      path.join("/tmp/project-a/skills", "skill-1"),
     );
-    expect(safeWrite).toHaveBeenCalledOnce();
+    expect(fs.copy).toHaveBeenCalledWith(
+      path.join("/mock/skills", "general/skill-1"),
+      path.join("/tmp/project-a/skills", "skill-1"),
+      { overwrite: true },
+    );
   });
 
-  it("目标文件已存在时标记为 overwritten", async () => {
+  it("目标文件夹已存在时标记为 overwritten", async () => {
     vi.mocked(getSkillMeta).mockReturnValue({
       id: "skill-1",
       name: "Skill 1",
       description: "desc",
       category: "general",
       tags: [],
-      filePath: "general/skill-1.md",
+      filePath: "general/skill-1/SKILL.md",
       fileSize: 100,
       lastModified: new Date().toISOString(),
     });
@@ -167,7 +164,7 @@ describe("syncService — pushSync", () => {
       description: "desc",
       category: "general",
       tags: [],
-      filePath: "general/skill-1.md",
+      filePath: "general/skill-1/SKILL.md",
       fileSize: 100,
       lastModified: new Date().toISOString(),
     });
@@ -176,21 +173,21 @@ describe("syncService — pushSync", () => {
 
     expect(result.total).toBe(1);
     expect(result.details[0].targetPath).toContain("project-b");
-    expect(safeWrite).toHaveBeenCalledOnce();
+    expect(fs.copy).toHaveBeenCalledOnce();
   });
 
-  it("文件写入失败时记录错误", async () => {
+  it("文件夹复制失败时记录错误", async () => {
     vi.mocked(getSkillMeta).mockReturnValue({
       id: "skill-1",
       name: "Skill 1",
       description: "desc",
       category: "general",
       tags: [],
-      filePath: "general/skill-1.md",
+      filePath: "general/skill-1/SKILL.md",
       fileSize: 100,
       lastModified: new Date().toISOString(),
     });
-    vi.mocked(fs.readFile).mockRejectedValue(
+    vi.mocked(fs.copy).mockRejectedValue(
       new Error("EACCES: permission denied"),
     );
 
@@ -230,7 +227,7 @@ describe("syncService — pushSync", () => {
           description: "",
           category: "cat",
           tags: [],
-          filePath: "cat/s1.md",
+          filePath: "cat/s1/SKILL.md",
           fileSize: 50,
           lastModified: new Date().toISOString(),
         };
@@ -242,7 +239,7 @@ describe("syncService — pushSync", () => {
           description: "",
           category: "cat",
           tags: [],
-          filePath: "cat/s2.md",
+          filePath: "cat/s2/SKILL.md",
           fileSize: 60,
           lastModified: new Date().toISOString(),
         };
@@ -255,6 +252,6 @@ describe("syncService — pushSync", () => {
     // 2 skills × 2 targets = 4 details
     expect(result.total).toBe(4);
     expect(result.success).toBe(4);
-    expect(safeWrite).toHaveBeenCalledTimes(4);
+    expect(fs.copy).toHaveBeenCalledTimes(4);
   });
 });
