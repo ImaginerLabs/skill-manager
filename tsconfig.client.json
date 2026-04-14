@@ -20,8 +20,8 @@
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "composite": true
   },
-  "include": ["src", "shared"],
-  "composite": true
+  "include": ["src", "shared"]
 }
