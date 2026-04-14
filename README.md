@@ -146,6 +146,15 @@ npm run test:e2e      # 运行 E2E 测试
 npm run test:all      # 运行全部测试
 ```
 
+### 代码质量
+
+项目采用严格的代码质量检查机制：
+
+- **ESLint**: 配置了完整的 React Hooks 规则，确保依赖项正确声明
+- **TypeScript**: 严格模式启用，包含完整的 Node.js 类型定义支持
+- **Prettier**: 统一的代码格式化标准
+- **Husky**: 提交前自动检查，确保代码质量
+
 ### Git Hooks
 
 项目使用 **Husky** 管理 Git 钩子，确保代码质量和文档同步：

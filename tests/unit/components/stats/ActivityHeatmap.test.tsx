@@ -7,9 +7,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import ActivityHeatmap, {
-  getHeatColor,
-} from "../../../../src/components/stats/ActivityHeatmap";
+import ActivityHeatmap from "../../../../src/components/stats/ActivityHeatmap";
+import { getHeatColor } from "../../../../src/components/stats/heatmap-utils";
 
 // ─────────────────────────────────────────────
 // Mock api.fetchActivityStats

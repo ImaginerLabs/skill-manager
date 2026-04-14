@@ -68,7 +68,7 @@ test.describe("Epic 2: 导入页面 — 基础功能", () => {
     await expect(pathInput).toBeVisible();
     await expect(pathInput).toHaveValue("~/.codebuddy/skills");
 
-    const scanBtn = page.locator("button", { hasText: "扫描" });
+    const scanBtn = page.getByRole("button", { name: "搜索", exact: true });
     await expect(scanBtn).toBeVisible();
     await expect(scanBtn).toBeEnabled();
   });
@@ -94,7 +94,7 @@ test.describe("Epic 2: 导入页面 — 基础功能", () => {
     await pathInput.clear();
     await pathInput.fill("/non-existent-path-xyz-12345");
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
 
     await expect(page.locator("text=扫描失败")).toBeVisible({
       timeout: 10000,
@@ -103,9 +103,10 @@ test.describe("Epic 2: 导入页面 — 基础功能", () => {
 
   // Story 2.1 AC-3: loading 状态
   test("点击扫描按钮时显示 loading 状态", async ({ page }) => {
-    const scanBtn = page.locator("button", { hasText: /扫描/ });
+    const scanBtn = page.getByRole("button", { name: "搜索", exact: true });
     await scanBtn.click();
-    await expect(scanBtn).toBeDisabled();
+    // loading 时按钮文本变为 "加载中..." 且禁用
+    await expect(page.getByRole("button", { name: /加载中/ })).toBeDisabled();
   });
 
   // Story 2.1 AC-2: 空目录提示
@@ -118,7 +119,7 @@ test.describe("Epic 2: 导入页面 — 基础功能", () => {
       });
     });
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(page.locator("text=目录为空")).toBeVisible({ timeout: 5000 });
   });
 
@@ -134,7 +135,7 @@ test.describe("Epic 2: 导入页面 — 基础功能", () => {
       });
     });
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(page.locator("text=broken-skill")).toBeVisible({
       timeout: 5000,
     });
@@ -173,7 +174,7 @@ test.describe("Epic 2: 导入页面 — 勾选与分类", () => {
       });
     });
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
 
     await expect(page.locator("text=Mock Skill 1")).toBeVisible({
       timeout: 5000,
@@ -206,7 +207,7 @@ test.describe("Epic 2: 导入页面 — 勾选与分类", () => {
       });
     });
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(page.locator("text=Skill A")).toBeVisible({ timeout: 5000 });
 
     // 用标签文本定位 Skill A 的 checkbox，避免索引错误
@@ -241,7 +242,7 @@ test.describe("Epic 2: 导入页面 — 勾选与分类", () => {
       });
     });
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(page.locator("text=Skill A")).toBeVisible({ timeout: 5000 });
 
     // 点击全选 checkbox（第一个）
@@ -270,7 +271,7 @@ test.describe("Epic 2: 导入页面 — 勾选与分类", () => {
       });
     });
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(page.locator("text=Skill A")).toBeVisible({ timeout: 5000 });
 
     // 未选文件时导入按钮禁用（按钮文本为 "确认 (0)"）
@@ -296,7 +297,7 @@ test.describe("Epic 2: 导入页面 — 勾选与分类", () => {
       });
     });
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(page.locator("text=Skill A")).toBeVisible({ timeout: 5000 });
 
     // 用标签文本定位 Skill A 的 checkbox
@@ -329,7 +330,7 @@ test.describe("Epic 2: 导入页面 — 勾选与分类", () => {
       });
     });
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(page.locator("text=Skill A")).toBeVisible({ timeout: 5000 });
 
     // 用标签文本定位 Skill A 的 checkbox
@@ -394,7 +395,7 @@ test.describe("Epic 2: 导入页面 — 勾选与分类", () => {
       });
     });
 
-    await page.locator("button", { hasText: "扫描" }).click();
+    await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(page.locator("text=Skill A")).toBeVisible({ timeout: 5000 });
 
     // 勾选 + 选分类（用标签文本定位 Skill A 的 checkbox）
@@ -484,8 +485,10 @@ test.describe("Epic 2: 冷启动引导", () => {
 
     await page.goto("/");
 
-    await expect(page.locator("text=暂无 Skill")).toBeVisible({
-      timeout: 10000,
-    });
+    await expect(page.getByRole("heading", { name: "暂无 Skill" })).toBeVisible(
+      {
+        timeout: 10000,
+      },
+    );
   });
 });

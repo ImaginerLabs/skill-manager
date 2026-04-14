@@ -6,11 +6,13 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   },
   "references": [
     { "path": "./tsconfig.client.json" },
     { "path": "./tsconfig.server.json" }
   ],
+  "include": ["*.ts"],
   "files": []
 }

@@ -99,7 +99,7 @@ export default function BundleManager() {
     } finally {
       setCategoriesLoading(false);
     }
-  }, [fetchBundles]);
+  }, [fetchBundles, t]);
 
   useEffect(() => {
     loadData();

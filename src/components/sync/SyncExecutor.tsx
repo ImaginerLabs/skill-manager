@@ -54,7 +54,7 @@ export default function SyncExecutor() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("sync.syncFailed"));
     }
-  }, [executePush]);
+  }, [executePush, t]);
 
   const handleReset = useCallback(() => {
     setSyncStatus("idle");

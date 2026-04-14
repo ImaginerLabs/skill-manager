@@ -72,7 +72,7 @@ export default function WorkflowPage() {
         );
       }
     },
-    [loadWorkflow],
+    [loadWorkflow, t],
   );
 
   const handleDelete = useCallback(
@@ -109,7 +109,7 @@ export default function WorkflowPage() {
         5000,
       );
     },
-    [fetchSkills, loadWorkflows],
+    [fetchSkills, loadWorkflows, t],
   );
 
   /** 保存成功后回调：切换回列表模式并刷新 */

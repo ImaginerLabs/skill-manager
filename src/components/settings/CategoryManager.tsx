@@ -91,7 +91,7 @@ export default function CategoryManager() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadData();

@@ -11,16 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-
-/**
- * 根据修改次数返回对应的热力颜色
- */
-export function getHeatColor(count: number): string {
-  if (count === 0) return "hsl(var(--muted))";
-  if (count <= 2) return "hsl(var(--primary) / 0.3)";
-  if (count <= 5) return "hsl(var(--primary) / 0.6)";
-  return "hsl(var(--primary))";
-}
+import { getHeatColor } from "./heatmap-utils";
 
 /**
  * 活跃度热力图 — 12 列（12 周）× 7 行（周一至周日）= 84 个豆点

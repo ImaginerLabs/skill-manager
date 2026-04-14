@@ -145,6 +145,15 @@ npm run test:e2e      # Run E2E tests
 npm run test:all      # Run all tests
 ```
 
+### Code Quality
+
+The project enforces strict code quality standards:
+
+- **ESLint**: Full React Hooks rules configuration ensuring proper dependency declarations
+- **TypeScript**: Strict mode enabled with complete Node.js type definitions support
+- **Prettier**: Unified code formatting standards
+- **Husky**: Pre-commit checks to ensure code quality
+
 ### Git Hooks
 
 The project uses **Husky** to manage Git hooks, ensuring code quality and documentation sync:

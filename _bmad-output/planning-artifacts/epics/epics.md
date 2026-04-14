@@ -13,6 +13,7 @@ inputDocuments:
   - "prd-category-settings-and-bundles.md"
   - "prd-epic6-ux-polish.md"
   - "prd-sidebar-redesign.md"
+  - "prd-external-skills-hub.md"
 ---
 
 # Skill Manager - Epic Breakdown
@@ -354,6 +355,15 @@ Sidebar 从单纯导航工具升级为「系统状态仪表盘」：分类目录
 **依赖:** Epic 1（CategoryTree 组件已就绪）、Epic 5（SettingsPage Tab 结构已就绪）
 **Stories:** 7.1（分类导航迁移至二级 Sidebar）、7.2（Sidebar 系统状态面板 + 活跃度热力图）、7.3（分类管理 Tab 滑块动画）
 
+### Epic 8: External Skills Hub（外部技能仓库聚合与管理）
+
+系统从「个人 Skill 资产管理」扩展为「技能生态聚合平台」：通过配置文件驱动的多仓库注册机制，自动从 GitHub 仓库（首批：`anthropics/skills`）拉取高质量 Skill，经过白名单/黑名单筛选后同步到项目 `skills/` 目录。外部 Skill 带有来源标签（可点击跳转 GitHub 仓库），以只读模式管理。预设分类从 4 个扩展到 9 个，所有出厂分类聚合为默认套件。GitHub Action 定时自动同步并创建 PR。
+**FRs:** FR-EH-01 ~ FR-EH-36（来源：prd-external-skills-hub.md）
+**NFRs:** NFR-EH-01 ~ NFR-EH-11
+**ARs:** AD-31（仓库配置 Schema）、AD-32（.gitignore）、AD-33（GitHub Action 权限）、AD-34（同步脚本）、AD-35（Frontmatter 解析扩展）、AD-36（只读错误处理）、AD-37（前端来源标签 UI）、AD-38（分类扩展）、AD-39（默认套件自动创建）、AD-40（边界情况容错）
+**依赖:** Epic 1（SkillCard/SkillPreview 组件已就绪）、Epic 5（bundleService 已就绪）
+**Stories:** 8.1（SkillMeta 类型扩展与 Schema 更新）、8.2（仓库配置文件与解析）、8.3（预设分类扩展与默认套件）、8.4（后端只读保护）、8.5（前端来源标签与只读标识）、8.6（同步脚本核心逻辑）、8.7（GitHub Action 工作流）
+
 ### 依赖关系
 
 ```
@@ -371,6 +381,8 @@ Sidebar 从单纯导航工具升级为「系统状态仪表盘」：分类目录
         Epic 6 (UX 体验全面优化)
             │
         Epic 7 (Sidebar 重设计)
+            │
+        Epic 8 (External Skills Hub)
 ```
 
 - Epic 0 → Epic 1：线性依赖
@@ -378,6 +390,8 @@ Sidebar 从单纯导航工具升级为「系统状态仪表盘」：分类目录
 - Epic 1.5 → Epic 2/3/4：钻石依赖（2/3/4 之间无相互依赖，但都依赖 Epic 1 的 Skill CRUD API 和分类 API，且受益于 Epic 1.5 的组件基础设施）
 - Epic 5 → Epic 7：Epic 7 的 Story 7.3 依赖 Epic 5 已完成的 SettingsPage Tab 结构
 - Epic 1 → Epic 7：Epic 7 的 Story 7.1 依赖 Epic 1 已完成的 CategoryTree 组件
+- Epic 1 + Epic 5 → Epic 8：Epic 8 依赖 Epic 1 的 SkillCard/SkillPreview 组件和 Epic 5 的 bundleService
+- **Epic 8 可与 Epic 7 并行**：两者无相互依赖，都依赖 Epic 1 和 Epic 5
 - **建议执行顺序**：Epic 2 当前 in-progress，Epic 1.5 可在 Epic 2 完成后立即执行，也可与 Epic 2 剩余 stories 并行（UI 优化不影响后端逻辑）
 - 单人开发时按 Epic 2 → 1.5 → 3 → 4 串行；多人可 Epic 2 + 1.5 并行
 
@@ -1917,3 +1931,433 @@ So that 交互体验更流畅、更现代，与整体 UI 风格保持一致。
 - 滑块背景色：`bg-[hsl(var(--background))]`，容器背景：`bg-[hsl(var(--muted))]`
 - 本 Story 不依赖后端，纯前端改动
 - 来源：FR-S3-1 ~ FR-S3-5，NFR-S4，AD-25
+
+---
+
+## Epic 8: External Skills Hub（外部技能仓库聚合与管理）
+
+**目标：** 系统从「个人 Skill 资产管理」扩展为「技能生态聚合平台」。通过配置文件驱动的多仓库注册机制，自动从 GitHub 仓库拉取高质量 Skill，经过白名单/黑名单筛选后同步到项目 `skills/` 目录。外部 Skill 带有来源标签（可点击跳转 GitHub 仓库），以只读模式管理。预设分类从 4 个扩展到 9 个，所有出厂分类聚合为默认套件。GitHub Action 定时自动同步并创建 PR。
+
+**依赖：** Epic 1（SkillCard/SkillPreview 组件已就绪）、Epic 5（bundleService 已就绪）
+**FRs:** FR-EH-01 ~ FR-EH-36
+**NFRs:** NFR-EH-01 ~ NFR-EH-11
+**ARs:** AD-31 ~ AD-40
+
+---
+
+### Story 8.1: SkillMeta 类型扩展与 Schema 更新
+
+As a 开发者,
+I want SkillMeta 类型和 Schema 支持外部 Skill 的来源元数据和只读标识,
+So that 后续的前后端功能可以基于稳定的类型定义构建。
+
+**Acceptance Criteria:**
+
+**Given** `shared/types.ts` 中 `SkillMeta` 接口尚无外部 Skill 相关字段
+**When** 完成本 Story
+**Then** `SkillMeta` 新增 4 个可选字段：
+
+- `source?: string` — 来源仓库 ID
+- `sourceUrl?: string` — Skill 在 GitHub 上的 URL
+- `sourceRepo?: string` — 仓库 GitHub URL
+- `readonly?: boolean` — 是否只读
+
+**Given** `shared/types.ts` 中尚无仓库配置相关类型
+**When** 完成本 Story
+**Then** 新增 `RepoSkillMapping` 接口（`name: string`、`targetCategory: string`）
+**And** 新增 `ExternalRepository` 接口（`id`、`name`、`url`、`branch`、`skillsPath`、`enabled`、`include: RepoSkillMapping[]`、`exclude: string[]`）
+**And** 新增 `RepositoriesConfig` 接口（`repositories: ExternalRepository[]`）
+
+**Given** `shared/schemas.ts` 中 `SkillMetaSchema` 尚无外部 Skill 字段
+**When** 完成本 Story
+**Then** `SkillMetaSchema` 新增 `source`（`z.string().optional()`）、`sourceUrl`（`z.string().url().optional()`）、`sourceRepo`（`z.string().url().optional()`）、`readonly`（`z.boolean().optional()`）
+**And** 新增 `RepoSkillMappingSchema`、`ExternalRepositorySchema`、`RepositoriesConfigSchema`
+**And** `ExternalRepositorySchema` 的 `url` 字段校验为合法 GitHub HTTPS URL（`z.string().regex(/^https:\/\/github\.com\//)`)
+
+**Given** `shared/constants.ts` 中尚无 `SKILL_READONLY` 错误码
+**When** 完成本 Story
+**Then** 新增 `SKILL_READONLY: "SKILL_READONLY"` 错误码常量
+
+**Given** `server/utils/frontmatterParser.ts` 尚未解析外部 Skill 字段
+**When** 完成本 Story
+**Then** `frontmatterParser` 解析 Frontmatter 时提取 `source`、`sourceUrl`、`sourceRepo`、`readonly` 字段
+**And** 缺失字段返回 `undefined`（不报错）
+
+**Given** 本 Story 完成
+**When** 运行测试
+**Then** TypeScript 编译零错误（`tsc --noEmit`）
+**And** Schema 校验有单元测试（合法/非法 URL、可选字段缺失）
+**And** `frontmatterParser` 新字段解析有单元测试
+**And** 所有测试通过
+
+**Technical Notes:**
+
+- 修改 `shared/types.ts`：`SkillMeta` 追加 4 个可选字段；新增 `RepoSkillMapping`、`ExternalRepository`、`RepositoriesConfig` 接口
+- 修改 `shared/schemas.ts`：`SkillMetaSchema` 追加 4 个可选字段；新增 3 个 Schema
+- 修改 `shared/constants.ts`：新增 `SKILL_READONLY` 错误码
+- 修改 `server/utils/frontmatterParser.ts`：解析新字段
+- 来源：FR-EH-34 ~ FR-EH-36，AD-31，AD-35
+
+---
+
+### Story 8.2: 仓库配置文件与解析
+
+As a 开发者,
+I want 系统能读取和校验 `config/repositories.yaml` 仓库注册配置文件,
+So that 同步脚本和后端服务可以获取外部仓库的注册信息。
+
+**Acceptance Criteria:**
+
+**Given** `config/repositories.yaml` 不存在
+**When** 完成本 Story
+**Then** 创建 `config/repositories.yaml`，包含 `anthropic-official` 仓库配置
+**And** `include` 白名单包含 9 个通用 Skill（pdf、docx、xlsx、pptx、mcp-builder、webapp-testing、skill-creator、frontend-design、claude-api）
+**And** `exclude` 黑名单包含 8 个非通用 Skill（slack-gif-creator、algorithmic-art、brand-guidelines、canvas-design、theme-factory、internal-comms、web-artifacts-builder、doc-coauthoring）
+**And** 每个 `include` 项包含 `name` 和 `targetCategory`
+
+**Given** `.gitignore` 中尚无 `skill-repos/` 规则
+**When** 完成本 Story
+**Then** `.gitignore` 新增 `skill-repos/` 忽略规则
+
+**Given** 系统启动时
+**When** `config/repositories.yaml` 存在且格式正确
+**Then** 系统正确解析并返回 `RepositoriesConfig` 对象
+
+**Given** 系统启动时
+**When** `config/repositories.yaml` 不存在
+**Then** 系统正常启动，返回空数组（`{ repositories: [] }`）（FR-EH-05）
+
+**Given** 系统启动时
+**When** `config/repositories.yaml` 格式错误（YAML 语法错误或 Schema 校验失败）
+**Then** 记录错误日志，返回空数组，不阻塞系统启动（FR-EH-06）
+
+**Given** 本 Story 完成
+**When** 运行测试
+**Then** 配置文件解析有单元测试（正常解析、文件不存在、格式错误）
+**And** Zod Schema 校验有单元测试（合法配置、非法 URL、缺失必填字段）
+**And** 所有测试通过
+
+**Technical Notes:**
+
+- 新建 `config/repositories.yaml`（内容参考 PRD 中的配置示例）
+- 修改 `.gitignore`：新增 `skill-repos/` 规则
+- 新建或修改配置读取逻辑（可复用 `server/utils/` 中的 YAML 读取模式）
+- 使用 Story 8.1 中定义的 `RepositoriesConfigSchema` 进行 Zod 校验
+- 来源：FR-EH-01 ~ FR-EH-06，AD-31，AD-32，AD-40（场景 1/2/8/9）
+
+---
+
+### Story 8.3: 预设分类扩展与默认套件
+
+As a 用户,
+I want 系统的预设分类从 4 个扩展到 9 个，并自动创建包含所有出厂分类的默认套件,
+So that 外部 Skill 有合适的分类归属，且我开箱即用就有完整的技能组合。
+
+**Acceptance Criteria:**
+
+**Given** `config/categories.yaml` 当前只有 4 个分类
+**When** 完成本 Story
+**Then** `categories.yaml` 包含 9 个分类：
+
+- 原有：`coding`、`writing`、`devops`、`workflows`
+- 新增：`document-processing`（文档处理）、`dev-tools`（开发工具）、`testing`（测试）、`design`（设计）、`meta-skills`（元技能）
+  **And** 每个新增分类有准确的 `displayName` 和 `description`
+
+**Given** 现有 Skill 已归属到原有 4 个分类
+**When** 分类扩展完成
+**Then** 现有 Skill 的分类归属不变（FR-EH-29）
+
+**Given** 系统启动时 `settings.yaml` 中不存在 `name: "default"` 的套件
+**When** `bundleService` 初始化
+**Then** 自动创建默认套件：`name: "default"`、`displayName: "默认套件"`、`description: "包含所有出厂预设分类的完整技能组合"`
+**And** 默认套件的 `categoryNames` 包含所有 9 个出厂分类
+**And** 默认套件的 `id` 固定为 `bundle-default`
+
+**Given** 系统启动时 `settings.yaml` 中已存在 `name: "default"` 的套件
+**When** `bundleService` 初始化
+**Then** 不重复创建（幂等操作）
+
+**Given** 用户尝试删除默认套件
+**When** 调用 `removeBundle` API
+**Then** 返回 400 错误，提示"默认套件不可删除"
+
+**Given** 用户编辑默认套件（修改包含的分类）
+**When** 调用 `updateBundle` API
+**Then** 正常更新（默认套件可编辑）
+
+**Given** 本 Story 完成
+**When** 运行测试
+**Then** `ensureDefaultBundle()` 有单元测试（首次创建、幂等跳过）
+**And** `removeBundle` 默认套件删除保护有单元测试
+**And** 分类扩展后现有 Skill 归属不变有集成测试
+**And** 所有测试通过
+
+**Technical Notes:**
+
+- 修改 `config/categories.yaml`：追加 5 个新分类
+- 修改 `server/services/bundleService.ts`：新增 `ensureDefaultBundle()` 函数 + `removeBundle` 默认套件删除保护
+- 修改 `server/index.ts`：启动序列新增 `ensureDefaultBundle()` 调用（在 `initializeSkillCache()` 之后）
+- `DEFAULT_BUNDLE_CATEGORIES` 常量包含 9 个分类名
+- 来源：FR-EH-27 ~ FR-EH-33，AD-38，AD-39
+
+---
+
+### Story 8.4: 后端只读保护
+
+As a 用户,
+I want 外部 Skill 在后端被保护为只读，任何编辑/删除/移动操作都被拦截,
+So that 外部 Skill 不会被误操作修改，下次同步时能正常覆盖更新。
+
+**Acceptance Criteria:**
+
+**Given** `server/types/errors.ts` 中尚无 `skillReadonly` 工厂方法
+**When** 完成本 Story
+**Then** `AppError` 新增 `skillReadonly(skillId: string)` 静态工厂方法
+**And** 返回 `new AppError(403, "SKILL_READONLY", \`Skill "${skillId}" is readonly (external skill)\`)`
+
+**Given** 用户调用 `PUT /api/skills/:id/meta` 更新一个 `readonly: true` 的 Skill
+**When** 后端 `updateSkillMeta` 执行
+**Then** 在 `skillNotFound` 检查之后、实际更新之前，检测 `meta.readonly`
+**And** 为 `true` 时抛出 `AppError.skillReadonly(id)`，返回 403 + `SKILL_READONLY`
+
+**Given** 用户调用 `DELETE /api/skills/:id` 删除一个 `readonly: true` 的 Skill
+**When** 后端 `deleteSkill` 执行
+**Then** 检测 `meta.readonly`，为 `true` 时返回 403 + `SKILL_READONLY`
+
+**Given** 用户调用 `PATCH /api/skills/:id/move` 移动一个 `readonly: true` 的 Skill
+**When** 后端 `moveSkillToCategory` 执行
+**Then** 检测 `meta.readonly`，为 `true` 时返回 403 + `SKILL_READONLY`
+
+**Given** 用户对非只读 Skill 执行编辑/删除/移动操作
+**When** 后端执行
+**Then** 正常处理，不受影响
+
+**Given** 本 Story 完成
+**When** 运行测试
+**Then** `AppError.skillReadonly()` 工厂方法有单元测试
+**And** `updateSkillMeta` 只读拦截有单元测试（readonly=true → 403，readonly=false → 正常）
+**And** `deleteSkill` 只读拦截有单元测试
+**And** `moveSkillToCategory` 只读拦截有单元测试
+**And** 所有测试通过
+
+**Technical Notes:**
+
+- 修改 `server/types/errors.ts`：新增 `AppError.skillReadonly()` 静态方法
+- 修改 `server/services/skillService.ts`：`updateSkillMeta`、`deleteSkill`、`moveSkillToCategory` 三个函数新增 `if (meta.readonly) throw AppError.skillReadonly(id)` 检查
+- `readonly` 检查必须在 `skillNotFound` 检查之后（先确认资源存在，再检查权限）
+- 来源：FR-EH-21 ~ FR-EH-26，AD-36
+
+---
+
+### Story 8.5: 前端来源标签与只读标识
+
+As a 用户,
+I want 在 Skill 卡片和预览面板中看到外部 Skill 的来源标签和只读标识,
+So that 我能清楚区分本地 Skill 和外部 Skill，并能快速跳转到 GitHub 仓库查看原始内容。
+
+**Acceptance Criteria:**
+
+**Given** 一个外部 Skill（`source` 字段有值）在 SkillCard 中渲染
+**When** 卡片渲染完成
+**Then** 卡片右上角显示来源标签：GitHub 图标（`lucide-react` 的 `Github`）+ 仓库显示名称
+**And** 来源标签使用 `muted` 色调，不抢占卡片主要信息的视觉焦点（FR-EH-20）
+
+**Given** 用户点击 SkillCard 上的来源标签
+**When** 点击事件触发
+**Then** 浏览器新标签页打开 `sourceUrl`（`target="_blank"` + `rel="noopener noreferrer"`）
+**And** 点击事件不冒泡到卡片点击事件（`e.stopPropagation()`）
+
+**Given** 一个外部 Skill（`readonly: true`）在 SkillCard 中渲染
+**When** 卡片渲染完成
+**Then** 卡片左下角显示锁图标（`lucide-react` 的 `Lock`）
+**And** 锁图标 Tooltip 提示"外部 Skill（只读）"
+
+**Given** 一个本地 Skill（无 `source` 字段）在 SkillCard 中渲染
+**When** 卡片渲染完成
+**Then** 不显示来源标签和锁图标
+
+**Given** 用户在 SkillPreview 中查看一个外部 Skill
+**When** 预览面板渲染完成
+**Then** 底部显示来源信息区域：仓库名称、仓库链接、"在 GitHub 上查看"按钮
+**And** "在 GitHub 上查看"按钮点击后新标签页打开 `sourceUrl` 或 `sourceRepo`
+
+**Given** 用户在 SkillPreview 中查看一个外部 Skill
+**When** 元数据编辑区域渲染
+**Then** 分类、标签、描述等编辑控件显示为禁用状态
+**And** Tooltip 提示"外部 Skill 为只读，由上游仓库管理"
+
+**Given** 用户在 SkillPreview 中查看一个外部 Skill
+**When** 删除按钮渲染
+**Then** 删除按钮显示为禁用状态
+**And** Tooltip 提示"外部 Skill 不可删除"
+
+**Given** 来源标签渲染
+**When** 性能测量
+**Then** 额外渲染开销 < 5ms（NFR-EH-02）
+
+**Given** 本 Story 完成
+**When** 运行测试
+**Then** SkillCard 来源标签渲染有组件测试（有 source → 显示，无 source → 不显示）
+**And** SkillCard 锁图标渲染有组件测试（readonly=true → 显示，readonly=false → 不显示）
+**And** 来源标签点击跳转有组件测试（`window.open` 调用验证）
+**And** SkillPreview 来源信息区域有组件测试
+**And** SkillPreview 只读禁用有组件测试
+**And** 所有测试通过
+
+**Technical Notes:**
+
+- 修改 `src/components/skills/SkillCard.tsx`：新增来源 Badge（右上角）+ 锁图标（左下角）
+- 修改 `src/components/skills/SkillPreview.tsx`：底部新增来源信息区域 + 元数据编辑区域 `disabled` 逻辑 + 删除按钮 `disabled` 逻辑
+- 新增 i18n 翻译键：`skill.viewOnGithub`、`skill.sourceInfo`、`skill.readonlyTooltip`、`skill.readonlyEditTooltip`、`skill.readonlyDeleteTooltip`
+- 使用 `lucide-react` 的 `Github`、`Lock`、`ExternalLink` 图标
+- 来源：FR-EH-16 ~ FR-EH-26，NFR-EH-02，NFR-EH-09，AD-37
+
+---
+
+### Story 8.6: 同步脚本核心逻辑
+
+As a 开发者,
+I want 一个 Node.js 同步脚本能自动从外部仓库拉取、筛选、复制 Skill 并注入来源元数据,
+So that GitHub Action 可以调用此脚本完成自动化同步。
+
+**Acceptance Criteria:**
+
+**Given** `scripts/sync-external-skills.mjs` 不存在
+**When** 完成本 Story
+**Then** 创建 `scripts/sync-external-skills.mjs`，ESM 格式
+
+**Given** 同步脚本执行
+**When** 读取 `config/repositories.yaml`
+**Then** 正确解析配置，遍历所有 `enabled: true` 的仓库
+
+**Given** 同步脚本处理一个仓库（首次）
+**When** `skill-repos/{id}/` 目录不存在
+**Then** 执行 `git clone {url} --branch {branch} --single-branch skill-repos/{id}/`
+**And** clone 超时设置为 60 秒
+
+**Given** 同步脚本处理一个仓库（增量）
+**When** `skill-repos/{id}/` 目录已存在
+**Then** 执行 `git -C skill-repos/{id}/ pull`
+
+**Given** 同步脚本完成仓库拉取
+**When** 根据 `include`/`exclude` 规则筛选
+**Then** 黑名单优先级高于白名单
+**And** `exclude` 中的 Skill 即使在 `include` 中也被排除
+
+**Given** 筛选后的 Skill 列表
+**When** 复制到 `skills/{targetCategory}/{skillName}/`
+**Then** 完整复制 Skill 目录（包含所有文件）
+**And** 目标分类目录不存在时自动创建（`fs.mkdirSync({ recursive: true })`）
+
+**Given** 复制完成的 Skill
+**When** 注入 Frontmatter 来源元数据
+**Then** 在 Skill 的主 `.md` 文件（`SKILL.md` 或目录下第一个 `.md` 文件）的 Frontmatter 中注入：
+
+- `source: "{repoId}"`
+- `sourceUrl: "{url}/tree/{branch}/{skillsPath}/{skillName}"`
+- `sourceRepo: "{url}"`
+- `readonly: true`
+  **And** 已有 Frontmatter 时追加字段，无 Frontmatter 时创建
+
+**Given** 本地 `skills/` 目录中已存在同名 Skill（非外部来源）
+**When** 同步脚本检测到 ID 冲突
+**Then** 跳过该外部 Skill，本地 Skill 优先
+**And** 记录 `[sync] WARN: Skill "{name}" already exists locally, skipping external version`
+
+**Given** 仓库 clone/pull 失败（网络错误或超时）
+**When** 同步脚本处理该仓库
+**Then** 记录错误日志，跳过该仓库，继续处理其他仓库
+**And** 保留上次同步的 Skill 不删除
+
+**Given** `include` 中的 Skill 在仓库中不存在
+**When** 同步脚本筛选
+**Then** 记录警告日志，跳过该 Skill
+
+**Given** Skill 文件格式异常（无 Frontmatter）
+**When** 同步脚本注入元数据
+**Then** 记录警告，仍复制文件（降级为无来源元数据）
+
+**Given** 同步脚本使用 `--dry-run` 参数执行
+**When** 脚本运行
+**Then** 仅输出将要执行的操作（clone/pull/copy/inject），不实际执行文件操作
+
+**Given** 同步脚本执行完成
+**When** 输出变更摘要
+**Then** 列出新增/更新/跳过的 Skill 列表
+**And** 全部成功或部分失败 → exit 0
+**And** 脚本自身未捕获异常 → exit 1
+
+**Given** 本 Story 完成
+**When** 运行测试
+**Then** 配置读取有单元测试
+**And** `include`/`exclude` 筛选逻辑有单元测试（白名单、黑名单优先、空列表）
+**And** Frontmatter 注入逻辑有单元测试（有 Frontmatter、无 Frontmatter、注入失败降级）
+**And** ID 冲突检测有单元测试
+**And** `--dry-run` 模式有单元测试
+**And** 所有测试通过
+
+**Technical Notes:**
+
+- 新建 `scripts/sync-external-skills.mjs`（ESM 格式）
+- 使用 `child_process.execSync` 执行 git 命令，设置 `timeout: 60000`
+- 所有日志使用 `[sync]` 前缀
+- 同步脚本**永远不删除** `skills/` 目录下的现有文件——只新增或覆盖
+- ID 冲突检测：检查目标路径是否已存在且 Frontmatter 中无 `source` 字段（说明是本地 Skill）
+- 来源：FR-EH-07 ~ FR-EH-15，NFR-EH-01，NFR-EH-10，NFR-EH-11，AD-34，AD-40
+
+---
+
+### Story 8.7: GitHub Action 工作流
+
+As a 开发者,
+I want 一个 GitHub Action 工作流能定时触发同步脚本并自动创建 PR,
+So that 外部 Skill 能自动保持与上游仓库的同步，且变更经过人工审核后才合并。
+
+**Acceptance Criteria:**
+
+**Given** `.github/workflows/sync-external-skills.yml` 不存在
+**When** 完成本 Story
+**Then** 创建 `.github/workflows/sync-external-skills.yml`
+
+**Given** GitHub Action 工作流配置
+**When** 查看触发条件
+**Then** 支持 cron 定时触发（`0 0 * * *`，每日 UTC 00:00）
+**And** 支持 `workflow_dispatch` 手动触发
+
+**Given** GitHub Action 执行
+**When** 工作流运行
+**Then** 执行以下步骤：
+
+1. `actions/checkout@v4` — 检出代码
+2. `actions/setup-node@v4` — 安装 Node.js 18
+3. `npm ci` — 安装依赖
+4. `node scripts/sync-external-skills.mjs` — 执行同步脚本
+5. `peter-evans/create-pull-request@v6` — 如有变更则创建 PR
+
+**Given** 同步脚本执行后有文件变更
+**When** 创建 PR
+**Then** PR 标题格式：`chore: sync external skills`
+**And** PR 分支名：`chore/sync-external-skills`
+**And** PR 描述包含变更摘要
+**And** commit message：`chore: sync external skills`
+
+**Given** 同步脚本执行后无文件变更
+**When** PR 创建步骤执行
+**Then** 不创建 PR（`peter-evans/create-pull-request` 默认行为）
+
+**Given** GitHub Action 工作流权限
+**When** 查看权限配置
+**Then** 包含 `contents: write`（提交变更）和 `pull-requests: write`（创建 PR）
+
+**Given** 本 Story 完成
+**When** 查看工作流文件
+**Then** YAML 语法正确，可被 GitHub Actions 正确解析
+**And** 所有 Action 版本使用主版本号锁定（`@v4`、`@v6`）
+
+**Technical Notes:**
+
+- 新建 `.github/workflows/sync-external-skills.yml`
+- 使用 `peter-evans/create-pull-request@v6` 创建 PR
+- 工作流需要 `permissions: contents: write, pull-requests: write`
+- 本 Story 不需要单元测试（YAML 配置文件），但需要人工验证 YAML 语法正确性
+- 来源：FR-EH-07 ~ FR-EH-15，AD-33
