@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-14T10:51:00
+last_updated: 2026-04-14T15:50:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -273,12 +273,12 @@ development_status:
   # Dependencies: Epic 1（SkillCard/SkillPreview 组件已就绪）、Epic 5（bundleService 已就绪）
   # FRs: FR-EH-01 ~ FR-EH-36 | NFRs: NFR-EH-01 ~ NFR-EH-11 | ARs: AD-31 ~ AD-40
   # ============================================================
-  epic-8: backlog
-  8-1-skillmeta-type-extension-and-schema-update: backlog
-  8-2-repository-config-file-and-parsing: backlog
-  8-3-preset-category-expansion-and-default-bundle: backlog
-  8-4-backend-readonly-protection: backlog
-  8-5-frontend-source-label-and-readonly-indicator: backlog
-  8-6-sync-script-core-logic: backlog
-  8-7-github-action-workflow: backlog
-  epic-8-retrospective: optional
+  epic-8: done
+  8-1-skillmeta-type-extension-and-schema-update: done
+  8-2-repository-config-file-and-parsing: done
+  8-3-preset-category-expansion-and-default-bundle: done
+  8-4-backend-readonly-protection: done
+  8-5-frontend-source-label-and-readonly-indicator: done
+  8-6-sync-script-core-logic: done
+  8-7-github-action-workflow: done
+  epic-8-retrospective: done

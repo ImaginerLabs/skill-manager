@@ -1,7 +1,7 @@
 ---
 project_name: skill-package
 user_name: Alex
-date: "2026-04-13"
+date: "2026-04-14"
 sections_completed:
   [
     "technology_stack",
@@ -13,7 +13,7 @@ sections_completed:
     "anti_patterns",
   ]
 status: "complete"
-rule_count: 58
+rule_count: 72
 optimized_for_llm: true
 ---
 
@@ -103,6 +103,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
   - `AppError.bundleNotFound(id)` — 404，code: `BUNDLE_NOT_FOUND`
   - `AppError.bundleLimitExceeded()` — 400，code: `BUNDLE_LIMIT_EXCEEDED`
   - `AppError.bundleNameDuplicate(name)` — 400，code: `BUNDLE_NAME_DUPLICATE`
+  - `AppError.skillReadonly(skillId)` — 403，code: `SKILL_READONLY`（外部 Skill 只读保护）
 - **统一响应格式**- **统一响应格式**：所有 API 响应遵循 `ApiResponse<T>` 类型 — 成功时 `{ success: true, data: T }`，失败时 `{ success: false, error: { code, message, details? } }`
 - **错误码常量**：使用 `shared/constants.ts` 中的 `ErrorCode` 常量，**禁止**硬编码错误码字符串
 - **全局错误中间件**：`errorHandler` 中间件在所有路由之后注册，自动将 `AppError` 转为标准 JSON 响应
@@ -116,6 +117,8 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - **路径预设 Schema**：`PathPresetCreateSchema`（POST /api/path-presets）、`PathPresetUpdateSchema`（PUT /api/path-presets/:id）
 - **`AppConfigSchema`**：包含 `pathPresets: z.array(PathPresetSchema).default([])`，旧版 settings.yaml 无此字段时自动默认 `[]`（向后兼容）
 - **套件 Schema**：`SkillBundleCreateSchema`（POST /api/skill-bundles）、`SkillBundleUpdateSchema`（PUT /api/skill-bundles/:id）；`SkillBundleSchema` 含 `categoryNames.max(20)` 约束；`AppConfigSchema` 追加 `skillBundles: z.array(SkillBundleSchema).max(50).default([])` 和 `activeCategories: z.array(z.string()).default([])`，旧版 settings.yaml 无此字段时自动默认 `[]`（向后兼容）
+- **外部仓库配置 Schema**：`RepoSkillMappingSchema`（`{ name, targetCategory }`）、`ExternalRepositorySchema`（`{ id, name, url, branch, skillsPath, enabled, include, exclude }`，`url` 校验 `z.string().regex(/^https:\/\/github\.com\//)`）、`RepositoriesConfigSchema`（`{ repositories: ExternalRepository[] }`）
+- **SkillMeta 外部字段**：`SkillMetaSchema` 追加 `source: z.string().optional()`、`sourceUrl: z.string().url().optional()`、`sourceRepo: z.string().url().optional()`、`readonly: z.boolean().optional()`
 
 ### 安全规则
 
@@ -224,13 +227,13 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - `workflowService.ts` — 工作流 CRUD + Markdown 解析（`getWorkflows`、`getWorkflowById`、`createWorkflow`、`updateWorkflow`、`deleteWorkflow`、`previewWorkflow`）；`getWorkflowById` 返回结构化 `steps`，前端无需自行解析 Markdown
 - `pathPresetService.ts` — 路径预设 CRUD（`getPathPresets`、`addPathPreset`、`updatePathPreset`、`removePathPreset`）；复用 `syncService` 的 `readSettings`/`writeSettings` 模式
 - `pathConfigService.ts` — 路径配置辅助服务（职责与 `pathPresetService` 有重叠，待后续 Epic 明确边界）
-- `bundleService.ts` — 套件 CRUD + 激活（`getBundles`、`addBundle`、`updateBundle`、`removeBundle`、`applyBundle`）；`getBundles()` 注入 `brokenCategoryNames` 字段（与 `categoryService.getCategories()` 做 diff）；`applyBundle` 以覆盖模式写入 `activeCategories`，跳过已删除分类引用，返回 `{ applied: string[], skipped: string[] }`
+- `bundleService.ts` — 套件 CRUD + 激活（`getBundles`、`addBundle`、`updateBundle`、`removeBundle`、`applyBundle`、`ensureDefaultBundle`）；`getBundles()` 注入 `brokenCategoryNames` 字段（与 `categoryService.getCategories()` 做 diff）；`applyBundle` 以覆盖模式写入 `activeCategories`，跳过已删除分类引用，返回 `{ applied: string[], skipped: string[] }`；`ensureDefaultBundle()` 在服务启动时自动创建/更新默认套件（`bundle-default`），包含全部 9 个出厂分类
 
 ### 工具函数列表
 
 - `server/utils/pathUtils.ts` — `normalizePath`、`slugify`、`isSubPath`、`resolveSkillPath`、`getRelativePath`、`getSkillId`
 - `server/utils/fileUtils.ts` — `atomicWrite`、`safeWrite`、`_clearMutexCache`（测试用）
-- `server/utils/frontmatterParser.ts` — `parseFrontmatter`（读文件版）、`parseRawFrontmatter`（不读文件版，用于导入场景）
+- `server/utils/frontmatterParser.ts` — `parseFrontmatter`（读文件版）、`parseRawFrontmatter`（不读文件版，用于导入场景）；解析外部 Skill 字段：`source`、`sourceUrl`、`sourceRepo`、`readonly`（`readonly` 严格 `=== true` 检查）
 - `server/utils/yamlUtils.ts` — YAML 配置文件读写工具（基于 `js-yaml`）
 
 ---
@@ -325,8 +328,15 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 
 ### 配置文件格式
 
-- **YAML 配置**：`config/categories.yaml`（分类）、`config/settings.yaml`（设置）
+- **YAML 配置**：`config/categories.yaml`（分类）、`config/settings.yaml`（设置）、`config/repositories.yaml`（外部仓库注册）
+- **`config/repositories.yaml`**：配置文件驱动的多仓库注册机制，定义外部 Skill 仓库列表（首批：`anthropics/skills`）；每个仓库含 `id`、`name`、`url`、`branch`、`skillsPath`、`enabled`、`include`（白名单映射）、`exclude`（黑名单 glob）
 - **环境变量**：`.env.example` 提供模板，端口配置 `PORT=3001`（开发）/ `3000`（生产）
+
+### 外部 Skill 同步脚本与 CI
+
+- **同步脚本**：`scripts/sync-external-skills.mjs` — 从 GitHub 仓库拉取外部 Skill，经白名单/黑名单筛选后同步到 `skills/` 目录；自动注入 Frontmatter 字段（`source`、`sourceUrl`、`sourceRepo`、`readonly: true`）
+- **GitHub Action**：`.github/workflows/sync-external-skills.yml` — 定时触发（cron）+ 手动触发（`workflow_dispatch`），执行同步脚本并自动创建 PR
+- **Git 隔离**：克隆的仓库缓存在 `skill-repos/` 目录（已加入 `.gitignore`），不提交到版本库
 
 ---
 
@@ -368,8 +378,11 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 
 - Skill 文件存放在 `skills/` 目录，按分类子目录组织
 - 每个 Skill 是一个 `.md` 文件，包含 YAML Frontmatter（name、description、category、tags 等）
+- **外部 Skill 额外 Frontmatter 字段**：`source`（仓库 ID）、`sourceUrl`（GitHub 文件 URL）、`sourceRepo`（仓库 URL）、`readonly: true`
 - Skill ID 由文件名 slug 化生成（`slugify()` 函数：去 .md 后缀、特殊字符转连字符、保留中文、小写化）
 - 启动时异步扫描 `skills/` 目录并缓存到内存 Map
+- **预设分类（9 个）**：`coding`、`writing`、`devops`、`workflows`、`document-processing`、`dev-tools`、`testing`、`design`、`meta-skills`
+- **默认套件**：`bundle-default`（固定 ID，不可删除），包含全部 9 个出厂分类；服务启动时由 `ensureDefaultBundle()` 自动创建/更新
 
 ---
 
@@ -390,6 +403,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - ❌ **不要使用亮色主题样式** — 本项目仅暗色主题
 - ❌ **不要在组件/store 中直接调用 `fetch`** — 必须通过 `src/lib/api.ts` 封装
 - ❌ **不要直接调用 `fs.writeFile()`** — 使用 `safeWrite()` 保证原子性和并发安全
+- ❌ **不要对外部 Skill（`readonly: true`）执行编辑/删除/移动操作** — 后端 `skillService` 的 `deleteSkill`、`moveSkillToCategory`、`updateSkillMeta` 均有 `readonly` 拦截，前端 SkillPreview 禁用编辑/删除按钮
 
 ### 容易遗漏的细节
 
@@ -436,6 +450,17 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - ⚠️ `toast.undoable()` 乐观删除模式：立即更新 UI → 5 秒后调用后端 → 失败时恢复；`pendingDeleteIds` Set 防重复触发；`timerMap` 统一管理定时器
 - ⚠️ `SyncStatusIndicator` 相对时间每 30 秒刷新（`setInterval`），组件卸载时必须 `clearInterval`
 - ⚠️ `pathConfigService.ts` 与 `pathPresetService.ts` 职责有重叠，后续 Epic 需明确边界
+- ⚠️ **外部 Skill 类型扩展**：`SkillMeta` 新增 4 个可选字段 `source?`、`sourceUrl?`、`sourceRepo?`、`readonly?`，所有字段均为 `optional`，现有 Skill 无这些字段时解析不报错（向后兼容）
+- ⚠️ `readonly` 字段严格检查 `data.readonly === true`（不是 truthy），避免 `"true"` 字符串误判
+- ⚠️ `AppError.skillReadonly(skillId)` 返回 **403**，code: `SKILL_READONLY`；在 `skillService` 的 `deleteSkill`、`moveSkillToCategory`、`updateSkillMeta` 三处拦截
+- ⚠️ `SkillCard` 外部 Skill 显示来源 Badge（`GitBranch` 图标 + `source` 文本，可点击跳转 `sourceUrl`）+ 右下角锁图标（`Lock`）
+- ⚠️ `SkillPreview` 外部 Skill 显示来源信息区域（仓库名 + GitHub 链接），元数据编辑和删除按钮 `disabled`
+- ⚠️ `config/repositories.yaml` 是外部仓库注册的唯一配置来源；`ExternalRepositorySchema.url` 使用 GitHub regex 校验（`/^https:\/\/github\.com\//`），`SkillMeta.sourceUrl`/`sourceRepo` 使用通用 `z.string().url()` 校验
+- ⚠️ `scripts/sync-external-skills.mjs` 同步脚本：克隆/拉取仓库到 `skill-repos/`，按 `include` 白名单映射分类，按 `exclude` 黑名单过滤，自动注入 Frontmatter（`source`、`sourceUrl`、`sourceRepo`、`readonly: true`）
+- ⚠️ `skill-repos/` 目录已加入 `.gitignore`，不提交到版本库
+- ⚠️ `.github/workflows/sync-external-skills.yml` 支持 cron 定时触发 + `workflow_dispatch` 手动触发，执行同步脚本后自动创建 PR
+- ⚠️ 默认套件 `bundle-default`（固定 ID）不可删除（`removeBundle` 中拦截）；`ensureDefaultBundle()` 在服务启动时自动创建或更新，`categoryNames` 始终同步为全部 9 个出厂分类
+- ⚠️ 预设分类从 4 个扩展到 9 个：新增 `document-processing`、`dev-tools`、`testing`、`design`、`meta-skills`
 
 ---
 
@@ -454,4 +479,4 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - 定期审查移除过时规则
 - 保持精简，聚焦于 LLM 容易遗漏的细节
 
-最后更新：2026-04-13（Epic 7 Sidebar 重设计完成后更新）
+最后更新：2026-04-14（Epic 8 External Skills Hub 完成后更新）
