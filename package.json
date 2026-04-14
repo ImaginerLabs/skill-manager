@@ -30,9 +30,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "release:patch": "HUSKY=0 npm version patch && npm run changelog && git add CHANGELOG.md && HUSKY=0 git commit --amend --no-edit --no-verify",
-    "release:minor": "HUSKY=0 npm version minor && npm run changelog && git add CHANGELOG.md && HUSKY=0 git commit --amend --no-edit --no-verify",
-    "release:major": "HUSKY=0 npm version major && npm run changelog && git add CHANGELOG.md && HUSKY=0 git commit --amend --no-edit --no-verify"
+    "release:patch": "HUSKY=0 npm version patch --force && npm run changelog && git add CHANGELOG.md && HUSKY=0 git commit --amend --no-edit --no-verify",
+    "release:minor": "HUSKY=0 npm version minor --force && npm run changelog && git add CHANGELOG.md && HUSKY=0 git commit --amend --no-edit --no-verify",
+    "release:major": "HUSKY=0 npm version major --force && npm run changelog && git add CHANGELOG.md && HUSKY=0 git commit --amend --no-edit --no-verify"
   },
   "keywords": [
     "skill",

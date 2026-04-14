@@ -34,6 +34,9 @@ npm-debug.log*
 # Knowledge base (third-party skill repos)
 knowledge/
 
+# External skill repos (cloned by sync script, not committed)
+skill-repos/
+
 # Test artifacts
 test-results/
 playwright-report/
