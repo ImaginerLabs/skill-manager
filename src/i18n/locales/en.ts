@@ -289,6 +289,17 @@ export const en = {
     workflowBadge: "Workflow",
   },
 
+  // ── External Skill Source Label ───────────────────────────
+  skill: {
+    viewOnGithub: "View on GitHub",
+    sourceInfo: "Source Info",
+    sourceRepo: "Repository",
+    readonlyTooltip: "External Skill (Read-only)",
+    readonlyEditTooltip:
+      "External Skills are read-only, managed by upstream repository",
+    readonlyDeleteTooltip: "External Skills cannot be deleted",
+  },
+
   // ── Error Code Mapping ────────────────────────────────────
   errors: {
     SKILL_NOT_FOUND: "Skill not found",

@@ -5,14 +5,17 @@
 import {
   Clock,
   Copy,
+  ExternalLink,
   FileText,
   GitBranch,
+  Lock,
   Pencil,
   Tag,
   User,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
@@ -28,10 +31,12 @@ import MetadataEditor from "./MetadataEditor";
 
 /**
  * Skill 预览面板内容 — 展示 Frontmatter 元数据 + Markdown 渲染
+ * 外部 Skill（readonly: true）显示来源信息区域，元数据编辑和删除按钮禁用
  */
 export default function SkillPreview() {
   const { selectedSkillId, fetchSkills, selectSkill } = useSkillStore();
   const { setPreviewOpen } = useUIStore();
+  const { t } = useTranslation();
   const [skill, setSkill] = useState<SkillFull | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,8 +115,13 @@ export default function SkillPreview() {
 
   if (!skill) return null;
 
+  const isReadonly = skill.readonly === true;
+
   return (
-    <ScrollArea data-testid="preview-panel" className="h-full">
+    <ScrollArea
+      data-testid="preview-panel"
+      className="h-full [&_[data-radix-scroll-area-viewport]>div]:!block"
+    >
       {/* Frontmatter 元数据头部 */}
       <div className="p-4 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
         {/* 标题 */}
@@ -124,6 +134,16 @@ export default function SkillPreview() {
           <h2 className="text-lg font-bold font-[var(--font-code)] text-[hsl(var(--foreground))] flex-1">
             {skill.name}
           </h2>
+          {/* 只读锁图标 */}
+          {isReadonly && (
+            <span
+              data-testid="preview-readonly-lock"
+              className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))]"
+              title={t("skill.readonlyTooltip")}
+            >
+              <Lock size={14} />
+            </span>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -137,13 +157,15 @@ export default function SkillPreview() {
               className={copied ? "text-[hsl(var(--primary))]" : ""}
             />
           </Button>
+          {/* 编辑按钮：只读时禁用 */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setShowEditor(!showEditor)}
+            onClick={() => !isReadonly && setShowEditor(!showEditor)}
             className="h-8 w-8"
-            title="编辑元数据"
+            title={isReadonly ? t("skill.readonlyEditTooltip") : "编辑元数据"}
             aria-label="编辑元数据"
+            disabled={isReadonly}
           >
             <Pencil size={14} />
           </Button>
@@ -207,10 +229,47 @@ export default function SkillPreview() {
             </Badge>
           ))}
         </div>
+
+        {/* 来源信息区域（仅外部 Skill 显示） */}
+        {skill.source && (
+          <div
+            data-testid="preview-source-info"
+            className="mt-3 pt-3 border-t border-[hsl(var(--border))] flex items-center gap-2 flex-wrap"
+          >
+            <ExternalLink
+              size={14}
+              className="text-[hsl(var(--muted-foreground))] shrink-0"
+            />
+            <span className="text-xs text-[hsl(var(--muted-foreground))]">
+              {t("skill.sourceRepo")}:
+            </span>
+            {skill.sourceRepo && (
+              <a
+                href={skill.sourceRepo}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[hsl(var(--primary))] hover:underline truncate max-w-[180px]"
+              >
+                {skill.source}
+              </a>
+            )}
+            {(skill.sourceUrl || skill.sourceRepo) && (
+              <a
+                href={skill.sourceUrl ?? skill.sourceRepo}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors"
+              >
+                <ExternalLink size={12} />
+                {t("skill.viewOnGithub")}
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 元数据编辑器 */}
-      {showEditor && (
+      {/* 元数据编辑器（只读时不渲染） */}
+      {showEditor && !isReadonly && (
         <MetadataEditor
           skill={skill}
           onClose={() => setShowEditor(false)}
@@ -228,7 +287,7 @@ export default function SkillPreview() {
       {/* Markdown 渲染内容 */}
       <div
         data-testid="skill-content"
-        className="p-4 prose prose-invert prose-sm max-w-none prose-headings:font-[var(--font-code)] prose-code:font-[var(--font-code)] prose-pre:bg-[hsl(var(--background))] prose-pre:border prose-pre:border-[hsl(var(--border))]"
+        className="p-4 w-full min-w-0 prose prose-invert prose-sm max-w-none break-words prose-headings:font-[var(--font-code)] prose-headings:break-words prose-code:font-[var(--font-code)] prose-code:break-all prose-pre:bg-[hsl(var(--background))] prose-pre:border prose-pre:border-[hsl(var(--border))] prose-pre:overflow-x-auto prose-pre:max-w-full prose-table:block prose-table:overflow-x-auto prose-table:max-w-full prose-img:max-w-full"
       >
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}

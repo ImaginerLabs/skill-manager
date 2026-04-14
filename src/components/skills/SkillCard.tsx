@@ -2,7 +2,7 @@
 // components/skills/SkillCard.tsx — Skill 卡片组件
 // ============================================================
 
-import { FileText, GitBranch } from "lucide-react";
+import { ExternalLink, FileText, GitBranch, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SkillMeta } from "../../../shared/types";
 import { useSkillStore } from "../../stores/skill-store";
@@ -15,6 +15,7 @@ interface SkillCardProps {
 /**
  * Skill 卡片 — 展示名称、描述（截断 2 行）、分类标签、类型标识
  * 支持 hover/selected/focused 三种交互状态
+ * 外部 Skill 显示来源标签（右上角）和锁图标（左下角）
  */
 export default function SkillCard({ skill }: SkillCardProps) {
   const { selectedSkillId, selectSkill } = useSkillStore();
@@ -25,14 +26,32 @@ export default function SkillCard({ skill }: SkillCardProps) {
     <button
       data-testid="skill-card"
       onClick={() => selectSkill(skill.id)}
-      className={`group w-full text-left rounded-lg border p-4 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[hsl(var(--primary))] ${
+      className={`group relative w-full text-left rounded-lg border p-4 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[hsl(var(--primary))] ${
         isSelected
           ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))/0.08] shadow-[0_0_0_1px_hsl(var(--primary))]"
           : "border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-[hsl(var(--muted))] hover:bg-[hsl(var(--surface-elevated))]"
       }`}
     >
+      {/* 来源标签（右上角，仅外部 Skill 显示） */}
+      {skill.source && skill.sourceUrl && (
+        <a
+          data-testid="skill-source-badge"
+          href={skill.sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))/0.5] hover:bg-[hsl(var(--muted))] transition-colors"
+          title={t("skill.viewOnGithub")}
+        >
+          <ExternalLink size={10} />
+          <span className="max-w-[80px] truncate">{skill.source}</span>
+        </a>
+      )}
+
       {/* 标题行 */}
-      <div className="flex items-start gap-2 mb-2">
+      <div
+        className={`flex items-start gap-2 mb-2 ${skill.source ? "pr-20" : ""}`}
+      >
         {skill.type === "workflow" ? (
           <GitBranch
             size={16}
@@ -92,6 +111,17 @@ export default function SkillCard({ skill }: SkillCardProps) {
         {skill.tags.length > 2 && (
           <span className="text-[10px] text-[hsl(var(--muted-foreground))]">
             +{skill.tags.length - 2}
+          </span>
+        )}
+
+        {/* 锁图标（左下角，仅只读 Skill 显示） */}
+        {skill.readonly && (
+          <span
+            data-testid="skill-readonly-lock"
+            className="ml-auto flex items-center gap-1 text-[10px] text-[hsl(var(--muted-foreground))]"
+            title={t("skill.readonlyTooltip")}
+          >
+            <Lock size={10} />
           </span>
         )}
       </div>

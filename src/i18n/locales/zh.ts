@@ -283,6 +283,16 @@ export const zh = {
     workflowBadge: "工作流",
   },
 
+  // ── 外部 Skill 来源标签 ───────────────────────────────────
+  skill: {
+    viewOnGithub: "在 GitHub 上查看",
+    sourceInfo: "来源信息",
+    sourceRepo: "仓库",
+    readonlyTooltip: "外部 Skill（只读）",
+    readonlyEditTooltip: "外部 Skill 为只读，由上游仓库管理",
+    readonlyDeleteTooltip: "外部 Skill 不可删除",
+  },
+
   // ── 错误码映射 ────────────────────────────────────────────
   errors: {
     SKILL_NOT_FOUND: "Skill 不存在",
