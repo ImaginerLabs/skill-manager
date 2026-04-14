@@ -26,9 +26,11 @@ import {
   getSkillFull,
   getSkillMeta,
   initializeSkillCache,
+  moveSkillToCategory,
   refreshSkillCache,
   updateSkillMeta,
 } from "../../../../server/services/skillService";
+import { AppError } from "../../../../server/types/errors";
 import { parseFrontmatter } from "../../../../server/utils/frontmatterParser";
 
 // Mock 数据
@@ -295,6 +297,127 @@ describe("skillService", () => {
       await expect(
         updateSkillMeta("nonexistent", { name: "新名称" }),
       ).rejects.toThrow("未找到");
+    });
+
+    it("只读 Skill 更新时抛出 403 SKILL_READONLY 错误", async () => {
+      const readonlyMeta = { ...mockSkillMeta, readonly: true };
+      vi.mocked(fs.pathExists).mockResolvedValue(true as never);
+      vi.mocked(fs.ensureDir).mockResolvedValue(undefined as never);
+      vi.mocked(fs.readdir).mockResolvedValueOnce([
+        { name: "test.md", isDirectory: () => false, isFile: () => true },
+      ] as never);
+      vi.mocked(parseFrontmatter).mockResolvedValue({
+        success: true,
+        meta: readonlyMeta,
+        content: "",
+        rawContent: "",
+      });
+
+      await initializeSkillCache();
+
+      await expect(
+        updateSkillMeta("react-extract", { name: "新名称" }),
+      ).rejects.toMatchObject({ code: "SKILL_READONLY", statusCode: 403 });
+    });
+  });
+
+  describe("deleteSkill — 只读保护", () => {
+    it("只读 Skill 删除时抛出 403 SKILL_READONLY 错误", async () => {
+      const readonlyMeta = { ...mockSkillMeta, readonly: true };
+      vi.mocked(fs.pathExists).mockResolvedValue(true as never);
+      vi.mocked(fs.ensureDir).mockResolvedValue(undefined as never);
+      vi.mocked(fs.readdir).mockResolvedValueOnce([
+        { name: "test.md", isDirectory: () => false, isFile: () => true },
+      ] as never);
+      vi.mocked(parseFrontmatter).mockResolvedValue({
+        success: true,
+        meta: readonlyMeta,
+        content: "",
+        rawContent: "",
+      });
+
+      await initializeSkillCache();
+
+      await expect(deleteSkill("react-extract")).rejects.toMatchObject({
+        code: "SKILL_READONLY",
+        statusCode: 403,
+      });
+    });
+
+    it("非只读 Skill 删除正常执行", async () => {
+      vi.mocked(fs.pathExists).mockResolvedValue(true as never);
+      vi.mocked(fs.ensureDir).mockResolvedValue(undefined as never);
+      vi.mocked(fs.readdir).mockResolvedValueOnce([
+        { name: "test.md", isDirectory: () => false, isFile: () => true },
+      ] as never);
+      vi.mocked(parseFrontmatter).mockResolvedValue({
+        success: true,
+        meta: mockSkillMeta,
+        content: "",
+        rawContent: "",
+      });
+
+      await initializeSkillCache();
+      vi.mocked(fs.remove).mockResolvedValue(undefined as never);
+
+      await expect(deleteSkill("react-extract")).resolves.toBeUndefined();
+    });
+  });
+
+  describe("moveSkillToCategory — 只读保护", () => {
+    it("只读 Skill 移动时抛出 403 SKILL_READONLY 错误", async () => {
+      const readonlyMeta = { ...mockSkillMeta, readonly: true };
+      vi.mocked(fs.pathExists).mockResolvedValue(true as never);
+      vi.mocked(fs.ensureDir).mockResolvedValue(undefined as never);
+      vi.mocked(fs.readdir).mockResolvedValueOnce([
+        { name: "test.md", isDirectory: () => false, isFile: () => true },
+      ] as never);
+      vi.mocked(parseFrontmatter).mockResolvedValue({
+        success: true,
+        meta: readonlyMeta,
+        content: "",
+        rawContent: "",
+      });
+
+      await initializeSkillCache();
+
+      await expect(
+        moveSkillToCategory("react-extract", "writing"),
+      ).rejects.toMatchObject({ code: "SKILL_READONLY", statusCode: 403 });
+    });
+
+    it("非只读 Skill 移动正常执行", async () => {
+      vi.mocked(fs.pathExists).mockResolvedValue(true as never);
+      vi.mocked(fs.ensureDir).mockResolvedValue(undefined as never);
+      vi.mocked(fs.readdir).mockResolvedValueOnce([
+        { name: "test.md", isDirectory: () => false, isFile: () => true },
+      ] as never);
+      vi.mocked(parseFrontmatter).mockResolvedValue({
+        success: true,
+        meta: mockSkillMeta,
+        content: "",
+        rawContent: "",
+      });
+
+      await initializeSkillCache();
+
+      const rawContent =
+        "---\nname: React 组件抽取\ndescription: 描述\ncategory: coding\ntags: []\n---\n\n# Content";
+      vi.mocked(fs.readFile).mockResolvedValue(rawContent as never);
+      vi.mocked(fs.writeFile).mockResolvedValue(undefined as never);
+      vi.mocked(fs.remove).mockResolvedValue(undefined as never);
+
+      const result = await moveSkillToCategory("react-extract", "writing");
+      expect(result.category).toBe("writing");
+    });
+  });
+
+  describe("AppError.skillReadonly 工厂方法", () => {
+    it("返回正确的 code 和 statusCode", () => {
+      const err = AppError.skillReadonly("test-skill");
+      expect(err.code).toBe("SKILL_READONLY");
+      expect(err.statusCode).toBe(403);
+      expect(err.message).toContain("test-skill");
     });
   });
 });

@@ -17,6 +17,7 @@ vi.mock("../../../../server/services/categoryService", () => ({
 import {
   addBundle,
   applyBundle,
+  ensureDefaultBundle,
   getBundles,
   removeBundle,
   updateBundle,
@@ -325,6 +326,102 @@ describe("bundleService", () => {
       vi.mocked(readYaml).mockResolvedValue({ skillBundles: [] });
 
       await expect(removeBundle("nonexistent-id")).rejects.toThrow("未找到");
+    });
+
+    it("尝试删除默认套件（bundle-default）时抛出 400 错误", async () => {
+      vi.mocked(readYaml).mockResolvedValue({
+        skillBundles: [
+          {
+            id: "bundle-default",
+            name: "default",
+            displayName: "默认套件",
+            categoryNames: ["coding"],
+            createdAt: "2026-04-14T00:00:00.000Z",
+            updatedAt: "2026-04-14T00:00:00.000Z",
+          },
+        ],
+      });
+
+      await expect(removeBundle("bundle-default")).rejects.toThrow(
+        "默认套件不可删除",
+      );
+    });
+  });
+
+  // ----------------------------------------------------------------
+  // ensureDefaultBundle
+  // ----------------------------------------------------------------
+  describe("ensureDefaultBundle", () => {
+    it("默认套件不存在时自动创建", async () => {
+      vi.mocked(readYaml).mockResolvedValue({ skillBundles: [] });
+      vi.mocked(writeYaml).mockResolvedValue(undefined);
+
+      await ensureDefaultBundle();
+
+      expect(writeYaml).toHaveBeenCalledOnce();
+      const writeCall = vi.mocked(writeYaml).mock.calls[0];
+      const writtenData = writeCall[1] as {
+        skillBundles: {
+          id: string;
+          name: string;
+          categoryNames: string[];
+        }[];
+      };
+      expect(writtenData.skillBundles).toHaveLength(1);
+      expect(writtenData.skillBundles[0].id).toBe("bundle-default");
+      expect(writtenData.skillBundles[0].name).toBe("default");
+      expect(writtenData.skillBundles[0].categoryNames).toHaveLength(9);
+    });
+
+    it("默认套件已存在时幂等跳过（不重复创建）", async () => {
+      vi.mocked(readYaml).mockResolvedValue({
+        skillBundles: [
+          {
+            id: "bundle-default",
+            name: "default",
+            displayName: "默认套件",
+            categoryNames: ["coding"],
+            createdAt: "2026-04-14T00:00:00.000Z",
+            updatedAt: "2026-04-14T00:00:00.000Z",
+          },
+        ],
+      });
+
+      await ensureDefaultBundle();
+
+      // 幂等：不应调用 writeYaml
+      expect(writeYaml).not.toHaveBeenCalled();
+    });
+
+    it("创建的默认套件包含所有 9 个出厂分类", async () => {
+      vi.mocked(readYaml).mockResolvedValue({ skillBundles: [] });
+      vi.mocked(writeYaml).mockResolvedValue(undefined);
+
+      await ensureDefaultBundle();
+
+      const writeCall = vi.mocked(writeYaml).mock.calls[0];
+      const writtenData = writeCall[1] as {
+        skillBundles: { categoryNames: string[] }[];
+      };
+      const categories = writtenData.skillBundles[0].categoryNames;
+      expect(categories).toContain("coding");
+      expect(categories).toContain("writing");
+      expect(categories).toContain("devops");
+      expect(categories).toContain("workflows");
+      expect(categories).toContain("document-processing");
+      expect(categories).toContain("dev-tools");
+      expect(categories).toContain("testing");
+      expect(categories).toContain("design");
+      expect(categories).toContain("meta-skills");
+    });
+
+    it("settings 为 null 时也能正常创建默认套件", async () => {
+      vi.mocked(readYaml).mockResolvedValue(null);
+      vi.mocked(writeYaml).mockResolvedValue(undefined);
+
+      await ensureDefaultBundle();
+
+      expect(writeYaml).toHaveBeenCalledOnce();
     });
   });
 

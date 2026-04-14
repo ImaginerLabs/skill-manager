@@ -10,6 +10,8 @@ vi.mock("react-i18next", () => ({
       const map: Record<string, string> = {
         "common.noDescription": "暂无描述",
         "skillList.workflowBadge": "工作流",
+        "skill.viewOnGithub": "在 GitHub 上查看",
+        "skill.readonlyTooltip": "外部 Skill（只读）",
       };
       return map[key] ?? key;
     },
@@ -152,6 +154,85 @@ describe("SkillCard", () => {
       const card = screen.getByRole("button");
       // 检查包含 border 类（未选中或选中状态都会有 border）
       expect(card.className).toMatch(/border-/);
+    });
+  });
+
+  describe("外部 Skill — 来源标签", () => {
+    const externalSkill: SkillMeta = {
+      ...mockSkill,
+      source: "anthropic-official",
+      sourceUrl: "https://github.com/anthropics/skills/tree/main/pdf/SKILL.md",
+      sourceRepo: "https://github.com/anthropics/skills",
+      readonly: true,
+    };
+
+    it("有 source 字段时显示来源标签", () => {
+      render(<SkillCard skill={externalSkill} />);
+      expect(screen.getByTestId("skill-source-badge")).toBeInTheDocument();
+    });
+
+    it("无 source 字段时不显示来源标签", () => {
+      render(<SkillCard skill={mockSkill} />);
+      expect(
+        screen.queryByTestId("skill-source-badge"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("来源标签包含仓库 ID 文本", () => {
+      render(<SkillCard skill={externalSkill} />);
+      expect(screen.getByTestId("skill-source-badge")).toHaveTextContent(
+        "anthropic-official",
+      );
+    });
+
+    it("来源标签 href 指向 sourceUrl", () => {
+      render(<SkillCard skill={externalSkill} />);
+      const badge = screen.getByTestId("skill-source-badge");
+      expect(badge).toHaveAttribute(
+        "href",
+        "https://github.com/anthropics/skills/tree/main/pdf/SKILL.md",
+      );
+    });
+
+    it("来源标签在新标签页打开（target=_blank）", () => {
+      render(<SkillCard skill={externalSkill} />);
+      const badge = screen.getByTestId("skill-source-badge");
+      expect(badge).toHaveAttribute("target", "_blank");
+      expect(badge).toHaveAttribute("rel", "noopener noreferrer");
+    });
+
+    it("有 source 但无 sourceUrl 时不显示来源标签", () => {
+      const skillNoUrl: SkillMeta = {
+        ...mockSkill,
+        source: "anthropic-official",
+      };
+      render(<SkillCard skill={skillNoUrl} />);
+      expect(
+        screen.queryByTestId("skill-source-badge"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("外部 Skill — 锁图标", () => {
+    it("readonly: true 时显示锁图标", () => {
+      const readonlySkill: SkillMeta = { ...mockSkill, readonly: true };
+      render(<SkillCard skill={readonlySkill} />);
+      expect(screen.getByTestId("skill-readonly-lock")).toBeInTheDocument();
+    });
+
+    it("readonly: false 时不显示锁图标", () => {
+      const nonReadonlySkill: SkillMeta = { ...mockSkill, readonly: false };
+      render(<SkillCard skill={nonReadonlySkill} />);
+      expect(
+        screen.queryByTestId("skill-readonly-lock"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("readonly 字段缺失时不显示锁图标", () => {
+      render(<SkillCard skill={mockSkill} />);
+      expect(
+        screen.queryByTestId("skill-readonly-lock"),
+      ).not.toBeInTheDocument();
     });
   });
 });

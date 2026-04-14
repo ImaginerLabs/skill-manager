@@ -277,4 +277,137 @@ description: 缺少 name 和 category
       }
     });
   });
+
+  describe("外部 Skill 字段解析", () => {
+    it("Frontmatter 含 source 字段时正确解析", () => {
+      const content = buildSkillContent({
+        name: "PDF 处理",
+        description: "处理 PDF 文件",
+        category: "document-processing",
+        source: "anthropic-official",
+      });
+
+      const result = parseRawFrontmatter(content, "document-processing/pdf.md");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.meta.source).toBe("anthropic-official");
+      }
+    });
+
+    it("Frontmatter 含 sourceUrl 字段时正确解析", () => {
+      const content = buildSkillContent({
+        name: "PDF 处理",
+        description: "处理 PDF 文件",
+        category: "document-processing",
+        sourceUrl:
+          "https://github.com/anthropics/skills/tree/main/pdf/SKILL.md",
+      });
+
+      const result = parseRawFrontmatter(content, "document-processing/pdf.md");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.meta.sourceUrl).toBe(
+          "https://github.com/anthropics/skills/tree/main/pdf/SKILL.md",
+        );
+      }
+    });
+
+    it("Frontmatter 含 sourceRepo 字段时正确解析", () => {
+      const content = buildSkillContent({
+        name: "PDF 处理",
+        description: "处理 PDF 文件",
+        category: "document-processing",
+        sourceRepo: "https://github.com/anthropics/skills",
+      });
+
+      const result = parseRawFrontmatter(content, "document-processing/pdf.md");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.meta.sourceRepo).toBe(
+          "https://github.com/anthropics/skills",
+        );
+      }
+    });
+
+    it("Frontmatter 含 readonly: true 时，meta.readonly === true", () => {
+      const content = buildSkillContent({
+        name: "PDF 处理",
+        description: "处理 PDF 文件",
+        category: "document-processing",
+        readonly: true,
+      });
+
+      const result = parseRawFrontmatter(content, "document-processing/pdf.md");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.meta.readonly).toBe(true);
+      }
+    });
+
+    it("Frontmatter 含 readonly: false 时，meta.readonly === undefined（严格 === true 检查）", () => {
+      const content = buildSkillContent({
+        name: "PDF 处理",
+        description: "处理 PDF 文件",
+        category: "document-processing",
+        readonly: false,
+      });
+
+      const result = parseRawFrontmatter(content, "document-processing/pdf.md");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        // readonly: false 不等于 true，所以返回 undefined
+        expect(result.meta.readonly).toBeUndefined();
+      }
+    });
+
+    it("Frontmatter 不含外部字段时，所有新字段均为 undefined，解析不报错", () => {
+      const content = buildSkillContent({
+        name: "普通 Skill",
+        description: "本地 Skill",
+        category: "coding",
+      });
+
+      const result = parseRawFrontmatter(content, "coding/normal.md");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.meta.source).toBeUndefined();
+        expect(result.meta.sourceUrl).toBeUndefined();
+        expect(result.meta.sourceRepo).toBeUndefined();
+        expect(result.meta.readonly).toBeUndefined();
+      }
+    });
+
+    it("包含所有外部字段的完整外部 Skill 正确解析", () => {
+      const content = buildSkillContent({
+        name: "PDF 处理",
+        description: "处理 PDF 文件",
+        category: "document-processing",
+        source: "anthropic-official",
+        sourceUrl:
+          "https://github.com/anthropics/skills/tree/main/pdf/SKILL.md",
+        sourceRepo: "https://github.com/anthropics/skills",
+        readonly: true,
+      });
+
+      const result = parseRawFrontmatter(content, "document-processing/pdf.md");
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.meta.source).toBe("anthropic-official");
+        expect(result.meta.sourceUrl).toBe(
+          "https://github.com/anthropics/skills/tree/main/pdf/SKILL.md",
+        );
+        expect(result.meta.sourceRepo).toBe(
+          "https://github.com/anthropics/skills",
+        );
+        expect(result.meta.readonly).toBe(true);
+      }
+    });
+  });
 });
