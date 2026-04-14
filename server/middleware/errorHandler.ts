@@ -2,9 +2,9 @@
 // server/middleware/errorHandler.ts — Express 全局错误处理中间件
 // ============================================================
 
-import type { Request, Response, NextFunction } from "express";
-import { AppError } from "../types/errors.js";
+import type { NextFunction, Request, Response } from "express";
 import { ErrorCode, HttpStatus } from "../../shared/constants.js";
+import { AppError } from "../types/errors.js";
 
 /**
  * Express 全局错误处理中间件

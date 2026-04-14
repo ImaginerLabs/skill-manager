@@ -1,0 +1,22 @@
+# 构建产物
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# 依赖
+node_modules/
+
+# 编译产物
+bin/
+
+# BMAD 文档与规划产物（非源码）
+_bmad/
+_bmad-output/
+docs/
+
+# CodeBuddy skill 资源文件
+.codebuddy/
+
+# 锁文件
+package-lock.json

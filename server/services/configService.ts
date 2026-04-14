@@ -4,8 +4,8 @@
 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readYaml, writeYaml } from "../utils/yamlUtils.js";
 import type { AppConfig, Category, SyncTarget } from "../../shared/types.js";
+import { readYaml, writeYaml } from "../utils/yamlUtils.js";
 
 // 项目根目录（使用 fileURLToPath 确保 Windows 兼容）
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

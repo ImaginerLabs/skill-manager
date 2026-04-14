@@ -3,7 +3,7 @@
 // ============================================================
 
 import { Router } from "express";
-import { loadConfig, loadCategories } from "../services/configService.js";
+import { loadCategories, loadConfig } from "../services/configService.js";
 
 export const configRoutes = Router();
 
