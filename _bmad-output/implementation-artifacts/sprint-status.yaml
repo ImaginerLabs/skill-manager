@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-14T15:50:00
+last_updated: 2026-04-14T22:13:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -282,3 +282,57 @@ development_status:
   8-6-sync-script-core-logic: done
   8-7-github-action-workflow: done
   epic-8-retrospective: done
+
+  # ============================================================
+  # ====================== V2 ENHANCEMENTS =====================
+  # ============================================================
+
+  # ============================================================
+  # V2 Epic 1: 默认套件全选修复
+  # 用户选择默认套件后，9 个出厂分类下的全部 Skill（包括外部 Skill）自动被选中
+  # Priority: P0（Bug 修复）| FRs: FR-V2-25, FR-V2-26 | Architecture: AD-48
+  # Dependencies: None（独立修复）
+  # ============================================================
+  v2-epic-1: done
+  v2-1-1-bundle-select-all-fix: done
+  v2-epic-1-retrospective: done
+
+  # ============================================================
+  # V2 Epic 2: 二级 Sidebar 来源视图浏览
+  # 用户可在 Skill 预览页的二级 Sidebar 中通过 Tab 切换「按分类」和「按来源」两种浏览维度
+  # Priority: P1 | FRs: FR-V2-1~6 | Architecture: AD-41, AD-42
+  # UX Design: UX-DR1~3, UX-DR11~12 | NFRs: NFR-V2-1~2, NFR-V2-8~9
+  # Dependencies: None（基于现有 SecondarySidebar）
+  # ============================================================
+  v2-epic-2: done
+  v2-2-1-view-tab-and-source-store: done
+  v2-2-2-source-tree-component-and-filtering: done
+  v2-2-3-tab-switching-state-management-and-a11y: done
+  v2-epic-2-retrospective: done
+
+  # ============================================================
+  # V2 Epic 3: 同步多模式
+  # 用户可选择增量同步、替换同步或 Diff 查看三种同步模式
+  # Priority: P1 | FRs: FR-V2-16~24, FR-V2-27~29 | Architecture: AD-45~47
+  # UX Design: UX-DR6~10, UX-DR13~14 | NFRs: NFR-V2-3~4, NFR-V2-6~7, NFR-V2-10~13
+  # Dependencies: None（基于现有 syncService）
+  # ============================================================
+  v2-epic-3: done
+  v2-3-1-incremental-sync-backend: done
+  v2-3-2-replace-sync-and-safety: done
+  v2-3-3-diff-endpoint-and-report: done
+  v2-3-4-split-button-ui-and-diff-report-frontend: done
+  v2-epic-3-retrospective: done
+
+  # ============================================================
+  # V2 Epic 4: 工作流自定义步骤与规范对齐
+  # 用户可在工作流编排器中添加自然语言自定义步骤，生成的工作流文件符合 skill-creator 规范
+  # Priority: P2 | FRs: FR-V2-7~15 | Architecture: AD-43, AD-44
+  # UX Design: UX-DR4~5 | NFRs: NFR-V2-5
+  # Dependencies: None（基于现有 workflowService）
+  # ============================================================
+  v2-epic-4: done
+  v2-4-1-custom-step-type-and-ui: done
+  v2-4-2-workflow-generation-spec-alignment: done
+  v2-4-3-backward-compatibility-and-polish: done
+  v2-epic-4-retrospective: done

@@ -1,33 +1,25 @@
 # Deferred Work
 
-## Deferred from: code review of Epic 2 (2026-04-11)
+## Accepted Limitations (Won't Fix)
 
-- **ImportPage 组件过大（386行），缺少组件拆分** — `src/pages/ImportPage.tsx` 承载了扫描、勾选、分类选择、导入、清理确认等所有逻辑，建议后续拆分为 `ScanSection`、`ImportWizard`、`CleanupDialog` 等子组件。Story 2-2 明确说"不要创建新的组件文件"，属于已有架构决策。
-- **SKILLS_ROOT 硬编码为相对路径** — `server/services/importService.ts` 中 `SKILLS_ROOT` 通过 `__dirname` 相对计算，在测试或部署路径变化时可能不稳定。建议后续通过配置注入。
-
-## Deferred from: code review of Epic UX-IMPROVEMENT (2026-04-13)
-
-- **WorkflowPage undo 恢复顺序不保证原位置** — `src/pages/WorkflowPage.tsx:98`，撤销删除时工作流被追加到列表末尾而非原位置。UX 可接受（刷新后顺序恢复正确），推迟处理。
-
-## Deferred from: code review of 7-3-settings-tab-slider-animation (2026-04-13)
-
-- **隐藏 Tab 内容子组件仍挂载** — `TabsContent` 使用 `hidden` 属性而非条件渲染，隐藏 Tab 中的子组件（含 `useEffect`）仍会挂载并执行副作用。这是 shadcn/ui 的预存在设计决策，非本次引入。若后续某个 Tab 内容有昂贵的初始化逻辑，可考虑改为条件渲染。
-
-## Deferred from: code review of 7-2-sidebar-stats-panel-and-activity-heatmap (2026-04-13)
-
-- **ActivityHeatmap useEffect 无卸载清理** — `src/components/stats/ActivityHeatmap.tsx:32`，`fetchActivityStats` 请求返回前若组件卸载会触发 setState，React 18 已不报错但属于潜在问题。建议后续用 AbortController 或 useRef 标记卸载状态。属于预存在模式，非本次引入。
-
-## Deferred from: code review of 7-1-secondary-sidebar-category-navigation (2026-04-13)
-
-- **CategoryTree 无 ErrorBoundary 包裹** — `src/components/layout/SecondarySidebar.tsx` 中 `CategoryTree` 若抛出异常会导致整个布局崩溃，建议后续在 SecondarySidebar 或 AppLayout 层添加 ErrorBoundary。属于预存在问题，非本次引入。
-- **isSkillBrowsePage 精确匹配 "/" 未来扩展性有限** — `src/components/layout/AppLayout.tsx:33`，若未来路由扩展为子路径（如 `/skills/xxx`），条件会失效。当前路由结构固定，可接受，推迟处理。
-
-## Deferred from: code review of heatmap-tooltip-1 (2026-04-13)
+> 以下项目经评估后决定不修复，属于已知限制或设计取舍。
 
 - **`toISOString()` 使用 UTC 时间导致日期与用户本地时区不一致** — `server/routes/statsRoutes.ts` 中 `mtime.toISOString().slice(0, 10)` 和日期序列生成都使用 UTC，在 UTC+ 时区用户看到的日期可能与直觉不一致。预存在问题，非本次引入。
 - **触屏设备无法触发 Tooltip** — Radix Tooltip 依赖 hover 事件，移动端无法触发。项目定位桌面端工具，可接受。
 - **`ActivityDay` 接口在前后端重复定义** — `server/routes/statsRoutes.ts` 和 `src/lib/api.ts` 各自定义 `ActivityDay`。Story 明确保持现有模式，避免引入重构风险。
 - **测试依赖 `new Date()` 当前日期** — UTC 午夜边界可能导致测试不稳定。预存在测试模式，非本次引入。
+
+## Completed: 延期工作全量清理 (2026-04-15)
+
+**已完成的修复工作（7 项）：**
+
+1. **ImportPage 组件拆分** — 将 `src/pages/ImportPage.tsx`（386 行）拆分为 `src/pages/import/` 目录，包含 `index.tsx`、`ScanPathInput.tsx`、`ImportFileList.tsx`、`CleanupConfirmDialog.tsx`、`useImport.ts` 五个模块，职责清晰。
+2. **SKILLS_ROOT 配置注入** — `server/services/importService.ts` 中 `SKILLS_ROOT` 改为通过 `configService` 读取配置，不再依赖 `__dirname` 相对计算。
+3. **WorkflowPage undo 恢复原位置** — 撤销删除时记录原始索引，恢复时使用 `splice` 插入原位置而非追加到末尾。
+4. **TabsContent 条件渲染** — `SettingsPage` 中 `TabsContent` 改为条件渲染，隐藏 Tab 的子组件不再挂载和执行副作用。
+5. **ActivityHeatmap useEffect 卸载清理** — 使用 `AbortController` 在组件卸载时取消请求，防止卸载后 setState。
+6. **SecondarySidebar ErrorBoundary** — 为 `CategoryTree` 添加 `ErrorBoundary` 包裹，异常时显示降级 UI 而非整个布局崩溃。
+7. **isSkillBrowsePage 路由匹配扩展** — 改为 `startsWith("/")` 或正则匹配，支持未来子路径扩展（如 `/skills/xxx`）。
 
 ## Completed: 目录结构审计与清理 (2026-04-11)
 
