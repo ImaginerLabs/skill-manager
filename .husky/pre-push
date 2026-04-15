@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# ─── 防递归：由 hook 内部触发的 push 直接跳过 ────────────────────────────────
+if [ "$HUSKY_RELEASE" = "1" ]; then
+  exit 0
+fi
+
 # ─── 自动版本发布（基于 Conventional Commits 语义推导）───────────────────────
 # 仅在 main / master 分支触发
 BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
@@ -35,16 +40,21 @@ REMOTE=${REMOTE:-origin}
 if [ "$HAS_BREAKING" -gt 0 ]; then
   echo "🚀 检测到 BREAKING CHANGE，执行 minor 发版..."
   npm run release:minor || exit 1
-  echo "📦 版本 commit 已在本地完成，推送版本 commit + tags..."
-  git push --no-verify "$REMOTE" HEAD:"$BRANCH" --follow-tags || exit 1
-  exit 0
 elif [ "$HAS_FEAT" -gt 0 ] || [ "$HAS_FIX" -gt 0 ]; then
   echo "🚀 检测到 feat/fix commit，执行 patch 发版..."
   npm run release:patch || exit 1
-  echo "📦 版本 commit 已在本地完成，推送版本 commit + tags..."
-  git push --no-verify "$REMOTE" HEAD:"$BRANCH" --follow-tags || exit 1
-  exit 0
 else
   echo "ℹ️  无 feat/fix/BREAKING commit（docs/chore/refactor 等），跳过自动发版"
   exit 0
 fi
+
+# 版本 commit 已在本地完成，由 hook 统一推送（含 tags），中止原始 push
+echo "📦 版本 commit 已在本地完成，推送版本 commit + tags..."
+HUSKY_RELEASE=1 git push --no-verify "$REMOTE" HEAD:"$BRANCH" --follow-tags
+STATUS=$?
+if [ $STATUS -ne 0 ]; then
+  echo "❌ 推送失败，请检查网络或权限"
+  exit 1
+fi
+echo "✅ 推送成功，原始 push 已由 hook 完成，退出"
+exit 1
