@@ -1,6 +1,63 @@
 #!/bin/sh
 
-# ─── 防递归：由 post-push 内部触发的 push 直接跳过 ───────────────────────────
+# ─── 防递归：由 hook 内部触发的 push 直接跳过 ────────────────────────────────
 if [ "$HUSKY_RELEASE" = "1" ]; then
   exit 0
 fi
+
+# ─── 自动版本发布（基于 Conventional Commits 语义推导）───────────────────────
+# 仅在 main / master 分支触发
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+if [ "$BRANCH" != "main" ] && [ "$BRANCH" != "master" ]; then
+  echo "ℹ️  非主分支（$BRANCH），跳过自动发版"
+  exit 0
+fi
+
+# 获取上一个 tag；若无 tag 则取全部 commit
+LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+if [ -n "$LAST_TAG" ]; then
+  COMMITS=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s" 2>/dev/null)
+else
+  COMMITS=$(git log --pretty=format:"%s" 2>/dev/null)
+fi
+
+if [ -z "$COMMITS" ]; then
+  echo "ℹ️  无新 commit，跳过自动发版"
+  exit 0
+fi
+
+# 语义分析（SemVer 映射规则）
+# BREAKING CHANGE / feat! / fix! → minor（早期项目不做 major 自动发版）
+# feat / fix / perf             → patch
+# docs / chore / refactor 等    → 跳过
+HAS_BREAKING=$(echo "$COMMITS" | grep -E "(BREAKING CHANGE|^[a-z]+(\(.*\))?!:)" | wc -l | tr -d ' ')
+HAS_FEAT=$(echo "$COMMITS" | grep -E "^feat(\(.*\))?:" | wc -l | tr -d ' ')
+HAS_FIX=$(echo "$COMMITS" | grep -E "^(fix|perf)(\(.*\))?:" | wc -l | tr -d ' ')
+
+REMOTE=$(git remote 2>/dev/null | head -1)
+REMOTE=${REMOTE:-origin}
+
+if [ "$HAS_BREAKING" -gt 0 ]; then
+  echo "🚀 检测到 BREAKING CHANGE，执行 minor 发版..."
+  npm run release:minor || exit 1
+elif [ "$HAS_FEAT" -gt 0 ] || [ "$HAS_FIX" -gt 0 ]; then
+  echo "🚀 检测到 feat/fix commit，执行 patch 发版..."
+  npm run release:patch || exit 1
+else
+  echo "ℹ️  无 feat/fix/BREAKING commit（docs/chore/refactor 等），跳过自动发版"
+  exit 0
+fi
+
+# 版本 commit 已在本地完成，由 hook 统一推送（含 tags）
+echo "📦 版本 commit 已在本地完成，推送版本 commit + tags..."
+HUSKY_RELEASE=1 git push --no-verify "$REMOTE" HEAD:"$BRANCH" --follow-tags
+if [ $? -ne 0 ]; then
+  echo "❌ 版本 commit 推送失败，请手动执行：git push origin HEAD --follow-tags"
+  exit 1
+fi
+
+# 更新本地 remote tracking ref，让 git 认为无新内容，静默退出原始 push
+NEW_SHA=$(git rev-parse HEAD)
+git update-ref "refs/remotes/$REMOTE/$BRANCH" "$NEW_SHA" 2>/dev/null || true
+echo "✅ 版本发布并推送成功（v$(node -p "require('./package.json').version") ）"
+exit 0
