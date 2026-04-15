@@ -48,7 +48,7 @@ else
   exit 0
 fi
 
-# 版本 commit 已在本地完成，由 hook 统一推送（含 tags），中止原始 push
+# 版本 commit 已在本地完成，由 hook 统一推送（含 tags）
 echo "📦 版本 commit 已在本地完成，推送版本 commit + tags..."
 HUSKY_RELEASE=1 git push --no-verify "$REMOTE" HEAD:"$BRANCH" --follow-tags
 STATUS=$?
@@ -56,5 +56,7 @@ if [ $STATUS -ne 0 ]; then
   echo "❌ 推送失败，请检查网络或权限"
   exit 1
 fi
-echo "✅ 推送成功，原始 push 已由 hook 完成，退出"
-exit 1
+# 更新本地 remote tracking ref，让 git 认为无新内容，静默退出原始 push
+git fetch --no-tags --quiet "$REMOTE" "$BRANCH" 2>/dev/null || true
+echo "✅ 推送成功"
+exit 0
