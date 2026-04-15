@@ -7,6 +7,7 @@ Use this template for all `/security-review` output. Generated during Step 7.
 ## Report Structure
 
 ### Header
+
 ```
 ╔══════════════════════════════════════════════════════════╗
 ║           🔐 SECURITY REVIEW REPORT                     ║
@@ -108,9 +109,9 @@ Confidence: HIGH / MEDIUM / LOW
 
 🔴 CRITICAL — Hardcoded API Key
   File: src/config/database.js, Line 12
-  
+
   Found: STRIPE_SECRET_KEY = "sk_live_FAKE_KEY_..."
-  
+
   Action Required:
   1. Rotate this key IMMEDIATELY at https://dashboard.stripe.com
   2. Remove from source code
@@ -185,10 +186,10 @@ Apply this patch? (Review first — AI-generated patches may need adjustment)
 
 Apply to every finding:
 
-| Confidence | When to Use |
-|------------|-------------|
-| **HIGH** | Vulnerability is unambiguous. Sanitization is clearly absent. Exploitable as-is. |
+| Confidence | When to Use                                                                                                      |
+| ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| **HIGH**   | Vulnerability is unambiguous. Sanitization is clearly absent. Exploitable as-is.                                 |
 | **MEDIUM** | Vulnerability likely exists but depends on runtime context, config, or call path the agent couldn't fully trace. |
-| **LOW** | Suspicious pattern detected but could be a false positive. Flag for human review. |
+| **LOW**    | Suspicious pattern detected but could be a false positive. Flag for human review.                                |
 
 Never omit confidence — it helps developers prioritize their review effort.

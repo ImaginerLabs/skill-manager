@@ -9,6 +9,7 @@ Load this file during Step 3 (Secrets & Exposure Scan).
 These patterns almost always indicate a real secret:
 
 ### API Keys & Tokens
+
 ```regex
 # OpenAI
 sk-[a-zA-Z0-9]{48}
@@ -60,12 +61,14 @@ key-[a-zA-Z0-9]{32}
 ```
 
 ### Private Keys
+
 ```regex
 -----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY( BLOCK)?-----
 -----BEGIN CERTIFICATE-----
 ```
 
 ### Database Connection Strings
+
 ```regex
 # MongoDB
 mongodb(\+srv)?:\/\/[^:]+:[^@]+@
@@ -81,6 +84,7 @@ redis:\/\/:[^@]+@
 ```
 
 ### Hardcoded Passwords (variable name signals)
+
 ```regex
 # Variable names that suggest secrets
 (password|passwd|pwd|secret|api_key|apikey|auth_token|access_token|private_key)
@@ -100,6 +104,7 @@ Threshold: > 4.5 bits/char AND > 20 chars AND assigned to a variable
 ```
 
 Common false positives to exclude:
+
 - Lorem ipsum text
 - HTML/CSS content
 - Base64-encoded non-sensitive config (but flag and note)
@@ -110,6 +115,7 @@ Common false positives to exclude:
 ## Files That Should Never Be Committed
 
 Flag if these files exist in the repo root or are tracked by git:
+
 ```
 .env
 .env.local
@@ -136,6 +142,7 @@ Also check `.gitignore` — if a secret file pattern is NOT in .gitignore, flag 
 ## CI/CD & IaC Secret Risks
 
 ### GitHub Actions — flag these patterns:
+
 ```yaml
 # Hardcoded values in env: blocks (should use ${{ secrets.NAME }})
 env:
@@ -146,6 +153,7 @@ env:
 ```
 
 ### Docker — flag these:
+
 ```dockerfile
 # Secrets in ENV (persisted in image layers)
 ENV AWS_SECRET_KEY=actual-value
@@ -155,6 +163,7 @@ ARG API_KEY=actual-value
 ```
 
 ### Terraform — flag these:
+
 ```hcl
 # Hardcoded sensitive values (should use var or data source)
 password = "hardcoded-password"
@@ -166,6 +175,7 @@ access_key = "AKIAIOSFODNN7EXAMPLE"
 ## Safe Patterns (Do NOT flag)
 
 These are intentional placeholders — recognize and skip:
+
 ```
 "your-api-key-here"
 "<YOUR_API_KEY>"

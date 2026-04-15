@@ -8,6 +8,7 @@
  *   node scripts/sync-external-skills.mjs --dry-run  # 预览模式（不实际写文件）
  */
 
+import { execSync } from "child_process";
 import {
   cpSync,
   existsSync,
@@ -16,11 +17,10 @@ import {
   readdirSync,
   writeFileSync,
 } from "fs";
-import path from "path";
-import { execSync } from "child_process";
-import { fileURLToPath } from "url";
 import matter from "gray-matter";
 import yaml from "js-yaml";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // ---- 路径常量 ----
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -153,7 +153,9 @@ function injectSourceMetadata(skillMdPath, repo, skillName, targetCategory) {
     const output = matter.stringify(parsed.content, parsed.data);
     writeFileSync(skillMdPath, output, "utf-8");
   } catch (err) {
-    log(`WARN: Frontmatter 注入失败（${skillMdPath}）: ${err.message}，文件已复制但无来源元数据`);
+    log(
+      `WARN: Frontmatter 注入失败（${skillMdPath}）: ${err.message}，文件已复制但无来源元数据`,
+    );
   }
 }
 
@@ -211,7 +213,9 @@ function syncGitRepo(repoUrl, branch, repoId) {
           { timeout: 60000, stdio: "pipe" },
         );
       } else {
-        log(`[DRY-RUN] 将执行: git clone ${repoUrl} --branch ${branch} --single-branch ${repoDir}`);
+        log(
+          `[DRY-RUN] 将执行: git clone ${repoUrl} --branch ${branch} --single-branch ${repoDir}`,
+        );
       }
     } else {
       log(`[${repoId}] 增量 pull`);
@@ -288,7 +292,9 @@ function processRepository(repo) {
 
     // 检查本地冲突
     if (!isDryRun && hasLocalConflict(skillName, targetCategory)) {
-      log(`WARN: [${repo.id}] Skill "${skillName}" 已存在本地版本，跳过外部版本`);
+      log(
+        `WARN: [${repo.id}] Skill "${skillName}" 已存在本地版本，跳过外部版本`,
+      );
       stats.skipped.push(`${skillName} (本地 Skill 优先)`);
       continue;
     }
@@ -317,14 +323,20 @@ function processRepository(repo) {
     if (mainFile) {
       injectSourceMetadata(mainFile, repo, skillName, targetCategory);
     } else {
-      log(`WARN: [${repo.id}] Skill "${skillName}" 无主 .md 文件，跳过 Frontmatter 注入`);
+      log(
+        `WARN: [${repo.id}] Skill "${skillName}" 无主 .md 文件，跳过 Frontmatter 注入`,
+      );
     }
 
     if (isNew) {
-      log(`[${repo.id}] 新增: ${skillName} → skills/${targetCategory}/${skillName}`);
+      log(
+        `[${repo.id}] 新增: ${skillName} → skills/${targetCategory}/${skillName}`,
+      );
       stats.added.push(`${skillName} → ${targetCategory}`);
     } else {
-      log(`[${repo.id}] 更新: ${skillName} → skills/${targetCategory}/${skillName}`);
+      log(
+        `[${repo.id}] 更新: ${skillName} → skills/${targetCategory}/${skillName}`,
+      );
       stats.updated.push(`${skillName} → ${targetCategory}`);
     }
   }
@@ -336,7 +348,11 @@ function processRepository(repo) {
 
 function main() {
   log("========================================");
-  log(isDryRun ? "开始同步外部 Skill 仓库 [DRY-RUN 模式]" : "开始同步外部 Skill 仓库");
+  log(
+    isDryRun
+      ? "开始同步外部 Skill 仓库 [DRY-RUN 模式]"
+      : "开始同步外部 Skill 仓库",
+  );
   log("========================================");
 
   // 读取配置

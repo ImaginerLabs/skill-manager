@@ -34,10 +34,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 function useUserData(userId: string) {
   // ...
   return {
-    user,     // 数据
-    loading,  // 加载状态
-    error,    // 错误状态
-    refetch,  // 手动刷新方法
+    user, // 数据
+    loading, // 加载状态
+    error, // 错误状态
+    refetch, // 手动刷新方法
   };
 }
 

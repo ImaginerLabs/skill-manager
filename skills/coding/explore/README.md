@@ -5,8 +5,9 @@
 ## 概述
 
 explore Skill 是一个强大的代码分析工具，专门用于：
+
 - **代码库探索** - 分析项目结构和技术栈
-- **问题诊断** - 识别代码问题和潜在bug  
+- **问题诊断** - 识别代码问题和潜在bug
 - **上下文研究** - 理解陌生代码库的业务逻辑
 - **解决方案提供** - 给出具体的修复建议和最佳实践
 
@@ -15,6 +16,7 @@ explore Skill 是一个强大的代码分析工具，专门用于：
 ### 安装与启用
 
 1. 确保Skill目录位于正确的路径：
+
    ```bash
    /Users/alex/Desktop/Github/General-Skills/explore/
    ```
@@ -24,8 +26,9 @@ explore Skill 是一个强大的代码分析工具，专门用于：
 ### 触发关键词
 
 当用户提到以下内容时，explore Skill会自动激活：
+
 - "代码探索"、"项目分析"、"技术栈识别"
-- "问题诊断"、"bug分析"、"错误排查"  
+- "问题诊断"、"bug分析"、"错误排查"
 - "上下文理解"、"代码逻辑梳理"、"调用链分析"
 - "代码审查"、"质量检查"、"性能分析"
 
@@ -56,7 +59,7 @@ explore Skill 是一个强大的代码分析工具，专门用于：
 ### 📊 支持的分析类型
 
 - **前端项目**: React, Vue, Angular, 小程序等
-- **后端项目**: Node.js, Express, NestJS等  
+- **后端项目**: Node.js, Express, NestJS等
 - **全栈项目**: Next.js, Nuxt.js等
 - **通用编程**: JavaScript, TypeScript, Python等
 
@@ -68,19 +71,20 @@ explore Skill 是一个强大的代码分析工具，专门用于：
 // 用户提供有问题的代码
 function ProblematicComponent() {
   const [data, setData] = useState([]);
-  
+
   useEffect(() => {
-    fetchData().then(result => {
+    fetchData().then((result) => {
       data.push(...result); // 错误: 直接修改状态
-      setData(data);        // 不会触发重新渲染
+      setData(data); // 不会触发重新渲染
     });
   }, []);
-  
+
   return <div>{data.length} items</div>;
 }
 ```
 
 **explore Skill分析结果**:
+
 - 🐛 发现问题: 直接修改状态对象
 - 💡 建议: 使用不可变更新 `setData(prev => [...prev, ...result])`
 - 📍 位置: useEffect中的状态更新逻辑
@@ -90,6 +94,7 @@ function ProblematicComponent() {
 **用户请求**: "帮我分析这个项目用了什么技术"
 
 **explore Skill分析流程**:
+
 1. 扫描项目根目录文件
 2. 识别package.json、配置文件等
 3. 分析依赖关系和框架使用
@@ -100,8 +105,9 @@ function ProblematicComponent() {
 **用户描述**: "这个函数有时候会返回错误的结果"
 
 **explore Skill分析步骤**:
+
 1. 阅读相关代码文件
-2. 分析数据流和边界条件  
+2. 分析数据流和边界条件
 3. 识别潜在的问题模式
 4. 提供修复建议和测试用例
 
@@ -122,23 +128,29 @@ explore/
 ## 参考资源
 
 ### 📚 技术指南
+
 - [代码分析技术指南](./references/code-analysis-guide.md) - 详细的分析方法论和最佳实践
 - [常见问题模式](./references/common-issues.md) - 各类代码问题的识别和修复模式
 
 ### 🛠️ 工具脚本
+
 - [示例分析脚本](./scripts/example-analysis.js) - 展示实际分析工作流程
 - [Skill验证脚本](./scripts/validate-skill.js) - 检查Skill完整性和规范性
 
 ## 最佳实践
 
 ### 提供足够上下文
+
 当使用explore Skill时，请提供：
+
 - 相关的代码片段或文件路径
-- 具体的问题描述或分析目标  
+- 具体的问题描述或分析目标
 - 期望的分析深度和范围
 
 ### 分析结果解读
+
 explore Skill会提供：
+
 - 结构化的问题描述
 - 具体的代码证据支持
 - 可行的修复建议
@@ -156,6 +168,7 @@ explore Skill会提供：
 如果您在使用过程中遇到问题，或者有改进建议，请：
 
 1. 检查Skill验证状态：
+
    ```bash
    node scripts/validate-skill.js
    ```

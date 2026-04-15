@@ -32,8 +32,8 @@ skillBundles:
       - testing
       - design
       - meta-skills
-    createdAt: '2026-04-14T04:01:28.856Z'
-    updatedAt: '2026-04-15T03:07:27.874Z'
+    createdAt: "2026-04-14T04:01:28.856Z"
+    updatedAt: "2026-04-15T03:07:27.874Z"
 activeCategories:
   - coding
   - writing

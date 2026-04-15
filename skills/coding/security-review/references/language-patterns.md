@@ -7,49 +7,54 @@ Load the relevant section during Step 1 (Scope Resolution) after identifying lan
 ## JavaScript / TypeScript (Node.js, React, Next.js, Express)
 
 ### Critical APIs/calls to flag
+
 ```js
-eval()                    // arbitrary code execution
-Function('return ...')   // same as eval
-child_process.exec()     // command injection if user input reaches it
-fs.readFile              // path traversal if user controls path
-fs.writeFile             // path traversal if user controls path
+eval(); // arbitrary code execution
+Function("return ..."); // same as eval
+child_process.exec(); // command injection if user input reaches it
+fs.readFile; // path traversal if user controls path
+fs.writeFile; // path traversal if user controls path
 ```
 
 ### Express.js specific
+
 ```js
 // Missing helmet (security headers)
-const app = express()
+const app = express();
 // Should have: app.use(helmet())
 
 // Body size limits missing (DoS)
-app.use(express.json())
+app.use(express.json());
 // Should have: app.use(express.json({ limit: '10kb' }))
 
 // CORS misconfiguration
-app.use(cors({ origin: '*' }))  // too permissive
-app.use(cors({ origin: req.headers.origin }))  // reflects any origin
+app.use(cors({ origin: "*" })); // too permissive
+app.use(cors({ origin: req.headers.origin })); // reflects any origin
 
 // Trust proxy without validation
-app.set('trust proxy', true)  // only safe behind known proxy
+app.set("trust proxy", true); // only safe behind known proxy
 ```
 
 ### React specific
+
 ```jsx
 <div dangerouslySetInnerHTML={{ __html: userContent }} />  // XSS
 <a href={userUrl}>link</a>  // javascript: URL injection
 ```
 
 ### Next.js specific
+
 ```js
 // Server Actions without auth
-export async function deleteUser(id) {   // missing: auth check
-  await db.users.delete(id)
+export async function deleteUser(id) {
+  // missing: auth check
+  await db.users.delete(id);
 }
 
 // API Routes missing method validation
 export default function handler(req, res) {
   // Should check: if (req.method !== 'POST') return res.status(405)
-  doSensitiveAction()
+  doSensitiveAction();
 }
 ```
 
@@ -58,6 +63,7 @@ export default function handler(req, res) {
 ## Python (Django, Flask, FastAPI)
 
 ### Django specific
+
 ```python
 # Raw SQL
 User.objects.raw(f"SELECT * FROM users WHERE name = '{name}'")  # SQLi
@@ -76,6 +82,7 @@ ALLOWED_HOSTS = ['*']  # too permissive
 ```
 
 ### Flask specific
+
 ```python
 # Debug mode
 app.run(debug=True)  # never in production
@@ -91,6 +98,7 @@ render_template_string(f"Hello {name}")  # Server-Side Template Injection
 ```
 
 ### FastAPI specific
+
 ```python
 # Missing auth dependency
 @app.delete("/users/{user_id}")  # No Depends(get_current_user)
@@ -108,6 +116,7 @@ async def read_file(filename: str):
 ## Java (Spring Boot)
 
 ### Spring Boot specific
+
 ```java
 // SQL Injection
 String query = "SELECT * FROM users WHERE name = '" + name + "'";

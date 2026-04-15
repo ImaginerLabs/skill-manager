@@ -5,15 +5,15 @@
 ```typescript
 // ✅ Props 接口必须明确定义，必填/可选清晰区分
 interface OrderHeaderProps {
-  orderId: string;           // 必填：订单 ID
-  status: OrderStatus;       // 必填：订单状态
-  createdAt: string;         // 必填：创建时间
-  onCancel?: () => void;     // 可选：取消回调
-  className?: string;        // 可选：自定义样式类
+  orderId: string; // 必填：订单 ID
+  status: OrderStatus; // 必填：订单状态
+  createdAt: string; // 必填：创建时间
+  onCancel?: () => void; // 可选：取消回调
+  className?: string; // 可选：自定义样式类
 }
 
 // ✅ 枚举/联合类型优先使用 TypeScript 原生类型
-type OrderStatus = 'pending' | 'paid' | 'shipped' | 'completed' | 'cancelled';
+type OrderStatus = "pending" | "paid" | "shipped" | "completed" | "cancelled";
 ```
 
 ---
@@ -98,9 +98,9 @@ export type { OrderItemListProps };
 ## 4. 自定义 Hook 文件结构规范
 
 ```typescript
-import { useState, useEffect, useCallback } from 'react';
-import type { OrderDetail } from '@/types/order';
-import { fetchOrderDetail } from '@/api/order';
+import { useState, useEffect, useCallback } from "react";
+import type { OrderDetail } from "@/types/order";
+import { fetchOrderDetail } from "@/api/order";
 
 interface UseOrderDetailReturn {
   data: OrderDetail | null;
@@ -124,10 +124,12 @@ function useOrderDetail(orderId: string): UseOrderDetailReturn {
     setError(null);
 
     try {
-      const result = await fetchOrderDetail(orderId, { signal: controller.signal });
+      const result = await fetchOrderDetail(orderId, {
+        signal: controller.signal,
+      });
       setData(result);
     } catch (err) {
-      if ((err as Error).name !== 'AbortError') {
+      if ((err as Error).name !== "AbortError") {
         setError(err as Error);
       }
     } finally {

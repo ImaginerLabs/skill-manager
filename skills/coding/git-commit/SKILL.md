@@ -10,8 +10,8 @@ description: >-
 license: MIT
 allowed-tools: Bash
 source: awesome-copilot
-sourceUrl: 'https://github.com/github/awesome-copilot/tree/main/skills/git-commit'
-sourceRepo: 'https://github.com/github/awesome-copilot'
+sourceUrl: "https://github.com/github/awesome-copilot/tree/main/skills/git-commit"
+sourceRepo: "https://github.com/github/awesome-copilot"
 readonly: true
 category: coding
 ---

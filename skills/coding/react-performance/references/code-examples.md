@@ -91,7 +91,7 @@ useEffect(() => {
   fetchData({ signal: controller.signal })
     .then((data) => setData(data))
     .catch((err) => {
-      if (err.name !== 'AbortError') reportError(err);
+      if (err.name !== "AbortError") reportError(err);
     });
 
   return () => controller.abort(); // 清理：取消请求
@@ -138,7 +138,7 @@ const count = useMemo(() => list.length, [list]); // 派生，始终与 list 同
 
 ```typescript
 // ❌ 错误：直接修改 state 对象（引用未变，React 不会触发重渲染）
-const [user, setUser] = useState({ name: 'Alex', age: 18 });
+const [user, setUser] = useState({ name: "Alex", age: 18 });
 user.age = 19; // 直接修改，不会触发重渲染
 setUser(user);
 

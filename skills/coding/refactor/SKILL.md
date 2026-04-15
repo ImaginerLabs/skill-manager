@@ -7,8 +7,8 @@ description: >-
   patterns. Less drastic than repo-rebuilder; use for gradual improvements.
 license: MIT
 source: awesome-copilot
-sourceUrl: 'https://github.com/github/awesome-copilot/tree/main/skills/refactor'
-sourceRepo: 'https://github.com/github/awesome-copilot'
+sourceUrl: "https://github.com/github/awesome-copilot/tree/main/skills/refactor"
+sourceRepo: "https://github.com/github/awesome-copilot"
 readonly: true
 category: coding
 ---
