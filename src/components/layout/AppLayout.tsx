@@ -16,9 +16,8 @@ import StatusBar from "./StatusBar";
  * 中间区域：侧边栏(240px) + 主内容区(flex-1) + 预览面板(400px)
  */
 export default function AppLayout() {
-  const { previewOpen, toggleSidebar, togglePreview, sidebarOpen } =
-    useUIStore();
-  const { selectedSkillId, fetchSkills } = useSkillStore();
+  const { toggleSidebar, togglePreview, sidebarOpen } = useUIStore();
+  const { fetchSkills } = useSkillStore();
   const location = useLocation();
 
   // 全局初始化：确保任何页面刷新都能加载分类和 Skill 数据
@@ -26,8 +25,9 @@ export default function AppLayout() {
     fetchSkills();
   }, [fetchSkills]);
 
-  // 预览面板仅在 Skill 浏览页（/）下生效，且始终打开不可关闭
-  const isSkillBrowsePage = location.pathname === "/";
+  // 预览面板仅在 Skill 浏览页（/ 或 /skills/*）下生效，且始终打开不可关闭
+  const isSkillBrowsePage =
+    location.pathname === "/" || location.pathname.startsWith("/skills");
   const showPreview = isSkillBrowsePage;
 
   // 全局键盘快捷键

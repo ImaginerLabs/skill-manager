@@ -2,6 +2,7 @@ import { Loader2 } from "lucide-react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { PathPreset } from "../../../shared/types";
+import { PathPresetSelect } from "../../components/shared/PathPresetSelect";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import type { ScanState } from "./useImport";
@@ -40,23 +41,7 @@ export const ScanPathInput = memo(function ScanPathInput({
             onChange={(e) => onScanPathChange(e.target.value)}
             placeholder="~/.codebuddy/skills"
           />
-          {pathPresets.length > 0 && (
-            <select
-              className="h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-2 text-xs text-[hsl(var(--foreground))] cursor-pointer shrink-0"
-              value=""
-              onChange={(e) => {
-                if (e.target.value) onScanPathChange(e.target.value);
-              }}
-              title={t("common.search")}
-            >
-              <option value="">{t("common.search")}</option>
-              {pathPresets.map((p) => (
-                <option key={p.id} value={p.path}>
-                  {p.label ? `${p.label} (${p.path})` : p.path}
-                </option>
-              ))}
-            </select>
-          )}
+          <PathPresetSelect presets={pathPresets} onSelect={onScanPathChange} />
         </div>
       </div>
       <Button onClick={onScan} disabled={scanState.status === "loading"}>

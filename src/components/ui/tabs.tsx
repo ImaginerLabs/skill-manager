@@ -154,12 +154,14 @@ const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
     const { activeTab } = React.useContext(TabsContext);
     const isActive = activeTab === value;
 
+    // 条件渲染：非激活 Tab 不挂载子组件，避免隐藏 Tab 中的 useEffect 等副作用仍然执行
+    if (!isActive) return null;
+
     return (
       <div
         ref={ref}
         role="tabpanel"
-        data-state={isActive ? "active" : "inactive"}
-        hidden={!isActive}
+        data-state="active"
         className={cn(
           "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2",
           className,

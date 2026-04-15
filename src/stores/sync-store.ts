@@ -3,10 +3,16 @@
 // ============================================================
 
 import { create } from "zustand";
-import type { SyncResult, SyncTarget } from "../../shared/types";
+import type {
+  DiffReport,
+  SyncMode,
+  SyncResult,
+  SyncTarget,
+} from "../../shared/types";
 import {
   addSyncTarget as apiAddSyncTarget,
   deleteSyncTarget as apiDeleteSyncTarget,
+  diffSync as apiDiffSync,
   fetchSyncTargets as apiFetchSyncTargets,
   pushSync as apiPushSync,
   updateSyncTarget as apiUpdateSyncTarget,
@@ -16,8 +22,10 @@ export interface SyncStore {
   targets: SyncTarget[];
   targetsLoading: boolean;
   selectedSkillIds: string[];
-  syncStatus: "idle" | "syncing" | "done" | "error";
+  syncStatus: "idle" | "syncing" | "done" | "error" | "diffing";
   syncResult: SyncResult | null;
+  /** Diff 差异报告 */
+  diffReport: DiffReport | null;
   /** 最后一次同步成功的时间戳（ISO 8601） */
   lastSyncTime: string | null;
   /** 最后一次同步失败的错误信息 */
@@ -40,7 +48,9 @@ export interface SyncStore {
   clearSelection: () => void;
   setSyncStatus: (status: SyncStore["syncStatus"]) => void;
   setSyncResult: (result: SyncResult | null) => void;
-  executePush: (targetIds?: string[]) => Promise<SyncResult>;
+  setDiffReport: (report: DiffReport | null) => void;
+  executePush: (targetIds?: string[], mode?: SyncMode) => Promise<SyncResult>;
+  executeDiff: (targetId: string) => Promise<DiffReport>;
 }
 
 export const useSyncStore = create<SyncStore>((set) => ({
@@ -49,6 +59,7 @@ export const useSyncStore = create<SyncStore>((set) => ({
   selectedSkillIds: [],
   syncStatus: "idle",
   syncResult: null,
+  diffReport: null,
   lastSyncTime: null,
   lastSyncError: null,
 
@@ -97,15 +108,16 @@ export const useSyncStore = create<SyncStore>((set) => ({
   clearSelection: () => set({ selectedSkillIds: [] }),
   setSyncStatus: (status) => set({ syncStatus: status }),
   setSyncResult: (result) => set({ syncResult: result }),
+  setDiffReport: (report) => set({ diffReport: report }),
 
-  executePush: async (targetIds) => {
+  executePush: async (targetIds, mode) => {
     const { selectedSkillIds } = useSyncStore.getState();
     if (selectedSkillIds.length === 0) {
       throw new Error("SYNC_NO_SKILL_SELECTED");
     }
-    set({ syncStatus: "syncing", syncResult: null });
+    set({ syncStatus: "syncing", syncResult: null, diffReport: null });
     try {
-      const result = await apiPushSync(selectedSkillIds, targetIds);
+      const result = await apiPushSync(selectedSkillIds, targetIds, mode);
       set({
         syncStatus: "done",
         syncResult: result,
@@ -117,6 +129,25 @@ export const useSyncStore = create<SyncStore>((set) => ({
       set({
         syncStatus: "error",
         lastSyncError: err instanceof Error ? err.message : "SYNC_FAILED",
+      });
+      throw err;
+    }
+  },
+
+  executeDiff: async (targetId) => {
+    const { selectedSkillIds } = useSyncStore.getState();
+    if (selectedSkillIds.length === 0) {
+      throw new Error("SYNC_NO_SKILL_SELECTED");
+    }
+    set({ syncStatus: "diffing", diffReport: null, syncResult: null });
+    try {
+      const report = await apiDiffSync(selectedSkillIds, targetId);
+      set({ syncStatus: "done", diffReport: report });
+      return report;
+    } catch (err) {
+      set({
+        syncStatus: "error",
+        lastSyncError: err instanceof Error ? err.message : "DIFF_FAILED",
       });
       throw err;
     }

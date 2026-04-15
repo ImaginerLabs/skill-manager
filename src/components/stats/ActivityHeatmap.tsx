@@ -23,11 +23,25 @@ export default function ActivityHeatmap() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
+    let isMounted = true;
+
     setLoading(true);
     fetchActivityStats(12)
-      .then(setData)
-      .catch(() => setData([]))
-      .finally(() => setLoading(false));
+      .then((result) => {
+        if (isMounted) setData(result);
+      })
+      .catch(() => {
+        if (isMounted) setData([]);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   // 将 84 天数据转置：原来是「按周分列」，现在改为「按行排列」

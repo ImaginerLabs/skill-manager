@@ -7,21 +7,25 @@ import {
   CheckCircle2,
   FileWarning,
   Loader2,
-  Play,
   RefreshCw,
+  SkipForward,
   XCircle,
 } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { SyncDetail } from "../../../shared/types";
+import type { SyncDetail, SyncMode } from "../../../shared/types";
 import { useSyncStore } from "../../stores/sync-store";
 import { toast } from "../shared/toast-store";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
+import DiffReportView from "./DiffReportView";
+import ReplaceSyncConfirmDialog from "./ReplaceSyncConfirmDialog";
+import SyncSplitButton from "./SyncSplitButton";
 
 /**
  * SyncExecutor — 同步执行按钮 + 进度展示 + 结果日志
+ * V2: 支持增量同步、替换同步、Diff 查看三种模式
  */
 export default function SyncExecutor() {
   const {
@@ -29,37 +33,126 @@ export default function SyncExecutor() {
     selectedSkillIds,
     syncStatus,
     syncResult,
+    diffReport,
     executePush,
+    executeDiff,
     setSyncStatus,
     setSyncResult,
+    setDiffReport,
   } = useSyncStore();
   const { t } = useTranslation();
 
+  // 替换同步确认对话框状态
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+  // 当前加载模式
+  const [loadingMode, setLoadingMode] = useState<"sync" | "diff" | null>(null);
+
   const enabledTargets = targets.filter((t) => t.enabled);
   const canSync = selectedSkillIds.length > 0 && enabledTargets.length > 0;
-  const isSyncing = syncStatus === "syncing";
+  const isBusy = syncStatus === "syncing" || syncStatus === "diffing";
 
-  const handleSync = useCallback(async () => {
+  // 执行同步（增量或替换）
+  const handleSync = useCallback(
+    async (mode: SyncMode) => {
+      if (mode === "replace") {
+        setShowReplaceConfirm(true);
+        return;
+      }
+
+      setLoadingMode("sync");
+      try {
+        const result = await executePush(undefined, mode);
+        if (mode === "incremental") {
+          // 增量同步结果 Toast
+          if (result.failed > 0) {
+            toast.error(t("sync.syncPartialFail", { failed: result.failed }));
+          } else {
+            toast.success(
+              t("sync.incrementalSyncSuccess", {
+                added: result.success,
+                updated: result.updated,
+                skipped: result.skipped,
+              }),
+              { duration: 5000 },
+            );
+          }
+        } else {
+          // full 模式
+          if (result.failed > 0) {
+            toast.error(t("sync.syncPartialFail", { failed: result.failed }));
+          } else {
+            toast.success(
+              t("sync.syncSuccess", {
+                count: result.success + result.overwritten,
+              }),
+            );
+          }
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : t("sync.syncFailed"));
+      } finally {
+        setLoadingMode(null);
+      }
+    },
+    [executePush, t],
+  );
+
+  // 确认替换同步
+  const handleConfirmReplace = useCallback(async () => {
+    setShowReplaceConfirm(false);
+    setLoadingMode("sync");
     try {
-      const result = await executePush();
+      const result = await executePush(undefined, "replace");
       if (result.failed > 0) {
-        toast.error(t("sync.syncPartialFail", { failed: result.failed }), {
-          details: `${t("sync.successCount", { count: result.success })}，${t("sync.overwrittenCount", { count: result.overwritten })}，${t("sync.failedCount", { count: result.failed })}`,
-        });
+        toast.error(t("sync.syncPartialFail", { failed: result.failed }));
       } else {
-        toast.success(
-          t("sync.syncSuccess", { count: result.success + result.overwritten }),
-        );
+        toast.success(t("sync.replaceSyncSuccess", { count: result.success }), {
+          duration: 5000,
+        });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("sync.syncFailed"));
+    } finally {
+      setLoadingMode(null);
     }
   }, [executePush, t]);
+
+  // 执行 Diff（预览变更）
+  const handleDiff = useCallback(async () => {
+    if (enabledTargets.length === 0) return;
+    // 对比第一个启用的目标，多目标时提示用户当前对比的目标
+    const target = enabledTargets[0];
+    if (enabledTargets.length > 1) {
+      toast.info(
+        t("sync.diffTargetHint", { name: target.name || target.path }),
+      );
+    }
+    setLoadingMode("diff");
+    try {
+      await executeDiff(target.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("sync.diffFailed"));
+    } finally {
+      setLoadingMode(null);
+    }
+  }, [enabledTargets, executeDiff, t]);
+
+  // 从 Diff 报告执行同步
+  const handleDiffSyncIncremental = useCallback(async () => {
+    setDiffReport(null);
+    await handleSync("incremental");
+  }, [handleSync, setDiffReport]);
+
+  const handleDiffSyncReplace = useCallback(() => {
+    setDiffReport(null);
+    setShowReplaceConfirm(true);
+  }, [setDiffReport]);
 
   const handleReset = useCallback(() => {
     setSyncStatus("idle");
     setSyncResult(null);
-  }, [setSyncStatus, setSyncResult]);
+    setDiffReport(null);
+  }, [setSyncStatus, setSyncResult, setDiffReport]);
 
   // 结果详情中的状态图标
   const StatusIcon = ({ status }: { status: SyncDetail["status"] }) => {
@@ -72,7 +165,15 @@ export default function SyncExecutor() {
           />
         );
       case "overwritten":
+      case "updated":
         return <FileWarning size={14} className="text-yellow-500 shrink-0" />;
+      case "skipped":
+        return (
+          <SkipForward
+            size={14}
+            className="text-[hsl(var(--muted-foreground))] shrink-0"
+          />
+        );
       case "failed":
         return (
           <XCircle
@@ -83,22 +184,32 @@ export default function SyncExecutor() {
     }
   };
 
+  const getStatusLabel = (status: SyncDetail["status"]) => {
+    switch (status) {
+      case "success":
+        return t("sync.statusNew");
+      case "overwritten":
+        return t("sync.statusOverwritten");
+      case "updated":
+        return t("sync.statusUpdated");
+      case "skipped":
+        return t("sync.statusSkipped");
+      case "failed":
+        return t("sync.statusFailed");
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* 同步按钮区域 */}
       <div className="flex items-center gap-3">
-        <Button
-          onClick={handleSync}
-          disabled={!canSync || isSyncing}
-          className="gap-2"
-        >
-          {isSyncing ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Play size={16} />
-          )}
-          {isSyncing ? t("sync.syncing") : t("sync.startSync")}
-        </Button>
+        <SyncSplitButton
+          onSync={handleSync}
+          onDiff={handleDiff}
+          disabled={!canSync}
+          loading={isBusy}
+          loadingMode={loadingMode}
+        />
 
         {/* 同步信息摘要 */}
         <div className="text-xs text-[hsl(var(--muted-foreground))]">
@@ -114,7 +225,7 @@ export default function SyncExecutor() {
         </div>
 
         {/* 重置按钮（有结果时显示） */}
-        {syncResult && (
+        {(syncResult || diffReport) && (
           <Button
             variant="ghost"
             size="sm"
@@ -126,6 +237,30 @@ export default function SyncExecutor() {
           </Button>
         )}
       </div>
+
+      {/* Diff 差异报告 */}
+      {diffReport && (
+        <DiffReportView
+          report={diffReport}
+          targetName={enabledTargets[0]?.name || enabledTargets[0]?.path}
+          onSyncIncremental={handleDiffSyncIncremental}
+          onSyncReplace={handleDiffSyncReplace}
+          onClose={() => setDiffReport(null)}
+        />
+      )}
+
+      {/* Diff 加载中 */}
+      {syncStatus === "diffing" && !diffReport && (
+        <div className="flex items-center gap-3 px-4 py-6 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+          <Loader2
+            size={18}
+            className="animate-spin text-[hsl(var(--primary))]"
+          />
+          <span className="text-sm text-[hsl(var(--muted-foreground))]">
+            {t("sync.diffLoading")}
+          </span>
+        </div>
+      )}
 
       {/* 同步结果摘要 */}
       {syncResult && (
@@ -143,13 +278,23 @@ export default function SyncExecutor() {
                 className="text-[hsl(var(--primary))] shrink-0"
               />
             )}
-            <div className="flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-3 text-sm flex-wrap">
               <span className="font-medium text-[hsl(var(--foreground))]">
                 {t("sync.syncComplete")}
               </span>
-              <Badge variant="default" className="text-[10px] px-1.5 py-0">
-                {t("sync.successCount", { count: syncResult.success })}
-              </Badge>
+              {syncResult.success > 0 && (
+                <Badge variant="default" className="text-[10px] px-1.5 py-0">
+                  {t("sync.successCount", { count: syncResult.success })}
+                </Badge>
+              )}
+              {syncResult.updated > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] px-1.5 py-0 bg-blue-500/15 text-blue-400"
+                >
+                  {t("sync.updatedCount", { count: syncResult.updated })}
+                </Badge>
+              )}
               {syncResult.overwritten > 0 && (
                 <Badge
                   variant="secondary"
@@ -158,6 +303,11 @@ export default function SyncExecutor() {
                   {t("sync.overwrittenCount", {
                     count: syncResult.overwritten,
                   })}
+                </Badge>
+              )}
+              {syncResult.skipped > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                  {t("sync.skippedCount", { count: syncResult.skipped })}
                 </Badge>
               )}
               {syncResult.failed > 0 && (
@@ -197,21 +347,22 @@ export default function SyncExecutor() {
                     variant={
                       detail.status === "success"
                         ? "default"
-                        : detail.status === "overwritten"
+                        : detail.status === "overwritten" ||
+                            detail.status === "updated"
                           ? "secondary"
-                          : "destructive"
+                          : detail.status === "skipped"
+                            ? "outline"
+                            : "destructive"
                     }
                     className={`text-[10px] px-1.5 py-0 shrink-0 ${
                       detail.status === "overwritten"
                         ? "bg-yellow-500/15 text-yellow-500"
-                        : ""
+                        : detail.status === "updated"
+                          ? "bg-blue-500/15 text-blue-400"
+                          : ""
                     }`}
                   >
-                    {detail.status === "success"
-                      ? t("sync.statusNew")
-                      : detail.status === "overwritten"
-                        ? t("sync.statusOverwritten")
-                        : t("sync.statusFailed")}
+                    {getStatusLabel(detail.status)}
                   </Badge>
                 </div>
               ))}
@@ -219,6 +370,14 @@ export default function SyncExecutor() {
           </ScrollArea>
         </div>
       )}
+
+      {/* 替换同步确认对话框 */}
+      <ReplaceSyncConfirmDialog
+        open={showReplaceConfirm}
+        onOpenChange={setShowReplaceConfirm}
+        skillCount={selectedSkillIds.length}
+        onConfirm={handleConfirmReplace}
+      />
     </div>
   );
 }

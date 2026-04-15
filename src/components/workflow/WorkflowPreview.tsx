@@ -2,8 +2,9 @@
 // components/workflow/WorkflowPreview.tsx — 工作流生成结果预览
 // ============================================================
 
-import { Eye, Save } from "lucide-react";
+import { Eye, RotateCcw, Save } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   createWorkflow as apiCreateWorkflow,
   previewWorkflow as apiPreviewWorkflow,
@@ -26,10 +27,15 @@ import {
  */
 function getDisabledReason(
   workflowName: string,
-  steps: { skillId: string }[],
+  steps: { skillId: string | null; type?: string; description?: string }[],
 ): string | null {
   if (workflowName.trim() === "") return "请先填写工作流名称";
-  if (steps.length === 0) return "请至少添加一个 Skill 步骤";
+  if (steps.length === 0) return "请至少添加一个步骤";
+  // 检查自定义步骤描述是否为空
+  const emptyCustomStep = steps.find(
+    (s) => s.type === "custom" && !(s.description ?? "").trim(),
+  );
+  if (emptyCustomStep) return "请填写所有自定义步骤的描述";
   return null;
 }
 
@@ -52,6 +58,9 @@ export default function WorkflowPreview({
   const isEditing = editingWorkflowId !== null;
   const canGenerate = workflowName.trim() !== "" && steps.length > 0;
   const disabledReason = getDisabledReason(workflowName, steps);
+  const hasContent =
+    workflowName !== "" || workflowDescription !== "" || steps.length > 0;
+  const { t } = useTranslation();
 
   const handlePreview = useCallback(async () => {
     if (!canGenerate) return;
@@ -165,6 +174,22 @@ export default function WorkflowPreview({
             )}
           </Tooltip>
 
+          {/* 重置按钮 */}
+          {hasContent && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                reset();
+                setPreview(null);
+              }}
+              className="gap-1.5 ml-auto text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+              aria-label={t("workflow.reset")}
+            >
+              <RotateCcw size={14} />
+              {t("workflow.reset")}
+            </Button>
+          )}
           {isEditing && (
             <span className="text-xs text-[hsl(var(--muted-foreground))]">
               正在编辑：{workflowName}

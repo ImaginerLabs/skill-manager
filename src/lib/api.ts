@@ -362,16 +362,33 @@ export async function validateSyncPath(
 
 // ---- Sync Push API ----
 
-import type { PathPreset, SyncResult } from "../../shared/types";
+import type {
+  DiffReport,
+  PathPreset,
+  SyncMode,
+  SyncResult,
+} from "../../shared/types";
 
-/** 执行同步推送（将选定 Skill 复制到启用的同步目标目录） */
+/** 执行同步推送（支持 full / incremental / replace 模式） */
 export async function pushSync(
   skillIds: string[],
   targetIds?: string[],
+  mode?: SyncMode,
 ): Promise<SyncResult> {
   return apiCall<SyncResult>("/api/sync/push", {
     method: "POST",
-    body: JSON.stringify({ skillIds, targetIds }),
+    body: JSON.stringify({ skillIds, targetIds, mode }),
+  });
+}
+
+/** 对比源 Skill 与目标目录的差异（不执行文件操作） */
+export async function diffSync(
+  skillIds: string[],
+  targetId: string,
+): Promise<DiffReport> {
+  return apiCall<DiffReport>("/api/sync/diff", {
+    method: "POST",
+    body: JSON.stringify({ skillIds, targetId }),
   });
 }
 

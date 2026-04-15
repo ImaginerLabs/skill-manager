@@ -2,6 +2,7 @@
 // components/skills/SkillGrid.tsx — Skill 卡片网格视图
 // ============================================================
 
+import { useFilteredSkills } from "../../hooks/useFilteredSkills";
 import { useSkillSearch } from "../../hooks/useSkillSearch";
 import { useSkillStore } from "../../stores/skill-store";
 import EmptyState from "./EmptyState";
@@ -11,17 +12,19 @@ import SkillCard from "./SkillCard";
  * Skill 卡片网格 — 根据分类筛选和搜索条件展示 Skill 卡片
  */
 export default function SkillGrid() {
-  const { skills, selectedCategory, searchQuery } = useSkillStore();
+  const { skills, categories, selectedCategory, selectedSource, searchQuery } =
+    useSkillStore();
 
-  // 先按分类筛选（大小写不敏感）
-  const categoryFiltered = selectedCategory
-    ? skills.filter(
-        (s) => s.category.toLowerCase() === selectedCategory.toLowerCase(),
-      )
-    : skills;
+  // 按分类或来源筛选（互斥，AD-41；支持"未分类"虚拟分类）
+  const filtered = useFilteredSkills(
+    skills,
+    categories,
+    selectedCategory,
+    selectedSource,
+  );
 
   // 再用 Fuse.js 模糊搜索
-  const filteredSkills = useSkillSearch(categoryFiltered, searchQuery);
+  const filteredSkills = useSkillSearch(filtered, searchQuery);
 
   if (filteredSkills.length === 0) {
     return <EmptyState hasSkills={skills.length > 0} />;

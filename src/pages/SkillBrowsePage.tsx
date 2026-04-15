@@ -32,6 +32,7 @@ export default function SkillBrowsePage() {
     viewMode,
     setViewMode,
     selectedCategory,
+    selectedSource,
     selectSkill,
     selectedSkillId,
   } = useSkillStore();
@@ -44,15 +45,23 @@ export default function SkillBrowsePage() {
     fileCount: number;
   } | null>(null);
 
-  // 计算过滤后的 Skill 数量（与子组件逻辑一致，大小写不敏感）
-  const categoryFiltered = selectedCategory
-    ? skills.filter(
-        (s) => s.category.toLowerCase() === selectedCategory.toLowerCase(),
-      )
-    : skills;
-  const filteredSkills = useSkillSearch(categoryFiltered, searchQuery);
-
-  const { selectSkill, selectedSkillId } = useSkillStore();
+  // 计算过滤后的 Skill 数量（与子组件逻辑一致）
+  let categorySourceFiltered = skills;
+  if (selectedCategory) {
+    categorySourceFiltered = categorySourceFiltered.filter(
+      (s) => s.category.toLowerCase() === selectedCategory.toLowerCase(),
+    );
+  }
+  if (selectedSource !== null && selectedSource !== undefined) {
+    if (selectedSource === "") {
+      categorySourceFiltered = categorySourceFiltered.filter((s) => !s.source);
+    } else {
+      categorySourceFiltered = categorySourceFiltered.filter(
+        (s) => s.source === selectedSource,
+      );
+    }
+  }
+  const filteredSkills = useSkillSearch(categorySourceFiltered, searchQuery);
 
   // 首次加载时获取 Skill 列表
   useEffect(() => {

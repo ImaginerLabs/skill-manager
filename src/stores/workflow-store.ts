@@ -7,6 +7,19 @@ import type { WorkflowStep } from "../../shared/types";
 
 const DRAFT_KEY = "workflow-draft";
 
+/** 向后兼容：为缺少 type 字段的步骤补全 */
+function normalizeSteps(steps: WorkflowStep[]): WorkflowStep[] {
+  return steps.map((step) => ({
+    ...step,
+    type:
+      step.type === "skill" || step.type === "custom"
+        ? step.type
+        : step.skillId
+          ? ("skill" as const)
+          : ("custom" as const),
+  }));
+}
+
 interface WorkflowDraft {
   steps: WorkflowStep[];
   workflowName: string;
@@ -14,13 +27,20 @@ interface WorkflowDraft {
   editingWorkflowId: string | null;
 }
 
-/** 从 localStorage 读取草稿 */
+/** 从 localStorage 读取草稿（含归一化） */
 function loadDraft(): Partial<WorkflowDraft> {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return {};
-    return JSON.parse(raw) as WorkflowDraft;
+    const draft = JSON.parse(raw) as WorkflowDraft;
+    // 归一化 steps，防止旧版草稿缺少 type 字段导致后端校验失败
+    if (Array.isArray(draft.steps)) {
+      draft.steps = normalizeSteps(draft.steps);
+    }
+    return draft;
   } catch {
+    // 草稿损坏时静默丢弃
+    localStorage.removeItem(DRAFT_KEY);
     return {};
   }
 }
@@ -51,6 +71,8 @@ export interface WorkflowStore {
   editingWorkflowId: string | null;
   // actions
   addStep: (skillId: string, skillName: string) => void;
+  /** 添加自定义步骤（type: 'custom'，skillId/skillName 为 null） */
+  addCustomStep: () => void;
   removeStep: (index: number) => void;
   reorderSteps: (from: number, to: number) => void;
   updateStepDescription: (index: number, desc: string) => void;
@@ -83,6 +105,28 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
           skillId,
           skillName,
           description: "",
+          type: "skill" as const,
+        },
+      ];
+      saveDraft({
+        steps,
+        workflowName: state.workflowName,
+        workflowDescription: state.workflowDescription,
+        editingWorkflowId: state.editingWorkflowId,
+      });
+      return { steps };
+    }),
+
+  addCustomStep: () =>
+    set((state) => {
+      const steps = [
+        ...state.steps,
+        {
+          order: state.steps.length + 1,
+          skillId: null,
+          skillName: null,
+          description: "",
+          type: "custom" as const,
         },
       ];
       saveDraft({
@@ -160,17 +204,18 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
     }),
 
   loadWorkflow: (id, name, description, steps) => {
+    const normalizedSteps = normalizeSteps(steps);
     saveDraft({
       editingWorkflowId: id,
       workflowName: name,
       workflowDescription: description,
-      steps,
+      steps: normalizedSteps,
     });
     set({
       editingWorkflowId: id,
       workflowName: name,
       workflowDescription: description,
-      steps,
+      steps: normalizedSteps,
     });
   },
 

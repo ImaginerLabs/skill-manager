@@ -19,6 +19,7 @@ import { useSkillSearch } from "../../hooks/useSkillSearch";
 import { fetchSkillBundles } from "../../lib/api";
 import { useSkillStore } from "../../stores/skill-store";
 import { useSyncStore } from "../../stores/sync-store";
+import { toast } from "../shared/toast-store";
 import { Badge } from "../ui/badge";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
@@ -100,10 +101,11 @@ export default function SyncSkillSelector() {
   }, [filteredSkills]);
 
   // 分类名 -> 该分类下所有 skill id（基于全量 skills，不受搜索过滤影响）
+  // 使用 toLowerCase() 归一化 key，确保套件选择时大小写不敏感匹配（AD-48）
   const categorySkillIdsMap = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const skill of skills) {
-      const cat = skill.category;
+      const cat = skill.category.toLowerCase();
       if (!map.has(cat)) map.set(cat, []);
       map.get(cat)!.push(skill.id);
     }
@@ -189,10 +191,13 @@ export default function SyncSkillSelector() {
       // 收集套件下所有有效分类的 skill id
       const bundleSkillIds: string[] = [];
       for (const catName of bundle.categoryNames) {
-        const ids = categorySkillIdsMap.get(catName) ?? [];
+        const ids = categorySkillIdsMap.get(catName.toLowerCase()) ?? [];
         bundleSkillIds.push(...ids);
       }
-      if (bundleSkillIds.length === 0) return;
+      if (bundleSkillIds.length === 0) {
+        toast.info(t("sync.bundleNoMatch", { name: bundle.displayName }));
+        return;
+      }
 
       // 判断是否已全部选中 → 切换逻辑
       const allBundleSelected = bundleSkillIds.every((id) =>
@@ -206,7 +211,7 @@ export default function SyncSkillSelector() {
         selectByCategory([...newIds]);
       }
     },
-    [categorySkillIdsMap, selectedSkillIds, selectByCategory],
+    [categorySkillIdsMap, selectedSkillIds, selectByCategory, t],
   );
 
   // 判断套件选中状态
@@ -214,7 +219,7 @@ export default function SyncSkillSelector() {
     (bundle: SkillBundleWithStatus): "all" | "some" | "none" => {
       const bundleSkillIds: string[] = [];
       for (const catName of bundle.categoryNames) {
-        const ids = categorySkillIdsMap.get(catName) ?? [];
+        const ids = categorySkillIdsMap.get(catName.toLowerCase()) ?? [];
         bundleSkillIds.push(...ids);
       }
       if (bundleSkillIds.length === 0) return "none";

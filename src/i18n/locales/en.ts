@@ -13,6 +13,13 @@ export const en = {
     settings: "Settings",
     categories: "Categories",
     manageCategories: "Manage Categories",
+    byCategory: "By Category",
+    bySource: "By Source",
+    viewSwitcher: "View Switcher",
+    sourceViewPlaceholder: "Source view coming soon",
+    allSources: "All",
+    mySkills: "My Skills",
+    sourceListLabel: "Filter Skills by source",
   },
 
   // ── Common UI ─────────────────────────────────────────────
@@ -76,10 +83,40 @@ export const en = {
     successCount: "Success {{count}}",
     overwrittenCount: "Overwritten {{count}}",
     failedCount: "Failed {{count}}",
+    updatedCount: "Updated {{count}}",
+    skippedCount: "Skipped {{count}}",
     statusNew: "New",
     statusOverwritten: "Overwritten",
     statusFailed: "Failed",
+    statusUpdated: "Updated",
+    statusSkipped: "Skipped",
     bundleSelect: "Select by Bundle",
+    bundleNoMatch: 'No matching skills found in bundle "{{name}}"',
+    // Sync multi-mode
+    incrementalSync: "Incremental Sync",
+    replaceSync: "Replace Sync",
+    viewDiff: "Preview Changes",
+    moreSyncOptions: "More sync options",
+    incrementalSyncSuccess:
+      "Incremental sync complete! Added {{added}}, updated {{updated}}, skipped {{skipped}}",
+    replaceSyncSuccess: "Replace sync complete! {{count}} files synced",
+    replaceSyncConfirmTitle: "Confirm Replace Sync",
+    replaceSyncConfirmDesc:
+      "This will delete {{count}} Skill folders in the target directory, then re-sync.",
+    replaceSyncWarning: "This action cannot be undone.",
+    confirmReplaceSync: "Confirm Replace Sync",
+    diffReport: "Change Preview",
+    diffSummary: "Summary",
+    diffAdded: "Added",
+    diffModified: "Modified",
+    diffDeleted: "Deleted",
+    diffUnchanged: "Unchanged",
+    diffNoChanges: "All files are unchanged",
+    diffLoading: "Generating change preview...",
+    diffFailed: "Change preview failed",
+    diffTargetHint: "Comparing against: {{name}}",
+    execIncremental: "Run Incremental Sync",
+    execReplace: "Run Replace Sync",
   },
 
   // ── Sync Target Manager ───────────────────────────────────
@@ -232,6 +269,14 @@ export const en = {
     loading: "Loading...",
     editAriaLabel: "Edit {{name}}",
     deleteAriaLabel: "Delete {{name}}",
+    addCustomStep: "Add Custom Step",
+    customStep: "Custom Step",
+    customStepPlaceholder:
+      "Enter custom step description, e.g.: Check staged code and analyze intent",
+    removeStep: "Remove this step",
+    startEditing:
+      "Select Skills from the left to add to workflow, or add custom steps to compose an automated workflow",
+    reset: "Reset Workflow",
   },
 
   // ── Import Page ───────────────────────────────────────────

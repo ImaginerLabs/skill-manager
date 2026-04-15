@@ -80,7 +80,12 @@ export default function WorkflowPage() {
       if (pendingDeleteIds.current.has(workflow.id)) return;
       pendingDeleteIds.current.add(workflow.id);
 
-      setWorkflows((prev) => prev.filter((wf) => wf.id !== workflow.id));
+      // 记录删除前的索引，用于撤销时恢复到原位置
+      let deletedIndex = -1;
+      setWorkflows((prev) => {
+        deletedIndex = prev.findIndex((wf) => wf.id === workflow.id);
+        return prev.filter((wf) => wf.id !== workflow.id);
+      });
 
       toast.undoable(
         t("toast.workflowDeleted", { name: workflow.name }),
@@ -102,7 +107,14 @@ export default function WorkflowPage() {
           pendingDeleteIds.current.delete(workflow.id);
           setWorkflows((prev) => {
             if (prev.some((wf) => wf.id === workflow.id)) return prev;
-            return [...prev, workflow];
+            // 恢复到原位置而非追加到末尾
+            const next = [...prev];
+            const insertAt =
+              deletedIndex >= 0 && deletedIndex <= next.length
+                ? deletedIndex
+                : next.length;
+            next.splice(insertAt, 0, workflow);
+            return next;
           });
           toast.success(t("toast.workflowUndoDelete", { name: workflow.name }));
         },

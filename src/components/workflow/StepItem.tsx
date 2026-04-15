@@ -54,7 +54,7 @@ export default function StepItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: step.skillId + "-" + step.order });
+  } = useSortable({ id: (step.skillId ?? "unknown") + "-" + step.order });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -90,12 +90,12 @@ export default function StepItem({
         ${isDragging ? "border-[hsl(var(--primary))] opacity-50 shadow-lg" : "border-[hsl(var(--border))]"}`}
       onKeyDown={handleKeyDown}
       role="listitem"
-      aria-label={`步骤 ${step.order}: ${step.skillName}`}
+      aria-label={`步骤 ${step.order}: ${step.skillName ?? "自定义步骤"}`}
     >
       {/* 拖拽手柄 */}
       <button
         className="mt-0.5 p-1 rounded cursor-grab active:cursor-grabbing text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] transition-colors shrink-0 touch-none"
-        aria-label={`拖拽排序 ${step.skillName}`}
+        aria-label={`拖拽排序 ${step.skillName ?? "步骤"}`}
         {...attributes}
         {...listeners}
       >
@@ -110,7 +110,7 @@ export default function StepItem({
       {/* 内容区 */}
       <div className="flex-1 min-w-0 space-y-1.5">
         <p className="text-sm font-medium font-[var(--font-code)] text-[hsl(var(--foreground))] truncate">
-          {step.skillName}
+          {step.skillName ?? "未知 Skill"}
         </p>
         {/* 描述输入 + 预设按钮 */}
         <div className="relative flex items-center gap-1">
@@ -119,7 +119,7 @@ export default function StepItem({
             value={step.description}
             onChange={(e) => onUpdateDescription(index, e.target.value)}
             className="h-7 text-xs bg-transparent border-[hsl(var(--border)/0.5)] focus:border-[hsl(var(--primary))]"
-            aria-label={`${step.skillName} 的描述`}
+            aria-label={`${step.skillName ?? "步骤"} 的描述`}
           />
           {/* 预设描述按钮 */}
           <div ref={presetRef} className="relative shrink-0">
@@ -167,7 +167,7 @@ export default function StepItem({
       <button
         onClick={() => onRemove(index)}
         className="mt-0.5 p-1.5 rounded-md text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)] opacity-0 group-hover:opacity-100 transition-all shrink-0"
-        aria-label={`移除 ${step.skillName}`}
+        aria-label={`移除 ${step.skillName ?? "步骤"}`}
       >
         <Trash2 size={14} />
       </button>

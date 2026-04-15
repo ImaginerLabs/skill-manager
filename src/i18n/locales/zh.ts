@@ -13,6 +13,13 @@ export const zh = {
     settings: "设置",
     categories: "分类",
     manageCategories: "管理分类",
+    byCategory: "按分类",
+    bySource: "按来源",
+    viewSwitcher: "视图切换",
+    sourceViewPlaceholder: "来源视图即将推出",
+    allSources: "全部",
+    mySkills: "我的 Skill",
+    sourceListLabel: "按来源筛选 Skill",
   },
 
   // ── 通用 UI ───────────────────────────────────────────────
@@ -75,10 +82,40 @@ export const zh = {
     successCount: "成功 {{count}}",
     overwrittenCount: "覆盖 {{count}}",
     failedCount: "失败 {{count}}",
+    updatedCount: "更新 {{count}}",
+    skippedCount: "跳过 {{count}}",
     statusNew: "新建",
     statusOverwritten: "覆盖",
     statusFailed: "失败",
+    statusUpdated: "已更新",
+    statusSkipped: "已跳过",
     bundleSelect: "按套件选择",
+    bundleNoMatch: "套件「{{name}}」下没有匹配的 Skill",
+    // 同步多模式
+    incrementalSync: "增量同步",
+    replaceSync: "替换同步",
+    viewDiff: "预览变更",
+    moreSyncOptions: "更多同步选项",
+    incrementalSyncSuccess:
+      "增量同步完成！新增 {{added}}、更新 {{updated}}、跳过 {{skipped}}",
+    replaceSyncSuccess: "替换同步完成！{{count}} 个文件已同步",
+    replaceSyncConfirmTitle: "替换同步确认",
+    replaceSyncConfirmDesc:
+      "此操作将删除目标目录中 {{count}} 个 Skill 文件夹，然后重新同步。",
+    replaceSyncWarning: "此操作不可撤销。",
+    confirmReplaceSync: "确认替换同步",
+    diffReport: "变更预览",
+    diffSummary: "摘要",
+    diffAdded: "新增",
+    diffModified: "修改",
+    diffDeleted: "删除",
+    diffUnchanged: "相同",
+    diffNoChanges: "所有文件均无变化",
+    diffLoading: "正在生成变更预览...",
+    diffFailed: "变更预览失败",
+    diffTargetHint: "对比目标：{{name}}",
+    execIncremental: "执行增量同步",
+    execReplace: "执行替换同步",
   },
 
   // ── 同步目标管理 ──────────────────────────────────────────
@@ -228,6 +265,14 @@ export const zh = {
     loading: "加载中...",
     editAriaLabel: "编辑 {{name}}",
     deleteAriaLabel: "删除 {{name}}",
+    addCustomStep: "添加自定义步骤",
+    customStep: "自定义步骤",
+    customStepPlaceholder:
+      "输入自定义步骤描述，如：检查暂存区的代码，并分析意图",
+    removeStep: "移除此步骤",
+    startEditing:
+      "从左侧选择 Skill 添加到工作流中，或添加自定义步骤，组合为一个自动化工作流",
+    reset: "重置工作流",
   },
 
   // ── 导入页 ────────────────────────────────────────────────

@@ -13,6 +13,8 @@ export interface SkillStore {
   skills: SkillMeta[];
   categories: Category[];
   selectedCategory: string | null;
+  /** 当前选中的来源（null = 全部），与 selectedCategory 互斥（AD-41） */
+  selectedSource: string | null;
   searchQuery: string;
   selectedSkillId: string | null;
   viewMode: "grid" | "list";
@@ -23,6 +25,8 @@ export interface SkillStore {
   setSkills: (skills: SkillMeta[]) => void;
   setCategories: (categories: Category[]) => void;
   setCategory: (category: string | null) => void;
+  /** 设置来源筛选（自动清除分类筛选，互斥） */
+  setSource: (source: string | null) => void;
   setSearchQuery: (query: string) => void;
   selectSkill: (id: string | null) => void;
   setViewMode: (mode: "grid" | "list") => void;
@@ -32,6 +36,7 @@ export const useSkillStore = create<SkillStore>((set) => ({
   skills: [],
   categories: [],
   selectedCategory: null,
+  selectedSource: null,
   searchQuery: "",
   selectedSkillId: null,
   viewMode: "grid",
@@ -56,7 +61,10 @@ export const useSkillStore = create<SkillStore>((set) => ({
   },
   setSkills: (skills) => set({ skills }),
   setCategories: (categories) => set({ categories }),
-  setCategory: (category) => set({ selectedCategory: category }),
+  setCategory: (category) =>
+    set({ selectedCategory: category, selectedSource: null }),
+  setSource: (source) =>
+    set({ selectedSource: source, selectedCategory: null }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   selectSkill: (id) => set({ selectedSkillId: id }),
   setViewMode: (mode) => set({ viewMode: mode }),

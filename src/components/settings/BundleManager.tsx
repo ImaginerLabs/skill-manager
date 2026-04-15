@@ -50,8 +50,6 @@ export default function BundleManager() {
     createBundle,
     updateBundle,
     deleteBundle,
-    applyBundle,
-    activeBundleId,
   } = useBundleStore();
   const { t } = useTranslation();
 
@@ -84,9 +82,6 @@ export default function BundleManager() {
   >([]);
   const [editCategorySearch, setEditCategorySearch] = useState("");
   const [updating, setUpdating] = useState(false);
-
-  // 激活状态
-  const [applying, setApplying] = useState<string | null>(null);
 
   // 加载数据
   const loadData = useCallback(async () => {
@@ -203,28 +198,6 @@ export default function BundleManager() {
       toast.error(
         err instanceof Error ? err.message : t("bundle.deleteFailed"),
       );
-    }
-  };
-
-  // 激活套件
-  const handleApply = async (id: string) => {
-    setApplying(id);
-    try {
-      const result = await applyBundle(id);
-      const msg =
-        result.skipped.length > 0
-          ? t("bundle.activateSuccess_withSkipped", {
-              applied: result.applied.length,
-              skipped: result.skipped.length,
-            })
-          : t("bundle.activateSuccess", { applied: result.applied.length });
-      toast.success(msg);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t("bundle.activateFailed"),
-      );
-    } finally {
-      setApplying(null);
     }
   };
 
@@ -415,11 +388,7 @@ export default function BundleManager() {
             return (
               <div
                 key={bundle.id}
-                className={`rounded-lg border overflow-hidden ${
-                  activeBundleId === bundle.id
-                    ? "border-[hsl(var(--primary))]"
-                    : "border-[hsl(var(--border))]"
-                } bg-[hsl(var(--card))]`}
+                className="rounded-lg border overflow-hidden border-[hsl(var(--border))] bg-[hsl(var(--card))]"
               >
                 {/* 套件头部行 */}
                 <div className="flex items-center gap-3 p-3">
@@ -539,14 +508,6 @@ export default function BundleManager() {
                               count: bundle.categoryNames.length,
                             })}
                           </Badge>
-                          {activeBundleId === bundle.id && (
-                            <Badge
-                              variant="default"
-                              className="h-5 px-1.5 text-[10px]"
-                            >
-                              {t("bundle.activated")}
-                            </Badge>
-                          )}
                           {bundle.brokenCategoryNames.length > 0 && (
                             <Badge
                               variant="outline"
@@ -564,23 +525,6 @@ export default function BundleManager() {
                           </p>
                         )}
                       </div>
-
-                      <Button
-                        size="sm"
-                        variant={
-                          activeBundleId === bundle.id ? "default" : "outline"
-                        }
-                        onClick={() => handleApply(bundle.id)}
-                        disabled={applying === bundle.id}
-                        className="h-7 text-xs px-2 shrink-0"
-                        title={t("bundle.activate")}
-                      >
-                        {applying === bundle.id
-                          ? t("common.processing")
-                          : activeBundleId === bundle.id
-                            ? t("bundle.activated")
-                            : t("bundle.activate")}
-                      </Button>
 
                       <Button
                         variant="ghost"
