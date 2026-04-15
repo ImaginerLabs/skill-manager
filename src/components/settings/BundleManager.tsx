@@ -284,9 +284,45 @@ export default function BundleManager() {
             />
             {/* 分类选择器 */}
             <div>
-              <p className="text-xs text-[hsl(var(--muted-foreground))] mb-2">
-                {t("bundle.selectCategories")}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  {t("bundle.selectCategories")}
+                </p>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => {
+                      const visible = filteredCategories(newCategorySearch);
+                      const allSelected = visible.every((c) =>
+                        newSelectedCategories.includes(c.name),
+                      );
+                      if (allSelected) {
+                        setNewSelectedCategories(
+                          newSelectedCategories.filter(
+                            (n) => !visible.some((c) => c.name === n),
+                          ),
+                        );
+                      } else {
+                        const merged = new Set([
+                          ...newSelectedCategories,
+                          ...visible.map((c) => c.name),
+                        ]);
+                        setNewSelectedCategories([...merged]);
+                      }
+                    }}
+                  >
+                    {filteredCategories(newCategorySearch).length > 0 &&
+                    filteredCategories(newCategorySearch).every((c) =>
+                      newSelectedCategories.includes(c.name),
+                    )
+                      ? t("bundle.deselectAll")
+                      : t("common.selectAll")}
+                  </Button>
+                </div>
+              </div>
               <div className="relative mb-2">
                 <Search
                   size={14}
@@ -409,6 +445,45 @@ export default function BundleManager() {
                       />
                       {/* 编辑分类选择器 */}
                       <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                            {t("bundle.selectCategories")}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 px-1.5 text-[10px]"
+                            onClick={() => {
+                              const visible =
+                                filteredCategories(editCategorySearch);
+                              const allSelected = visible.every((c) =>
+                                editSelectedCategories.includes(c.name),
+                              );
+                              if (allSelected) {
+                                setEditSelectedCategories(
+                                  editSelectedCategories.filter(
+                                    (n) => !visible.some((c) => c.name === n),
+                                  ),
+                                );
+                              } else {
+                                const merged = new Set([
+                                  ...editSelectedCategories,
+                                  ...visible.map((c) => c.name),
+                                ]);
+                                setEditSelectedCategories([...merged]);
+                              }
+                            }}
+                          >
+                            {filteredCategories(editCategorySearch).length >
+                              0 &&
+                            filteredCategories(editCategorySearch).every((c) =>
+                              editSelectedCategories.includes(c.name),
+                            )
+                              ? t("bundle.deselectAll")
+                              : t("common.selectAll")}
+                          </Button>
+                        </div>
                         <div className="relative mb-1">
                           <Search
                             size={14}

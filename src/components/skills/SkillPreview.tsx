@@ -9,6 +9,7 @@ import {
   FileText,
   GitBranch,
   Lock,
+  Package,
   Pencil,
   Tag,
   User,
@@ -84,8 +85,14 @@ export default function SkillPreview() {
   // 未选中状态
   if (!selectedSkillId) {
     return (
-      <div className="flex items-center justify-center h-full text-[hsl(var(--muted-foreground))]">
-        <p className="text-sm">选择一个 Skill 查看预览</p>
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <Package
+          size={48}
+          className="text-[hsl(var(--muted-foreground))] mb-3 opacity-30"
+        />
+        <p className="text-sm text-[hsl(var(--muted-foreground))]">
+          {t("skillBrowse.previewEmpty")}
+        </p>
       </div>
     );
   }

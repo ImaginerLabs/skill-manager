@@ -6,7 +6,7 @@ import {
   Search,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import SkillGrid from "../components/skills/SkillGrid";
@@ -14,6 +14,7 @@ import SkillListView from "../components/skills/SkillListView";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { useFilteredSkills } from "../hooks/useFilteredSkills";
 import { useSkillSearch } from "../hooks/useSkillSearch";
 import { detectCodeBuddy, refreshSkills } from "../lib/api";
 import { useSkillStore } from "../stores/skill-store";
@@ -29,6 +30,7 @@ export default function SkillBrowsePage() {
     searchQuery,
     setSearchQuery,
     skills,
+    categories,
     viewMode,
     setViewMode,
     selectedCategory,
@@ -46,21 +48,12 @@ export default function SkillBrowsePage() {
   } | null>(null);
 
   // 计算过滤后的 Skill 数量（与子组件逻辑一致）
-  let categorySourceFiltered = skills;
-  if (selectedCategory) {
-    categorySourceFiltered = categorySourceFiltered.filter(
-      (s) => s.category.toLowerCase() === selectedCategory.toLowerCase(),
-    );
-  }
-  if (selectedSource !== null && selectedSource !== undefined) {
-    if (selectedSource === "") {
-      categorySourceFiltered = categorySourceFiltered.filter((s) => !s.source);
-    } else {
-      categorySourceFiltered = categorySourceFiltered.filter(
-        (s) => s.source === selectedSource,
-      );
-    }
-  }
+  const categorySourceFiltered = useFilteredSkills(
+    skills,
+    categories,
+    selectedCategory,
+    selectedSource,
+  );
   const filteredSkills = useSkillSearch(categorySourceFiltered, searchQuery);
 
   // 首次加载时获取 Skill 列表
@@ -68,12 +61,47 @@ export default function SkillBrowsePage() {
     fetchSkills();
   }, [fetchSkills]);
 
-  // skills 加载完成后，若未选中任何 skill，自动选中第一个
+  // skills 首次加载完成后，若未选中任何 skill，自动选中第一个（仅触发一次）
+  const initialSelectDoneRef = useRef(false);
   useEffect(() => {
-    if (!loading && skills.length > 0 && !selectedSkillId) {
+    if (
+      !loading &&
+      skills.length > 0 &&
+      !selectedSkillId &&
+      !initialSelectDoneRef.current
+    ) {
+      initialSelectDoneRef.current = true;
       selectSkill(skills[0].id);
     }
   }, [loading, skills, selectedSkillId, selectSkill]);
+
+  // 分类/来源切换时：清空搜索框 + 自动选中当前筛选结果的第一个 Skill
+  const prevCategoryRef = useRef(selectedCategory);
+  const prevSourceRef = useRef(selectedSource);
+  useEffect(() => {
+    const categoryChanged = prevCategoryRef.current !== selectedCategory;
+    const sourceChanged = prevSourceRef.current !== selectedSource;
+    prevCategoryRef.current = selectedCategory;
+    prevSourceRef.current = selectedSource;
+
+    if (!categoryChanged && !sourceChanged) return;
+
+    // 清空搜索框
+    setSearchQuery("");
+
+    // 自动选中当前分类/来源下的第一个 Skill
+    if (categorySourceFiltered.length > 0) {
+      selectSkill(categorySourceFiltered[0].id);
+    } else {
+      selectSkill(null);
+    }
+  }, [
+    selectedCategory,
+    selectedSource,
+    categorySourceFiltered,
+    selectSkill,
+    setSearchQuery,
+  ]);
 
   // 冷启动检测：skills 为空时检测 CodeBuddy 目录
   useEffect(() => {

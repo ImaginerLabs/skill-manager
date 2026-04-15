@@ -235,7 +235,7 @@ describe("SkillPreview — 快捷操作（复制路径）(Story 3.1)", () => {
 
       render(<SkillPreview />);
 
-      expect(screen.getByText("选择一个 Skill 查看预览")).toBeInTheDocument();
+      expect(screen.getByText("skillBrowse.previewEmpty")).toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: "复制文件路径" }),
       ).not.toBeInTheDocument();

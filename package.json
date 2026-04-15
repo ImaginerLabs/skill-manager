@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "concurrently -n client,server -c blue,green \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "vite",
-    "dev:server": "tsx watch server/index.ts",
+    "dev:server": "tsx watch --exclude ./config server/index.ts",
     "build": "tsc --noEmit && vite build",
     "start": "cross-env NODE_ENV=production tsx server/index.ts",
     "typecheck": "tsc --noEmit",
@@ -124,10 +124,10 @@
   "lint-staged": {
     "*.{ts,tsx,js,jsx,cjs,mjs}": [
       "eslint --max-warnings=0",
-      "prettier --check"
+      "prettier --write"
     ],
     "*.{json,css,md,html,yaml,yml}": [
-      "prettier --check"
+      "prettier --write"
     ]
   }
 }

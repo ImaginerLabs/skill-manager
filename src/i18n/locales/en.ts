@@ -61,6 +61,7 @@ export const en = {
     coldStartImport: "Start Import →",
     errorTitle: "Load Failed",
     loadingText: "Loading...",
+    previewEmpty: "Select a Skill to preview",
   },
 
   // ── Sync Page ─────────────────────────────────────────────
@@ -186,6 +187,7 @@ export const en = {
     displayNameLabel: "Display Name",
     descriptionLabel: "Description",
     brokenRef: "{{count}} category references broken",
+    deselectAll: "Deselect All",
   },
 
   // ── Category Management ───────────────────────────────────

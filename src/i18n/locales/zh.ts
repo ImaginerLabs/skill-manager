@@ -61,6 +61,7 @@ export const zh = {
     coldStartImport: "开始导入 →",
     errorTitle: "加载失败",
     loadingText: "加载中...",
+    previewEmpty: "选择一个 Skill 查看预览",
   },
 
   // ── 同步页 ────────────────────────────────────────────────
@@ -183,6 +184,7 @@ export const zh = {
     displayNameLabel: "显示名称",
     descriptionLabel: "描述",
     brokenRef: "{{count}} 个分类引用已失效",
+    deselectAll: "取消全选",
   },
 
   // ── 分类管理 ──────────────────────────────────────────────

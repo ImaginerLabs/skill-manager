@@ -28,5 +28,9 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    watch: {
+      // 排除服务端运行时写入的目录/文件，防止文件变化触发页面刷新
+      ignored: ["**/config/**", "**/server/**", "**/skills/**", "**/*.yaml"],
+    },
   },
 });

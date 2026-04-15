@@ -26,8 +26,19 @@ export default function SkillGrid() {
   // 再用 Fuse.js 模糊搜索
   const filteredSkills = useSkillSearch(filtered, searchQuery);
 
+  // 判断是否为"分类本身为空"（非搜索导致的空结果）
+  const isCategoryEmpty =
+    (selectedCategory !== null || selectedSource !== null) &&
+    !searchQuery &&
+    filtered.length === 0;
+
   if (filteredSkills.length === 0) {
-    return <EmptyState hasSkills={skills.length > 0} />;
+    return (
+      <EmptyState
+        hasSkills={skills.length > 0}
+        isCategoryEmpty={isCategoryEmpty}
+      />
+    );
   }
 
   return (
