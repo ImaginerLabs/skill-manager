@@ -36,14 +36,14 @@ if [ "$HAS_BREAKING" -gt 0 ]; then
   echo "🚀 检测到 BREAKING CHANGE，执行 minor 发版..."
   npm run release:minor || exit 1
   echo "📦 版本 commit 已在本地完成，推送版本 commit + tags..."
-  git push --no-verify "$REMOTE" HEAD:"$BRANCH" --follow-tags
-  exit $?
+  git push --no-verify "$REMOTE" HEAD:"$BRANCH" --follow-tags || exit 1
+  exit 0
 elif [ "$HAS_FEAT" -gt 0 ] || [ "$HAS_FIX" -gt 0 ]; then
   echo "🚀 检测到 feat/fix commit，执行 patch 发版..."
   npm run release:patch || exit 1
   echo "📦 版本 commit 已在本地完成，推送版本 commit + tags..."
-  git push --no-verify "$REMOTE" HEAD:"$BRANCH" --follow-tags
-  exit $?
+  git push --no-verify "$REMOTE" HEAD:"$BRANCH" --follow-tags || exit 1
+  exit 0
 else
   echo "ℹ️  无 feat/fix/BREAKING commit（docs/chore/refactor 等），跳过自动发版"
   exit 0
