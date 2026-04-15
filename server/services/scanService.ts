@@ -83,9 +83,18 @@ async function collectMdFiles(
   const results: string[] = [];
   const entries = await fs.readdir(dirPath, { withFileTypes: true });
 
+  // 若当前目录下存在 SKILL.md，视为 Skill 包根目录：只收录 SKILL.md，不递归子目录
+  const hasSkillMd = entries.some((e) => e.isFile() && e.name === "SKILL.md");
+  if (hasSkillMd) {
+    results.push(path.join(dirPath, "SKILL.md"));
+    return results;
+  }
+
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry.name);
     if (entry.isDirectory()) {
+      // 跳过隐藏目录（以 . 开头）
+      if (entry.name.startsWith(".")) continue;
       const subFiles = await collectMdFiles(
         fullPath,
         currentDepth + 1,

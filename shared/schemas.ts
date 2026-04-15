@@ -39,9 +39,10 @@ export const SkillFullSchema = SkillMetaSchema.extend({
 /** WorkflowStep Zod Schema */
 export const WorkflowStepSchema = z.object({
   order: z.number().int().nonnegative(),
-  skillId: z.string().min(1),
-  skillName: z.string().min(1),
+  skillId: z.string().nullable(),
+  skillName: z.string().nullable(),
   description: z.string(),
+  type: z.enum(["skill", "custom"]),
 });
 
 /** Workflow Zod Schema */
@@ -126,12 +127,15 @@ export const SyncTargetSchema = z.object({
   enabled: z.boolean(),
 });
 
+/** SyncMode Zod Schema */
+export const SyncModeSchema = z.enum(["incremental", "replace", "full"]);
+
 /** SyncDetail Zod Schema */
 export const SyncDetailSchema = z.object({
   skillId: z.string(),
   skillName: z.string(),
   targetPath: z.string(),
-  status: z.enum(["success", "overwritten", "failed"]),
+  status: z.enum(["success", "overwritten", "failed", "skipped", "updated"]),
   error: z.string().optional(),
 });
 
@@ -141,7 +145,27 @@ export const SyncResultSchema = z.object({
   success: z.number().nonnegative(),
   overwritten: z.number().nonnegative(),
   failed: z.number().nonnegative(),
+  skipped: z.number().nonnegative(),
+  updated: z.number().nonnegative(),
   details: z.array(SyncDetailSchema),
+});
+
+/** DiffItem Zod Schema */
+export const DiffItemSchema = z.object({
+  skillId: z.string(),
+  skillName: z.string(),
+  path: z.string(),
+});
+
+/** DiffReport Zod Schema */
+export const DiffReportSchema = z.object({
+  targetId: z.string(),
+  targetPath: z.string(),
+  added: z.array(DiffItemSchema),
+  modified: z.array(DiffItemSchema),
+  deleted: z.array(DiffItemSchema),
+  unchanged: z.array(DiffItemSchema),
+  generatedAt: z.string(),
 });
 
 // ---- 路径预设 Schema ----
@@ -339,6 +363,13 @@ export const SyncTargetUpdateSchema = z.object({
 export const SyncPushRequestSchema = z.object({
   skillIds: z.array(z.string().min(1)).min(1, "至少选择一个 Skill"),
   targetIds: z.array(z.string().min(1)).optional(),
+  mode: SyncModeSchema.default("full"),
+});
+
+/** POST /api/sync/diff 请求体 */
+export const DiffRequestSchema = z.object({
+  skillIds: z.array(z.string().min(1)).min(1, "至少选择一个 Skill"),
+  targetId: z.string().min(1, "targetId 为必填项"),
 });
 
 // ---- 类型推断导出 ----
@@ -365,3 +396,7 @@ export type ExternalRepositoryInferred = z.infer<
 export type RepositoriesConfigInferred = z.infer<
   typeof RepositoriesConfigSchema
 >;
+export type SyncModeInferred = z.infer<typeof SyncModeSchema>;
+export type DiffItemInferred = z.infer<typeof DiffItemSchema>;
+export type DiffReportInferred = z.infer<typeof DiffReportSchema>;
+export type DiffRequestInferred = z.infer<typeof DiffRequestSchema>;

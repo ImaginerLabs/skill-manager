@@ -16,6 +16,7 @@ import type {
 import { AppError } from "../types/errors.js";
 import { readYaml, writeYaml } from "../utils/yamlUtils.js";
 import { getCategories } from "./categoryService.js";
+import { getAllSkills, waitForInitialization } from "./skillService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
@@ -31,7 +32,7 @@ const VALID_BUNDLE_NAME_RE = /^[a-z0-9-]+$/;
 /** 默认套件固定 ID */
 const DEFAULT_BUNDLE_ID = "bundle-default";
 
-/** 默认套件包含的所有出厂分类（9 个） */
+/** 默认套件包含的出厂分类（初始创建时使用，后续会动态更新） */
 const DEFAULT_BUNDLE_CATEGORIES = [
   "coding",
   "writing",
@@ -282,26 +283,90 @@ export async function applyBundle(id: string): Promise<ApplyBundleResult> {
 }
 
 /**
- * 确保默认套件存在（幂等操作）
- * 系统启动时调用，若默认套件不存在则自动创建
+ * 收集当前所有实际存在的分类名（从 Skill 缓存 + categories.yaml 合并去重）
+ */
+async function collectAllCategoryNames(): Promise<string[]> {
+  await waitForInitialization();
+  const skills = getAllSkills();
+  const categories = await getCategories();
+
+  const categorySet = new Set<string>();
+  // 1. 从 categories.yaml 中获取所有已定义分类
+  for (const cat of categories) {
+    if (cat.name !== "uncategorized") {
+      categorySet.add(cat.name);
+    }
+  }
+  // 2. 从实际 Skill 中收集所有分类（包括非标准分类）
+  for (const skill of skills) {
+    if (skill.category && skill.category !== "uncategorized") {
+      categorySet.add(skill.category);
+    }
+  }
+
+  return [...categorySet];
+}
+
+/**
+ * 确保默认套件存在并包含所有分类（幂等操作）
+ * 系统启动时调用，若默认套件不存在则创建，已存在则更新其 categoryNames
  */
 export async function ensureDefaultBundle(): Promise<void> {
   const settings = await readSettings();
   const bundles = settings.skillBundles ?? [];
 
-  // 幂等检查：已存在 name: "default" 的套件则跳过
-  const exists = bundles.some((b) => b.name === "default");
-  if (exists) {
+  // 动态收集所有分类名
+  const allCategoryNames = await collectAllCategoryNames();
+
+  const existingIndex = bundles.findIndex((b) => b.name === "default");
+  const now = new Date().toISOString();
+
+  if (existingIndex >= 0) {
+    // 已存在：同步 categoryNames（添加新分类 + 移除已失效分类）
+    const existing = bundles[existingIndex];
+    const validSet = new Set(allCategoryNames);
+    const currentNames = new Set(existing.categoryNames);
+
+    const newNames = allCategoryNames.filter((n) => !currentNames.has(n));
+    const removedNames = existing.categoryNames.filter((n) => !validSet.has(n));
+
+    if (newNames.length > 0 || removedNames.length > 0) {
+      const updatedCategories = existing.categoryNames
+        .filter((n) => validSet.has(n))
+        .concat(newNames);
+
+      bundles[existingIndex] = {
+        ...existing,
+        categoryNames: updatedCategories,
+        updatedAt: now,
+      };
+      settings.skillBundles = bundles;
+      await writeSettings(settings);
+
+      const logs: string[] = [];
+      if (newNames.length > 0) {
+        logs.push(`新增 ${newNames.length} 个分类: ${newNames.join(", ")}`);
+      }
+      if (removedNames.length > 0) {
+        logs.push(
+          `移除 ${removedNames.length} 个失效分类: ${removedNames.join(", ")}`,
+        );
+      }
+      console.log(`[bundleService] 默认套件已更新，${logs.join("；")}`);
+    }
     return;
   }
 
-  const now = new Date().toISOString();
+  // 不存在：创建默认套件，包含所有分类
   const defaultBundle: SkillBundle = {
     id: DEFAULT_BUNDLE_ID,
     name: "default",
     displayName: "默认套件",
-    description: "包含所有出厂预设分类的完整技能组合",
-    categoryNames: DEFAULT_BUNDLE_CATEGORIES,
+    description: "包含所有分类的完整技能组合",
+    categoryNames:
+      allCategoryNames.length > 0
+        ? allCategoryNames
+        : DEFAULT_BUNDLE_CATEGORIES,
     createdAt: now,
     updatedAt: now,
   };

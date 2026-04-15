@@ -3,10 +3,19 @@
 // ============================================================
 
 import fs from "fs-extra";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { SyncDetail, SyncResult, SyncTarget } from "../../shared/types.js";
+import type {
+  DiffItem,
+  DiffReport,
+  SyncDetail,
+  SyncMode,
+  SyncResult,
+  SyncTarget,
+} from "../../shared/types.js";
 import { AppError } from "../types/errors.js";
+import { isSubPath } from "../utils/pathUtils.js";
 import { readYaml, writeYaml } from "../utils/yamlUtils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -194,18 +203,105 @@ export async function validateSyncPath(
   }
 }
 
+// ---- 文件比较工具函数 ----
+
 /**
- * 执行同步推送 — 将选定的 Skill 整个文件夹复制到启用的同步目标目录
+ * 计算文件的 md5 哈希值
+ */
+async function computeMd5(filePath: string): Promise<string> {
+  const content = await fs.readFile(filePath);
+  return createHash("md5").update(content).digest("hex");
+}
+
+/**
+ * 比较源文件和目标文件，判断是否需要同步
+ * 分层策略：先比较 mtime（O(1)），mtime 不同再比较 md5（O(n)）
+ */
+async function compareSkillFile(
+  sourcePath: string,
+  targetPath: string,
+): Promise<{
+  status: "added" | "modified" | "unchanged";
+  method: "mtime" | "md5";
+}> {
+  // 1. 目标文件不存在 → 新增
+  const targetExists = await fs.pathExists(targetPath);
+  if (!targetExists) {
+    return { status: "added", method: "mtime" };
+  }
+
+  // 2. 快速路径：比较 mtime
+  const [sourceStat, targetStat] = await Promise.all([
+    fs.stat(sourcePath),
+    fs.stat(targetPath),
+  ]);
+
+  // mtime 相同 → 大概率未变化（快速跳过）
+  if (sourceStat.mtimeMs === targetStat.mtimeMs) {
+    return { status: "unchanged", method: "mtime" };
+  }
+
+  // 3. mtime 不同 → 回退到 md5 精确比较
+  try {
+    const [sourceHash, targetHash] = await Promise.all([
+      computeMd5(sourcePath),
+      computeMd5(targetPath),
+    ]);
+
+    if (sourceHash === targetHash) {
+      return { status: "unchanged", method: "md5" };
+    }
+
+    return { status: "modified", method: "md5" };
+  } catch {
+    // md5 计算失败时回退到全量覆盖（FR-V2-29）
+    return { status: "modified", method: "md5" };
+  }
+}
+
+/**
+ * 查找 Skill 文件夹中的代表性文件（SKILL.md 或第一个 .md 文件）
+ */
+function findRepresentativeFile(dirPath: string, files: string[]): string {
+  // 优先 SKILL.md
+  if (files.includes("SKILL.md")) {
+    return path.join(dirPath, "SKILL.md");
+  }
+  // 其次第一个 .md 文件
+  const mdFile = files.find((f) => f.endsWith(".md"));
+  if (mdFile) {
+    return path.join(dirPath, mdFile);
+  }
+  // 兜底：目录本身（不应该发生）
+  return dirPath;
+}
+
+/**
+ * 从 Skill meta 推导出源文件夹路径和文件夹名
+ */
+function resolveSkillDirs(
+  meta: { filePath: string },
+  skillsRoot: string,
+): { sourceDir: string; folderName: string } {
+  const skillRelDir = path.dirname(meta.filePath);
+  const sourceDir = path.join(skillsRoot, skillRelDir);
+  const folderName = path.basename(skillRelDir);
+  return { sourceDir, folderName };
+}
+
+// ---- 同步推送（支持多模式） ----
+
+/**
+ * 执行同步推送 — 支持 full / incremental / replace 三种模式
  *
- * 流程：
- * 1. 获取启用的同步目标列表
- * 2. 从 meta.filePath（如 "coding/explore/SKILL.md"）推导出 Skill 文件夹路径
- * 3. 将整个 Skill 文件夹复制到 {target.path}/{folderName}/
- * 4. 同名文件夹默认覆盖，在结果中标注 overwritten
+ * - full（默认）：全量覆盖，同名文件夹直接覆盖
+ * - incremental：增量同步，mtime + md5 分层比较，跳过未变化文件
+ * - replace：替换同步，先删除目标中对应文件夹，再全量复制
  */
 export async function pushSync(
   skillIds: string[],
   targetIds?: string[],
+  mode: SyncMode = "full",
 ): Promise<SyncResult> {
   const { getSkillMeta, getSkillsRoot } = await import("./skillService.js");
 
@@ -233,12 +329,12 @@ export async function pushSync(
   let successCount = 0;
   let overwrittenCount = 0;
   let failedCount = 0;
+  let skippedCount = 0;
+  let updatedCount = 0;
 
-  // 对每个 Skill × 每个目标执行文件夹复制
   for (const skillId of skillIds) {
     const meta = getSkillMeta(skillId);
     if (!meta) {
-      // Skill 不存在，记录失败
       for (const target of targets) {
         details.push({
           skillId,
@@ -252,32 +348,24 @@ export async function pushSync(
       continue;
     }
 
-    // 从 meta.filePath（如 "coding/explore/SKILL.md"）推导出 Skill 文件夹
-    const skillRelDir = path.dirname(meta.filePath); // "coding/explore"
-    const sourceDir = path.join(skillsRoot, skillRelDir); // 源文件夹绝对路径
-    const folderName = path.basename(skillRelDir); // "explore" — Skill 文件夹名
+    const { sourceDir, folderName } = resolveSkillDirs(meta, skillsRoot);
 
     for (const target of targets) {
       const destDir = path.join(target.path, folderName);
+
       try {
         // 确保目标父目录存在
         await fs.ensureDir(target.path);
 
-        // 检查目标文件夹是否已存在（判断是否为覆盖）
-        const existed = await fs.pathExists(destDir);
-
-        // 复制整个 Skill 文件夹（overwrite: true 覆盖已有内容）
-        await fs.copy(sourceDir, destDir, { overwrite: true });
-
-        if (existed) {
-          details.push({
-            skillId: meta.id,
-            skillName: meta.name,
-            targetPath: destDir,
-            status: "overwritten",
-          });
-          overwrittenCount++;
-        } else {
+        if (mode === "replace") {
+          // 替换模式：先安全删除，再全量复制
+          if (!isSubPath(destDir, target.path)) {
+            throw AppError.pathTraversal();
+          }
+          if (await fs.pathExists(destDir)) {
+            await fs.remove(destDir);
+          }
+          await fs.copy(sourceDir, destDir, { overwrite: true });
           details.push({
             skillId: meta.id,
             skillName: meta.name,
@@ -285,6 +373,67 @@ export async function pushSync(
             status: "success",
           });
           successCount++;
+        } else if (mode === "incremental") {
+          // 增量模式：比较后决定是否复制
+          const sourceFiles = await fs.readdir(sourceDir);
+          const repFile = findRepresentativeFile(sourceDir, sourceFiles);
+          const targetRepFile = path.join(
+            destDir,
+            path.relative(sourceDir, repFile),
+          );
+
+          const cmp = await compareSkillFile(repFile, targetRepFile);
+
+          if (cmp.status === "unchanged") {
+            details.push({
+              skillId: meta.id,
+              skillName: meta.name,
+              targetPath: destDir,
+              status: "skipped",
+            });
+            skippedCount++;
+          } else {
+            await fs.copy(sourceDir, destDir, { overwrite: true });
+            if (cmp.status === "added") {
+              details.push({
+                skillId: meta.id,
+                skillName: meta.name,
+                targetPath: destDir,
+                status: "success",
+              });
+              successCount++;
+            } else {
+              details.push({
+                skillId: meta.id,
+                skillName: meta.name,
+                targetPath: destDir,
+                status: "updated",
+              });
+              updatedCount++;
+            }
+          }
+        } else {
+          // full 模式（默认）：全量覆盖
+          const existed = await fs.pathExists(destDir);
+          await fs.copy(sourceDir, destDir, { overwrite: true });
+
+          if (existed) {
+            details.push({
+              skillId: meta.id,
+              skillName: meta.name,
+              targetPath: destDir,
+              status: "overwritten",
+            });
+            overwrittenCount++;
+          } else {
+            details.push({
+              skillId: meta.id,
+              skillName: meta.name,
+              targetPath: destDir,
+              status: "success",
+            });
+            successCount++;
+          }
         }
       } catch (err) {
         details.push({
@@ -304,6 +453,138 @@ export async function pushSync(
     success: successCount,
     overwritten: overwrittenCount,
     failed: failedCount,
+    skipped: skippedCount,
+    updated: updatedCount,
     details,
+  };
+}
+
+// ---- Diff 对比 ----
+
+/**
+ * 对比源 Skill 与目标目录的差异，生成差异报告
+ * 不执行任何文件操作
+ */
+export async function diffSync(
+  skillIds: string[],
+  targetId: string,
+): Promise<DiffReport> {
+  const { getSkillMeta, getSkillsRoot } = await import("./skillService.js");
+
+  if (skillIds.length === 0) {
+    throw AppError.validationError("至少选择一个 Skill");
+  }
+
+  // 获取目标
+  const allTargets = await getSyncTargets();
+  const target = allTargets.find((t) => t.id === targetId);
+  if (!target) {
+    throw AppError.notFound(`同步目标 "${targetId}" 未找到`);
+  }
+
+  const targetPath = target.path;
+  const targetExists = await fs.pathExists(targetPath);
+
+  const skillsRoot = getSkillsRoot();
+  const added: DiffItem[] = [];
+  const modified: DiffItem[] = [];
+  const unchanged: DiffItem[] = [];
+  const deleted: DiffItem[] = [];
+
+  // 1. 正向遍历：源 → 目标
+  const sourceBasenames = new Set<string>();
+
+  for (const skillId of skillIds) {
+    const meta = getSkillMeta(skillId);
+    if (!meta) continue;
+
+    const { sourceDir, folderName } = resolveSkillDirs(meta, skillsRoot);
+    sourceBasenames.add(folderName);
+
+    const item: DiffItem = {
+      skillId: meta.id,
+      skillName: meta.name,
+      path: folderName,
+    };
+
+    if (!targetExists) {
+      added.push(item);
+      continue;
+    }
+
+    const destDir = path.join(targetPath, folderName);
+    const destExists = await fs.pathExists(destDir);
+
+    if (!destExists) {
+      added.push(item);
+      continue;
+    }
+
+    // 以代表性文件哈希比较
+    try {
+      const sourceFiles = await fs.readdir(sourceDir);
+      const repFile = findRepresentativeFile(sourceDir, sourceFiles);
+      const targetRepFile = path.join(
+        destDir,
+        path.relative(sourceDir, repFile),
+      );
+
+      const targetRepExists = await fs.pathExists(targetRepFile);
+      if (!targetRepExists) {
+        modified.push(item);
+        continue;
+      }
+
+      const [sourceHash, targetHash] = await Promise.all([
+        computeMd5(repFile),
+        computeMd5(targetRepFile),
+      ]);
+
+      if (sourceHash === targetHash) {
+        unchanged.push(item);
+      } else {
+        modified.push(item);
+      }
+    } catch {
+      // 哈希计算失败，视为已修改
+      modified.push(item);
+    }
+  }
+
+  // 2. 反向遍历：目标中有但源中没有的 → 删除候选
+  if (targetExists) {
+    try {
+      const targetEntries = await fs.readdir(targetPath, {
+        withFileTypes: true,
+      });
+
+      for (const entry of targetEntries) {
+        if (entry.isDirectory() && !sourceBasenames.has(entry.name)) {
+          // 检查是否是 Skill 文件夹（包含 .md 文件）
+          const entryPath = path.join(targetPath, entry.name);
+          const entryFiles = await fs.readdir(entryPath);
+          const hasMd = entryFiles.some((f) => f.endsWith(".md"));
+          if (hasMd) {
+            deleted.push({
+              skillId: entry.name,
+              skillName: entry.name,
+              path: entry.name,
+            });
+          }
+        }
+      }
+    } catch {
+      // 目标目录读取失败，忽略反向遍历
+    }
+  }
+
+  return {
+    targetId: target.id,
+    targetPath: target.path,
+    added,
+    modified,
+    deleted,
+    unchanged,
+    generatedAt: new Date().toISOString(),
   };
 }

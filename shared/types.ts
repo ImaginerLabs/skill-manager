@@ -54,9 +54,10 @@ export interface SkillFull extends SkillMeta {
 /** 工作流步骤 */
 export interface WorkflowStep {
   order: number;
-  skillId: string;
-  skillName: string;
+  skillId: string | null;
+  skillName: string | null;
   description: string;
+  type: "skill" | "custom";
 }
 
 /** 工作流 */
@@ -154,12 +155,15 @@ export interface SyncTarget {
   enabled: boolean;
 }
 
+/** 同步模式 */
+export type SyncMode = "incremental" | "replace" | "full";
+
 /** 同步详情 */
 export interface SyncDetail {
   skillId: string;
   skillName: string;
   targetPath: string;
-  status: "success" | "overwritten" | "failed";
+  status: "success" | "overwritten" | "failed" | "skipped" | "updated";
   error?: string;
 }
 
@@ -169,7 +173,35 @@ export interface SyncResult {
   success: number;
   overwritten: number;
   failed: number;
+  /** 增量同步跳过的文件数 */
+  skipped: number;
+  /** 增量同步更新的文件数 */
+  updated: number;
   details: SyncDetail[];
+}
+
+/** Diff 报告项 */
+export interface DiffItem {
+  skillId: string;
+  skillName: string;
+  /** 相对路径（文件夹名） */
+  path: string;
+}
+
+/** Diff 差异报告 */
+export interface DiffReport {
+  targetId: string;
+  targetPath: string;
+  /** 源有目标无 */
+  added: DiffItem[];
+  /** 两边都有但内容不同 */
+  modified: DiffItem[];
+  /** 目标有源无 */
+  deleted: DiffItem[];
+  /** 两边内容一致 */
+  unchanged: DiffItem[];
+  /** ISO 时间戳 */
+  generatedAt: string;
 }
 
 // ---- 路径预设类型 ----

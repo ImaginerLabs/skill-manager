@@ -5,12 +5,14 @@
 import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
 import {
+  DiffRequestSchema,
   SyncPushRequestSchema,
   SyncTargetCreateSchema,
   SyncTargetUpdateSchema,
 } from "../../shared/schemas.js";
 import {
   addSyncTarget,
+  diffSync,
   getSyncTargets,
   pushSync,
   removeSyncTarget,
@@ -135,7 +137,35 @@ syncRoutes.post(
 );
 
 /**
- * POST /api/sync/push — 执行同步推送（将 Skill 文件复制到目标目录）
+ * POST /api/sync/diff — 对比源 Skill 与目标目录的差异（不执行文件操作）
+ */
+syncRoutes.post(
+  "/sync/diff",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const parsed = DiffRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: parsed.error.issues
+              .map((i) => `${i.path.join(".")}: ${i.message}`)
+              .join("; "),
+          },
+        });
+        return;
+      }
+      const report = await diffSync(parsed.data.skillIds, parsed.data.targetId);
+      res.json({ success: true, data: report });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
+ * POST /api/sync/push — 执行同步推送（支持 full / incremental / replace 模式）
  */
 syncRoutes.post(
   "/sync/push",
@@ -157,6 +187,7 @@ syncRoutes.post(
       const result = await pushSync(
         parsed.data.skillIds,
         parsed.data.targetIds,
+        parsed.data.mode,
       );
       res.json({ success: true, data: result });
     } catch (err) {

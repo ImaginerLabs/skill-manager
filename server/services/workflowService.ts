@@ -18,20 +18,75 @@ const SKILLS_ROOT = path.join(PROJECT_ROOT, "skills");
 const WORKFLOWS_DIR = path.join(SKILLS_ROOT, "workflows");
 
 /**
+ * 生成 "pushy" 触发策略的 description
+ * 不仅描述功能，还主动包含触发场景和关键词，提高 Agent 触发率
+ */
+function generatePushyDescription(
+  workflowName: string,
+  steps: WorkflowStep[],
+): string {
+  const skillNames = steps
+    .filter((s) => s.type === "skill" && s.skillName)
+    .map((s) => s.skillName!);
+  const customDescriptions = steps
+    .filter((s) => s.type === "custom" && s.description)
+    .map(
+      (s) =>
+        s.description.slice(0, 20) + (s.description.length > 20 ? "..." : ""),
+    );
+
+  const parts = [...skillNames, ...customDescriptions].filter(Boolean);
+  if (parts.length === 0) return `${workflowName}工作流。`;
+
+  const funcDesc = `组合${parts.join("、")}${customDescriptions.length > 0 ? "和自定义步骤" : ""}的${workflowName}工作流。`;
+  const triggerScene =
+    skillNames.length > 0
+      ? `当用户需要${workflowName}、${skillNames.join("、")}时使用此工作流。`
+      : `当用户需要${workflowName}时使用此工作流。`;
+
+  return `${funcDesc}${triggerScene}`;
+}
+
+/**
  * 生成工作流 .md 文件内容
+ * 对齐 skill-creator 规范：Frontmatter 字段、pushy description、正文结构
  */
 function generateWorkflowContent(workflow: Workflow): string {
+  // tags 从步骤 Skill 名称聚合 + "workflow"
+  const tags = [
+    "workflow",
+    ...workflow.steps
+      .filter((s) => s.type === "skill" && s.skillName)
+      .map((s) => s.skillName!.toLowerCase().replace(/\s+/g, "-")),
+  ];
+
+  // description 优先使用用户输入，否则自动生成 pushy description
+  const description = workflow.description.trim()
+    ? workflow.description
+    : generatePushyDescription(workflow.name, workflow.steps);
+
   const frontmatter = {
     name: workflow.name,
-    description: workflow.description,
+    description,
     category: "workflows",
     type: "workflow",
-    tags: ["workflow"],
+    tags: [...new Set(tags)],
   };
 
+  // 正文：概述段落 + Step 列表
   const stepsContent = workflow.steps
     .map((step: WorkflowStep) => {
-      let section = `## Step ${step.order}\n\n**使用 Skill:** \`${step.skillName}\``;
+      const title =
+        step.type === "custom"
+          ? step.description.slice(0, 30) +
+            (step.description.length > 30 ? "..." : "")
+          : step.skillName || step.skillId || "未知 Skill";
+
+      let section = `## Step ${step.order}: ${title}\n`;
+
+      if (step.type !== "custom" && step.skillId) {
+        section += `\n**使用 Skill:** \`${step.skillName || step.skillId}\``;
+      }
       if (step.description) {
         section += `\n\n${step.description}`;
       }
@@ -39,7 +94,14 @@ function generateWorkflowContent(workflow: Workflow): string {
     })
     .join("\n\n");
 
-  return matter.stringify(`\n${stepsContent}\n`, frontmatter);
+  // 构建正文：概述段落（如果有用户描述）+ 步骤列表
+  let body = "";
+  if (workflow.description.trim()) {
+    body += `${workflow.description.trim()}\n\n---\n\n`;
+  }
+  body += stepsContent;
+
+  return matter.stringify(`\n${body}\n`, frontmatter);
 }
 
 /**
@@ -146,17 +208,19 @@ export async function getWorkflowById(id: string): Promise<{
   const parsed = matter(raw);
   const content = parsed.content;
 
-  // 从 Markdown 内容解析步骤
+  // 从 Markdown 内容解析步骤（兼容 Skill 步骤和自定义步骤）
   const stepRegex =
-    /## Step (\d+)\s*\n\n\*\*使用 Skill:\*\* `([^`]+)`(?:\n\n([\s\S]*?))?(?=\n## Step|\s*$)/g;
+    /## Step (\d+)(?::\s*(.+?))?\s*\n(?:\n\*\*使用 Skill:\*\* `([^`]+)`)?(?:\n\n([\s\S]*?))?(?=\n## Step|\s*$)/g;
   const steps: WorkflowStep[] = [];
   let match;
   while ((match = stepRegex.exec(content)) !== null) {
+    const hasSkill = !!match[3];
     steps.push({
       order: parseInt(match[1], 10),
-      skillId: match[2].toLowerCase().replace(/\s+/g, "-"),
-      skillName: match[2],
-      description: (match[3] || "").trim(),
+      skillId: hasSkill ? match[3].toLowerCase().replace(/\s+/g, "-") : null,
+      skillName: hasSkill ? match[3] : null,
+      description: (match[4] || match[2] || "").trim(),
+      type: hasSkill ? "skill" : "custom",
     });
   }
 
