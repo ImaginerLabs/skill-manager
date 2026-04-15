@@ -144,10 +144,11 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - **Store 文件位置**：`src/stores/` 目录，kebab-case 命名
 - **完整 Store 列表**：
   - `skill-store.ts` — Skill 列表、分类、搜索、视图模式
-  - `sync-store.ts` — IDE 同步目标（`targets`）、选中 Skill（`selectedSkillIds`）、同步状态（`syncStatus`：idle/syncing/done/error）、最后同步时间（`lastSyncAt`）
+  - `sync-store.ts` — IDE 同步目标（`targets`）、选中 Skill（`selectedSkillIds`）、同步状态（`syncStatus`：idle/syncing/done/error/diffing）、最后同步时间（`lastSyncAt`）、差异报告（`diffReport`）；actions：`executeDiff`、`setDiffReport`
   - `ui-store.ts` — 侧边栏、预览面板、命令面板开关状态
   - `workflow-store.ts` — 工作流步骤编排
   - `bundle-store.ts` — 套件列表（`bundles`）、加载状态（`bundlesLoading`）、错误状态（`bundlesError`）、当前激活套件 ID（`activeBundleId`）；actions：`fetchBundles`、`createBundle`、`updateBundle`、`deleteBundle`、`applyBundle`
+  - `source-store.ts` — 来源列表（`sources`）、加载状态（`sourcesLoading`）；来源数据从 `skills` 计算得出（按 `source` 字段分组）
 - **异步操作**：在 store action 中处理，使用 `set({ loading: true })` / `set({ loading: false })` 模式
 - **并行请求**：使用 `Promise.all()` 并行获取多个数据源
 
@@ -163,7 +164,8 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
   - Import: `scanDirectory`、`importFiles`、`detectCodeBuddy`、`cleanupSourceFiles`
   - Workflow: `fetchWorkflows`、`fetchWorkflowDetail`、`createWorkflow`、`previewWorkflow`、`updateWorkflow`、`deleteWorkflow`
   - Sync Target: `fetchSyncTargets`、`addSyncTarget`、`updateSyncTarget`、`deleteSyncTarget`、`validateSyncPath`
-  - Sync Push: `pushSync(skillIds, targetIds?)`
+  - Sync Push: `pushSync(skillIds, targetIds?, mode?: SyncMode)` — `SyncMode = 'full' | 'incremental' | 'replace'`；默认 `full`（向后兼容）
+  - Sync Diff: `fetchSyncDiff(skillIds, targetId)` — 调用 `POST /api/sync/diff`，返回 `DiffReport`
   - Path Preset: `fetchPathPresets`、`addPathPreset`、`updatePathPreset`、`deletePathPreset`
   - Skill Bundle: `fetchSkillBundles`、`createSkillBundle`、`updateSkillBundle`、`deleteSkillBundle`、`applySkillBundle`
   - Stats: `fetchActivityStats(weeks?: number): Promise<ActivityDay[]>` — 调用 `GET /api/stats/activity?weeks={n}`；`ActivityDay = { date: string; count: number; files: string[] }`（YYYY-MM-DD 格式，files 为当日修改的文件名列表，不含路径和 .md 后缀）
@@ -173,17 +175,21 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - **页面组件**：`src/pages/` — PascalCase 命名（如 `SkillBrowsePage.tsx`）
 - **功能组件**：`src/components/{feature}/` — 按功能域分组（`skills/`、`layout/`、`shared/`、`ui/`、`import/`、`sync/`、`workflow/`、`settings/`、`stats/`）
   - `stats/` — 统计组件：`StatsPanel.tsx`（Skill/工作流/分类数量统计）、`ActivityHeatmap.tsx`（近 12 周活跃度热力图）
+  - `skills/ViewTab.tsx` — 二级 Sidebar 视图切换组件（按分类/按来源）
+  - `skills/SourceTree.tsx` — 按来源浏览组件（展示外部仓库列表及其 Skill）
+  - `sync/SyncSplitButton.tsx` — 同步分裂按钮（增量同步/替换同步/查看差异）
+  - `workflow/CustomStepCard.tsx` — 工作流自定义步骤卡片（虚线边框 + 自动扩展 Textarea）
 - **UI 基础组件**：`src/components/ui/` — shadcn/ui 风格，使用 `cva` + `cn()` 工具函数
   - variants 逻辑拆分到独立文件：`badge-variants.ts`、`button-variants.ts`
 - **共享组件**：`src/components/shared/` — `CommandPalette`、`ErrorBoundary`、`Toast`、`toast-store.ts`
 - **自定义 Hooks**：`src/hooks/` — 如 `useSkillSearch.ts`（基于 fuse.js 的模糊搜索）
 - **路由配置**：`src/App.tsx` 使用 `createBrowserRouter`，`AppLayout` 作为根布局组件
 - **路由列表**：`/`（SkillBrowsePage）、`/workflow`（WorkflowPage）、`/sync`（SyncPage）、`/import`（ImportPage）、`/settings`（SettingsPage，Tab 化：「分类设置」+ 「套件管理」）、`/paths`（PathsPage，路径预设管理）
+- **二级 Sidebar 视图切换**：`SecondarySidebar` 顶部有 `ViewTab` 组件，支持「按分类」和「按来源」两种浏览维度；按分类时显示 `CategoryTree`，按来源时显示 `SourceTree`（展示外部仓库列表）；`selectedSource` 和 `selectedCategory` 互斥管理
 - **侧边栏布局（Epic 7 重设计）**：
   - 主 `Sidebar`（`src/components/layout/Sidebar.tsx`）：导航菜单 + 底部 `StatsPanel` + `ActivityHeatmap`；**不再**包含「分类」导航项和 `CategoryTree`
-  - `SecondarySidebar`（`src/components/layout/SecondarySidebar.tsx`）：仅在路由 `/` 时由 `AppLayout` 条件渲染（`isSkillBrowsePage && <SecondarySidebar />`），内含 `CategoryTree` + 底部「管理分类」NavLink（跳转 `/settings`）；宽度固定 `180px`
+  - `SecondarySidebar`（`src/components/layout/SecondarySidebar.tsx`）：仅在路由 `/` 时由 `AppLayout` 条件渲染（`isSkillBrowsePage && <SecondarySidebar />`），内含 `ViewTab`（按分类/按来源切换）+ `CategoryTree`（按分类时）或 `SourceTree`（按来源时）+ 底部「管理分类」 NavLink（跳转 `/settings`）；宽度固定 `180px`
   - `AppLayout` 中布局顺序：`<Sidebar />` → `{isSkillBrowsePage && <SecondarySidebar />}` → `<main>`
-
 ### Toast 通知
 
 - **`toast-store.ts`**：位于 `src/components/shared/`，提供 `toast.success()`、`toast.error()` 等方法
@@ -210,7 +216,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - `skillRoutes.ts` — Skill CRUD（`/api/skills`、`/api/skills/:id`、`/api/skills/:id/meta`、`/api/skills/:id/category`、`/api/skills/errors`、`POST /api/refresh`）
 - `categoryRoutes.ts` — 分类管理（`/api/categories`、`/api/categories/:name`）
 - `importRoutes.ts` — 导入功能（`/api/import/scan`、`/api/import/execute`、`/api/import/detect-codebuddy`、`/api/import/cleanup`）
-- `syncRoutes.ts` — 同步目标管理（`/api/sync/targets`、`/api/sync/targets/:id`、`POST /api/sync/validate-path`、`POST /api/sync/push`）
+- `syncRoutes.ts` — 同步目标管理（`/api/sync/targets`、`/api/sync/targets/:id`、`POST /api/sync/validate-path`、`POST /api/sync/push`、`POST /api/sync/diff`）
 - `workflowRoutes.ts` — 工作流 CRUD（`/api/workflows`、`/api/workflows/:id`、`POST /api/workflows/preview`）
 - `pathPresetRoutes.ts` — 路径预设 CRUD（`/api/path-presets`、`/api/path-presets/:id`）
 - `bundleRoutes.ts` — 套件 CRUD + 激活（`GET/POST /api/skill-bundles`、`PUT/DELETE /api/skill-bundles/:id`、`PUT /api/skill-bundles/:id/apply`、`GET /api/skill-bundles/export`（501 占位）、`POST /api/skill-bundles/import`（501 占位））
@@ -223,7 +229,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - `importService.ts` — 文件导入（`importFiles`、`cleanupFiles`、`getSkillsRoot`）
 - `categoryService.ts` — 分类 CRUD（基于 `config/categories.yaml`）
 - `configService.ts` — 应用配置读写（基于 `config/settings.yaml`，使用 `js-yaml`）
-- `syncService.ts` — 同步目标 CRUD + 路径校验 + 推送（`getSyncTargets`、`addSyncTarget`、`updateSyncTarget`、`removeSyncTarget`、`validateSyncPath`、`pushSync`）；`pushSync` 是**扁平化**复制，只取 `path.basename`，不保留分类子目录
+- `syncService.ts` — 同步目标 CRUD + 路径校验 + 推送（`getSyncTargets`、`addSyncTarget`、`updateSyncTarget`、`removeSyncTarget`、`validateSyncPath`、`pushSync`、`getSyncDiff`）；`pushSync` 支持 `mode` 参数（`full`/`incremental`/`replace`）；增量模式采用 mtime + md5 分层比较；`getSyncDiff` 返回 `DiffReport`（新增/修改/删除/未变化文件列表）；`pushSync` 扁平化复制，只取 `path.basename`，不保留分类子目录
 - `workflowService.ts` — 工作流 CRUD + Markdown 解析（`getWorkflows`、`getWorkflowById`、`createWorkflow`、`updateWorkflow`、`deleteWorkflow`、`previewWorkflow`）；`getWorkflowById` 返回结构化 `steps`，前端无需自行解析 Markdown
 - `pathPresetService.ts` — 路径预设 CRUD（`getPathPresets`、`addPathPreset`、`updatePathPreset`、`removePathPreset`）；复用 `syncService` 的 `readSettings`/`writeSettings` 模式
 - `pathConfigService.ts` — 路径配置辅助服务（职责与 `pathPresetService` 有重叠，待后续 Epic 明确边界）
@@ -424,8 +430,10 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - ⚠️ `pushSync` 同步推送是**扁平化**复制：只取文件名（`path.basename`），不保留分类子目录结构
 - ⚠️ `pushSync` 同名文件默认覆盖，在结果中标注 `overwritten` 状态
 - ⚠️ 工作流文件存储在 `skills/workflows/` 目录，Frontmatter 包含 `type: "workflow"` 和 `category: "workflows"`
+- ⚠️ **工作流自定义步骤**：`WorkflowStep` 新增 `type: 'skill' | 'custom'` 字段；`skillId` 和 `skillName` 改为 `string | null`；自定义步骤无关联 Skill，只有自然语言描述；向后兼容旧工作流文件（缺失 `type` 字段时默认为 `'skill'`）
 - ⚠️ 工作流创建/更新/删除后自动调用 `refreshSkillCache()` 刷新缓存
 - ⚠️ 同步目标数据存储在 `config/settings.yaml` 的 `sync.targets` 字段中
+- ⚠️ **同步多模式**：`pushSync` 支持 `mode` 参数：`full`（全量覆盖，默认，向后兼容）、`incremental`（增量，mtime + md5 分层比较，跳过未变化文件）、`replace`（替换，先备份目标目录再清空全量写入）；`POST /api/sync/diff` 端点返回 `DiffReport`（`{ added, modified, deleted, unchanged }`）
 - ⚠️ `addSyncTarget` / `updateSyncTarget` 会校验路径必须是绝对路径，且路径不能与已有目标重复（`path.normalize` 对比）
 - ⚠️ `addPathPreset` / `updatePathPreset` 同样校验绝对路径 + 重复检测（`path.normalize` 对比）
 - ⚠️ 路径预设数据存储在 `config/settings.yaml` 的 `pathPresets` 字段中（与 `sync` 并列）
@@ -479,4 +487,4 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - 定期审查移除过时规则
 - 保持精简，聚焦于 LLM 容易遗漏的细节
 
-最后更新：2026-04-14（Epic 8 External Skills Hub 完成后更新）
+最后更新：2026-04-15（V2 功能全量完成后更新：V2 Epic 1~4 全部 done，包含同步多模式、来源视图浏览、工作流自定义步骤、默认套件全选修复）

@@ -18,18 +18,19 @@
 | --------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | 📚 Skill 浏览   | 分类目录树 + 卡片/列表双视图 + Markdown 预览，大小写不敏感分类匹配；列表视图点击行打开详情                                 |
 | 🔍 模糊搜索     | Fuse.js 前端内存搜索，< 200ms 响应；Command Palette 支持描述摘要与分组展示                                                 |
-| 🔗 工作流编排   | 拖拽排序，将多个 Skill 组合为工作流文件；Tab 布局管理已有工作流；草稿自动持久化                                            |
-| 🔄 IDE 同步     | 将选中 Skill 推送到 IDE 目录（支持 CodeBuddy）；分步引导新用户配置                                                         |
+| 🔗 工作流编排   | 拖拽排序，将多个 Skill 组合为工作流文件；支持添加自然语言自定义步骤；Tab 布局管理已有工作流；草稿自动持久化                |
+| 🔄 IDE 同步     | 三种同步模式：增量同步（只同步变化文件）、替换同步（清空后全量覆盖）、查看差异（预览变更）；SplitButton 快速切换           |
 | 📥 IDE 导入     | 从 IDE 目录扫描并导入 Skill 到仓库                                                                                         |
 | ⚙️ 配置管理     | 管理 IDE 路径、分类定义、路径预设；分类批量操作（多选移出）                                                                |
 | 📦 套件管理     | 将常用分类组合保存为套件，一键激活整套分类配置；损坏引用自动警告                                                           |
 | ⌨️ 键盘快捷键   | `⌘K` 全局搜索（含描述摘要 + 类型分组），`Alt+↑/↓` 步骤排序                                                                 |
-| 📋 快捷操作     | Skill 详情侧边栏支持一键复制路径；版本号与 `package.json` 自动                                                             |
-| 同步            |
-| 🗂️ 二级导航     | 主页左侧二级侧边栏（220px），按分类快速筛选 Skill，路由联动高亮当前分类；标题栏含图标，底部提供管理分类快捷入口            |
+| 📋 快捷操作     | Skill 详情侧边栏支持一键复制路径；版本号与 `package.json` 自动同步                                                         |
+| 🗂️ 二级导航     | 主页左侧二级侧边栏，支持「按分类」和「按来源」两种浏览维度切换；底部提供管理分类快捷入口                                   |
+| 🌐 外部技能仓库 | 自动从 GitHub 仓库（如 anthropics/skills）拉取外部 Skill；来源标签可点击跳转；只读保护防止误操作；GitHub Action 定时同步   |
 | 📊 统计面板     | Sidebar 底部展示 Skill 总数、分类数、同步数等关键指标                                                                      |
 | 🔥 活跃度热力图 | 可视化近期 Skill 文件修改活跃度，类 GitHub 贡献热力图风格；hover 浮窗展示当日修改次数与文件列表                            |
 | 🌓 主题切换     | 支持亮色/暗色主题切换，Header 右侧 Sun/Moon 按钮一键切换；偏好持久化到 localStorage，初始化跟随系统 `prefers-color-scheme` |
+| 🌍 国际化       | 支持中文（zh）和英文（en）双语，语言跟随浏览器设置，支持手动切换并持久化                                                   |
 
 ---
 
@@ -183,23 +184,24 @@ git commit --no-verify
 ### API 概览
 
 ```
-GET    /api/skills              # 获取所有 Skill 列表
-GET    /api/skills/:id          # 获取 Skill 详情
-PUT    /api/skills/:id/meta     # 更新 Skill 元数据
-DELETE /api/skills/:id          # 删除 Skill
-GET    /api/categories          # 获取分类列表
-GET    /api/workflows           # 获取工作流列表
-POST   /api/sync/push           # 推送到 IDE
-POST   /api/sync/import         # 从 IDE 导入
-GET    /api/config              # 读取配置
-POST   /api/refresh             # 刷新 Skill 缓存
-GET    /api/health              # 健康检查
-GET    /api/skill-bundles       # 获取套件列表
-POST   /api/skill-bundles       # 创建套件
-PUT    /api/skill-bundles/:id   # 更新套件
-DELETE /api/skill-bundles/:id   # 删除套件
-PUT    /api/skill-bundles/:id/apply  # 一键激活套件
-GET    /api/stats/activity           # 获取近期活跃度数据（支持 ?weeks= 参数）
+GET    /api/skills                        # 获取所有 Skill 列表
+GET    /api/skills/:id                    # 获取 Skill 详情
+PUT    /api/skills/:id/meta               # 更新 Skill 元数据
+DELETE /api/skills/:id                    # 删除 Skill
+GET    /api/categories                    # 获取分类列表
+GET    /api/workflows                     # 获取工作流列表
+POST   /api/sync/push                     # 推送到 IDE（支持 mode: full/incremental/replace）
+POST   /api/sync/diff                     # 查看同步差异报告
+POST   /api/sync/import                   # 从 IDE 导入
+GET    /api/config                        # 读取配置
+POST   /api/refresh                       # 刷新 Skill 缓存
+GET    /api/health                        # 健康检查
+GET    /api/skill-bundles                 # 获取套件列表
+POST   /api/skill-bundles                 # 创建套件
+PUT    /api/skill-bundles/:id             # 更新套件
+DELETE /api/skill-bundles/:id             # 删除套件
+PUT    /api/skill-bundles/:id/apply       # 一键激活套件
+GET    /api/stats/activity                # 获取近期活跃度数据（支持 ?weeks= 参数）
 ```
 
 ---
