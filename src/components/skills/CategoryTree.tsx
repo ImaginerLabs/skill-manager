@@ -5,8 +5,10 @@
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { ChevronRight, Folder, FolderOpen } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSkillStore } from "../../stores/skill-store";
+import SidebarItem from "../shared/SidebarItem";
 import { Badge } from "../ui/badge";
 
 /**
@@ -14,6 +16,7 @@ import { Badge } from "../ui/badge";
  */
 export default function CategoryTree() {
   const { categories, selectedCategory, setCategory, skills } = useSkillStore();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,27 +40,24 @@ export default function CategoryTree() {
               size={12}
               className={`transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
             />
-            分类
+            {t("nav.categories")}
           </button>
         </Collapsible.Trigger>
 
         <Collapsible.Content>
           {/* "全部" 选项 */}
-          <button
+          <SidebarItem
             data-testid="category-all"
+            active={selectedCategory === null}
+            icon={<FolderOpen size={16} />}
+            label={t("nav.byCategory")}
+            badge={
+              <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                {totalCount}
+              </Badge>
+            }
             onClick={() => handleSelectCategory(null)}
-            className={`flex items-center gap-2 w-full px-4 py-1.5 text-sm transition-colors duration-200 cursor-pointer ${
-              selectedCategory === null
-                ? "border-l-2 border-[hsl(var(--primary))] bg-[hsl(var(--accent))] text-[hsl(var(--primary))] font-medium pl-[14px]"
-                : "border-l-2 border-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))] pl-[14px]"
-            }`}
-          >
-            <FolderOpen size={16} />
-            <span className="flex-1 text-left">全部</span>
-            <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
-              {totalCount}
-            </Badge>
-          </button>
+          />
 
           {/* 分类列表 */}
           <div
@@ -65,29 +65,26 @@ export default function CategoryTree() {
             data-active={selectedCategory ?? undefined}
           >
             {categories.map((cat) => (
-              <button
+              <SidebarItem
                 key={cat.name}
                 data-testid={`category-${cat.name}`}
+                active={selectedCategory === cat.name}
+                icon={<Folder size={16} />}
+                label={cat.displayName}
+                badge={
+                  <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                    {cat.skillCount}
+                  </Badge>
+                }
                 onClick={() => handleSelectCategory(cat.name)}
-                className={`flex items-center gap-2 w-full px-4 py-1.5 text-sm transition-colors duration-200 cursor-pointer ${
-                  selectedCategory === cat.name
-                    ? "border-l-2 border-[hsl(var(--primary))] bg-[hsl(var(--accent))] text-[hsl(var(--primary))] font-medium pl-[14px]"
-                    : "border-l-2 border-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))] pl-[14px]"
-                }`}
-              >
-                <Folder size={16} />
-                <span className="flex-1 text-left">{cat.displayName}</span>
-                <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
-                  {cat.skillCount}
-                </Badge>
-              </button>
+              />
             ))}
           </div>
 
           {/* 无分类时的提示 */}
           {categories.length === 0 && (
             <div className="px-4 py-3 text-xs text-[hsl(var(--muted-foreground))]">
-              暂无分类，请先导入 Skill
+              {t("category.empty")}
             </div>
           )}
         </Collapsible.Content>

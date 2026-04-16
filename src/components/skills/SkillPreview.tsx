@@ -6,7 +6,6 @@ import {
   Clock,
   Copy,
   ExternalLink,
-  FileText,
   GitBranch,
   Lock,
   Package,
@@ -22,6 +21,7 @@ import remarkGfm from "remark-gfm";
 import type { SkillFull } from "../../../shared/types";
 import { fetchSkillById } from "../../lib/api";
 import { useSkillStore } from "../../stores/skill-store";
+import SkillTypeIcon from "../shared/SkillTypeIcon";
 import { toast } from "../shared/toast-store";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -143,11 +143,7 @@ export default function SkillPreview() {
       <div className="p-4 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
         {/* 标题 */}
         <div className="flex items-center gap-2 mb-2">
-          {skill.type === "workflow" ? (
-            <GitBranch size={18} className="text-[hsl(var(--info))]" />
-          ) : (
-            <FileText size={18} className="text-[hsl(var(--primary))]" />
-          )}
+          <SkillTypeIcon type={skill.type} size={18} />
           <h2 className="text-lg font-bold font-[var(--font-code)] text-[hsl(var(--foreground))] flex-1">
             {skill.name}
           </h2>

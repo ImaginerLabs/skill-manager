@@ -4,22 +4,15 @@
 
 import { Check, Edit2, FolderOpen, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import type { PathPreset } from "../../../shared/types";
+import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 import { fetchPathPresets, validateSyncPath } from "../../lib/api";
 import { useSyncStore } from "../../stores/sync-store";
+import ConfirmDialog from "../shared/ConfirmDialog";
 import { PathPresetSelect } from "../shared/PathPresetSelect";
 import { toast } from "../shared/toast-store";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../ui/alert-dialog";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -46,6 +39,7 @@ export default function SyncTargetManager() {
     updateTarget,
     removeTarget,
   } = useSyncStore();
+  const { t } = useTranslation();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
@@ -58,13 +52,35 @@ export default function SyncTargetManager() {
     name: "",
     path: "",
   });
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [validating, setValidating] = useState(false);
   const [pathStatus, setPathStatus] = useState<{
     exists: boolean;
     writable: boolean;
   } | null>(null);
+
+  // 删除确认对话框状态
+  const {
+    confirmState: deleteState,
+    requestConfirm: requestDelete,
+    handleConfirm: handleConfirmDelete,
+    handleCancel: handleCancelDelete,
+  } = useConfirmDialog<string>(async (targetId) => {
+    setDeleting(true);
+    try {
+      const target = targets.find((t) => t.id === targetId);
+      await removeTarget(targetId);
+      toast.success(
+        t("syncTarget.deleteSuccess", { name: target?.name ?? "" }),
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : t("syncTarget.deleteFailed"),
+      );
+    } finally {
+      setDeleting(false);
+    }
+  });
 
   useEffect(() => {
     fetchTargets();
@@ -104,17 +120,19 @@ export default function SyncTargetManager() {
     setAdding(true);
     try {
       await addTarget({ name: newName.trim(), path: newPath.trim() });
-      toast.success(`同步目标「${newName.trim()}」已添加`);
+      toast.success(t("syncTarget.createSuccess", { name: newName.trim() }));
       setNewName("");
       setNewPath("");
       setShowAddForm(false);
       setPathStatus(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "添加同步目标失败");
+      toast.error(
+        err instanceof Error ? err.message : t("syncTarget.createFailed"),
+      );
     } finally {
       setAdding(false);
     }
-  }, [newName, newPath, addTarget]);
+  }, [newName, newPath, addTarget, t]);
 
   const handleStartEdit = useCallback(
     (id: string, name: string, path: string) => {
@@ -130,12 +148,14 @@ export default function SyncTargetManager() {
         name: editing.name.trim(),
         path: editing.path.trim(),
       });
-      toast.success("同步目标已更新");
+      toast.success(t("syncTarget.updateSuccess"));
       setEditing({ id: null, name: "", path: "" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "更新同步目标失败");
+      toast.error(
+        err instanceof Error ? err.message : t("syncTarget.updateFailed"),
+      );
     }
-  }, [editing, updateTarget]);
+  }, [editing, updateTarget, t]);
 
   const handleCancelEdit = useCallback(() => {
     setEditing({ id: null, name: "", path: "" });
@@ -146,31 +166,18 @@ export default function SyncTargetManager() {
       try {
         await updateTarget(id, { enabled: !enabled });
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "更新状态失败");
+        toast.error(
+          err instanceof Error ? err.message : t("syncTarget.updateFailed"),
+        );
       }
     },
-    [updateTarget],
+    [updateTarget, t],
   );
-
-  const handleDelete = useCallback(async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      const target = targets.find((t) => t.id === deleteTarget);
-      await removeTarget(deleteTarget);
-      toast.success(`同步目标「${target?.name ?? ""}」已删除`);
-      setDeleteTarget(null);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "删除同步目标失败");
-    } finally {
-      setDeleting(false);
-    }
-  }, [deleteTarget, targets, removeTarget]);
 
   if (targetsLoading && targets.length === 0) {
     return (
       <div className="p-6 text-center text-sm text-[hsl(var(--muted-foreground))]">
-        加载中...
+        {t("common.loading")}
       </div>
     );
   }
@@ -182,7 +189,7 @@ export default function SyncTargetManager() {
         <div className="flex items-center gap-2">
           <FolderOpen size={18} className="text-[hsl(var(--primary))]" />
           <h3 className="text-sm font-medium text-[hsl(var(--foreground))]">
-            同步目标 ({targets.length})
+            {t("syncTarget.title")} ({targets.length})
           </h3>
         </div>
         {!showAddForm && (
@@ -193,7 +200,7 @@ export default function SyncTargetManager() {
             className="gap-1.5"
           >
             <Plus size={14} />
-            添加目标
+            {t("syncTarget.addTarget")}
           </Button>
         )}
       </div>
@@ -202,16 +209,16 @@ export default function SyncTargetManager() {
       {showAddForm && (
         <div className="rounded-md border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--card))] p-4 space-y-3">
           <Input
-            placeholder="目标名称（如：CodeBuddy 项目）"
+            placeholder={t("syncTarget.namePlaceholder")}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="h-9 text-sm"
-            aria-label="同步目标名称"
+            aria-label={t("syncTarget.nameLabel")}
           />
           <div className="space-y-1">
             <div className="flex gap-2">
               <Input
-                placeholder="绝对路径（如：/Users/alex/project/.codebuddy/skills）"
+                placeholder={t("syncTarget.pathPlaceholder")}
                 value={newPath}
                 onChange={(e) => {
                   setNewPath(e.target.value);
@@ -219,7 +226,7 @@ export default function SyncTargetManager() {
                 }}
                 onBlur={() => handleValidatePath(newPath)}
                 className="h-9 text-sm font-[var(--font-code)]"
-                aria-label="同步目标路径"
+                aria-label={t("syncTarget.pathLabel")}
               />
               <PathPresetSelect
                 presets={pathPresets}
@@ -231,7 +238,7 @@ export default function SyncTargetManager() {
             </div>
             {validating && (
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                校验路径中...
+                {t("syncTarget.validating")}
               </p>
             )}
             {pathStatus && !validating && (
@@ -245,10 +252,10 @@ export default function SyncTargetManager() {
                 }`}
               >
                 {pathStatus.exists && pathStatus.writable
-                  ? "✓ 路径存在且可写"
+                  ? t("syncTarget.pathValid")
                   : pathStatus.exists
-                    ? "⚠ 路径存在但不可写"
-                    : "路径不存在（同步时将自动创建）"}
+                    ? "⚠ " + t("syncTarget.pathInvalid")
+                    : t("syncTarget.pathInvalid")}
               </p>
             )}
           </div>
@@ -260,7 +267,7 @@ export default function SyncTargetManager() {
               className="gap-1.5"
             >
               <Plus size={14} />
-              {adding ? "添加中..." : "确认添加"}
+              {adding ? t("common.processing") : t("common.confirm")}
             </Button>
             <Button
               variant="ghost"
@@ -272,7 +279,7 @@ export default function SyncTargetManager() {
                 setPathStatus(null);
               }}
             >
-              取消
+              {t("common.cancel")}
             </Button>
           </div>
         </div>
@@ -283,7 +290,7 @@ export default function SyncTargetManager() {
         <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
           {/* 引导标题 */}
           <p className="text-sm font-medium text-[hsl(var(--foreground))]">
-            开始使用同步功能
+            {t("syncTarget.noTargets")}
           </p>
           {/* 分步引导 */}
           <div className="w-full max-w-xs space-y-2 text-left">
@@ -294,10 +301,10 @@ export default function SyncTargetManager() {
               </span>
               <div>
                 <p className="text-xs font-medium text-[hsl(var(--primary))]">
-                  添加同步目标
+                  {t("syncTarget.addTarget")}
                 </p>
                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
-                  配置 IDE 项目路径
+                  {t("syncTarget.noTargetsHint")}
                 </p>
               </div>
             </div>
@@ -308,10 +315,10 @@ export default function SyncTargetManager() {
               </span>
               <div>
                 <p className="text-xs font-medium text-[hsl(var(--foreground))]">
-                  选择 Skill
+                  {t("sync.selectSkills")}
                 </p>
                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
-                  在左侧选择要同步的 Skill
+                  {t("sync.subtitle")}
                 </p>
               </div>
             </div>
@@ -322,10 +329,10 @@ export default function SyncTargetManager() {
               </span>
               <div>
                 <p className="text-xs font-medium text-[hsl(var(--foreground))]">
-                  开始同步
+                  {t("sync.startSync")}
                 </p>
                 <p className="text-[11px] text-[hsl(var(--muted-foreground))] mt-0.5">
-                  一键同步到目标路径
+                  {t("sync.subtitle")}
                 </p>
               </div>
             </div>
@@ -339,7 +346,7 @@ export default function SyncTargetManager() {
             data-testid="guide-add-target-btn"
           >
             <Plus size={14} />
-            添加同步目标
+            {t("syncTarget.addTarget")}
           </Button>
         </div>
       ) : (
@@ -366,7 +373,7 @@ export default function SyncTargetManager() {
                         }))
                       }
                       className="h-8 text-sm"
-                      aria-label="编辑目标名称"
+                      aria-label={t("syncTarget.nameLabel")}
                     />
                     <Input
                       value={editing.path}
@@ -377,7 +384,7 @@ export default function SyncTargetManager() {
                         }))
                       }
                       className="h-8 text-sm font-[var(--font-code)]"
-                      aria-label="编辑目标路径"
+                      aria-label={t("syncTarget.pathLabel")}
                     />
                     <div className="flex items-center gap-1.5">
                       <Button
@@ -385,7 +392,7 @@ export default function SyncTargetManager() {
                         size="icon"
                         className="h-7 w-7"
                         onClick={handleSaveEdit}
-                        aria-label="保存编辑"
+                        aria-label={t("common.save")}
                       >
                         <Check size={14} />
                       </Button>
@@ -394,7 +401,7 @@ export default function SyncTargetManager() {
                         size="icon"
                         className="h-7 w-7"
                         onClick={handleCancelEdit}
-                        aria-label="取消编辑"
+                        aria-label={t("common.cancel")}
                       >
                         <X size={14} />
                       </Button>
@@ -415,7 +422,9 @@ export default function SyncTargetManager() {
                             handleToggleEnabled(target.id, target.enabled)
                           }
                         >
-                          {target.enabled ? "启用" : "禁用"}
+                          {target.enabled
+                            ? t("syncTarget.enabledLabel")
+                            : t("common.close")}
                         </Badge>
                       </div>
                       <p className="text-xs font-[var(--font-code)] text-[hsl(var(--muted-foreground))] truncate">
@@ -430,7 +439,7 @@ export default function SyncTargetManager() {
                         onClick={() =>
                           handleStartEdit(target.id, target.name, target.path)
                         }
-                        aria-label={`编辑 ${target.name}`}
+                        aria-label={`${t("common.edit")} ${target.name}`}
                       >
                         <Edit2 size={13} />
                       </Button>
@@ -438,8 +447,8 @@ export default function SyncTargetManager() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-[hsl(var(--destructive))]"
-                        onClick={() => setDeleteTarget(target.id)}
-                        aria-label={`删除 ${target.name}`}
+                        onClick={() => requestDelete(target.id)}
+                        aria-label={`${t("common.delete")} ${target.name}`}
                       >
                         <Trash2 size={13} />
                       </Button>
@@ -453,31 +462,19 @@ export default function SyncTargetManager() {
       )}
 
       {/* 删除确认对话框 */}
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除同步目标</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定要删除同步目标「
-              {targets.find((t) => t.id === deleteTarget)?.name}
-              」吗？此操作不可撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] hover:bg-[hsl(var(--destructive)/0.9)]"
-            >
-              {deleting ? "删除中..." : "确认删除"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={deleteState.open}
+        onOpenChange={(open) => !open && handleCancelDelete()}
+        variant="danger"
+        title={t("syncTarget.deleteConfirmTitle")}
+        description={t("syncTarget.deleteConfirmDesc", {
+          name:
+            targets.find((tgt) => tgt.id === deleteState.target)?.name ?? "",
+        })}
+        confirmLabel={deleting ? t("common.processing") : t("common.delete")}
+        onConfirm={handleConfirmDelete}
+        confirmDisabled={deleting}
+      />
     </div>
   );
 }

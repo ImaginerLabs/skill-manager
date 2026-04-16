@@ -6,7 +6,6 @@ import { Command } from "cmdk";
 import {
   BookOpen,
   Download,
-  FileText,
   GitBranch,
   RefreshCw,
   Search,
@@ -17,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSkillStore } from "../../stores/skill-store";
 import { useUIStore } from "../../stores/ui-store";
+import SkillTypeIcon from "./SkillTypeIcon";
 
 /**
  * Command Palette — ⌘K 全局搜索
@@ -135,9 +135,10 @@ export default function CommandPalette() {
                   onSelect={() => handleSelectSkill(skill.id)}
                   className="flex items-start gap-2 px-2 py-2 rounded text-sm cursor-pointer data-[selected=true]:bg-[hsl(var(--accent))] text-[hsl(var(--foreground))]"
                 >
-                  <FileText
+                  <SkillTypeIcon
+                    type={skill.type}
                     size={14}
-                    className="shrink-0 text-[hsl(var(--primary))] mt-0.5"
+                    className="mt-0.5"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
@@ -171,9 +172,10 @@ export default function CommandPalette() {
                     onSelect={() => handleSelectSkill(skill.id)}
                     className="flex items-start gap-2 px-2 py-2 rounded text-sm cursor-pointer data-[selected=true]:bg-[hsl(var(--accent))] text-[hsl(var(--foreground))]"
                   >
-                    <GitBranch
+                    <SkillTypeIcon
+                      type={skill.type}
                       size={14}
-                      className="shrink-0 text-[hsl(var(--info))] mt-0.5"
+                      className="mt-0.5"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">

@@ -427,7 +427,7 @@ export default function SyncExecutor() {
           </div>
 
           {/* 详细列表 */}
-          <ScrollArea className="max-h-[300px]">
+          <ScrollArea className="h-[300px]">
             <div className="divide-y divide-[hsl(var(--border))]">
               {displayResult.details.map((detail, index) => {
                 const retryCount = syncFlow.getRetryCount(detail.skillId);

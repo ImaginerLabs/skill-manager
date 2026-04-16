@@ -4,16 +4,7 @@
 
 import { AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../ui/alert-dialog";
+import ConfirmDialog from "../shared/ConfirmDialog";
 
 interface ReplaceSyncConfirmDialogProps {
   open: boolean;
@@ -35,33 +26,26 @@ export default function ReplaceSyncConfirmDialog({
   const { t } = useTranslation();
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <AlertTriangle
-              size={18}
-              className="text-[hsl(var(--destructive))]"
-            />
-            {t("sync.replaceSyncConfirmTitle")}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <p>{t("sync.replaceSyncConfirmDesc", { count: skillCount })}</p>
-            <p className="text-[hsl(var(--destructive))] font-medium">
-              {t("sync.replaceSyncWarning")}
-            </p>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            className="bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] hover:bg-[hsl(var(--destructive))]/90"
-          >
-            {t("sync.confirmReplaceSync")}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      variant="danger"
+      title={
+        <span className="flex items-center gap-2">
+          <AlertTriangle size={18} className="text-[hsl(var(--destructive))]" />
+          {t("sync.replaceSyncConfirmTitle")}
+        </span>
+      }
+      description={
+        <div className="space-y-2">
+          <p>{t("sync.replaceSyncConfirmDesc", { count: skillCount })}</p>
+          <p className="text-[hsl(var(--destructive))] font-medium">
+            {t("sync.replaceSyncWarning")}
+          </p>
+        </div>
+      }
+      confirmLabel={t("sync.confirmReplaceSync")}
+      onConfirm={onConfirm}
+    />
   );
 }

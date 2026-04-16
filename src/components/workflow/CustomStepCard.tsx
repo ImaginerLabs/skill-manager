@@ -2,11 +2,10 @@
 // components/workflow/CustomStepCard.tsx — 自定义步骤卡片组件
 // ============================================================
 
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import type { WorkflowStep } from "../../../shared/types";
+import { useSortableStep } from "../../hooks/useSortableStep";
 
 interface CustomStepCardProps {
   step: WorkflowStep;
@@ -39,17 +38,17 @@ export default function CustomStepCard({
     attributes,
     listeners,
     setNodeRef,
-    transform,
-    transition,
+    style,
     isDragging,
-  } = useSortable({ id: `custom-${step.order}` });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  // 自动扩展 Textarea 高度
+    handleKeyDown,
+  } = useSortableStep({
+    id: `custom-${step.order}`,
+    index,
+    onMoveUp,
+    onMoveDown,
+    isFirst,
+    isLast,
+  });
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -71,19 +70,6 @@ export default function CustomStepCard({
     // 仅在挂载时执行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.altKey && e.key === "ArrowUp" && !isFirst) {
-        e.preventDefault();
-        onMoveUp(index);
-      } else if (e.altKey && e.key === "ArrowDown" && !isLast) {
-        e.preventDefault();
-        onMoveDown(index);
-      }
-    },
-    [index, isFirst, isLast, onMoveUp, onMoveDown],
-  );
 
   return (
     <div

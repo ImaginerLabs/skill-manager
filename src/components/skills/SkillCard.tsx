@@ -2,11 +2,12 @@
 // components/skills/SkillCard.tsx — Skill 卡片组件
 // ============================================================
 
-import { ExternalLink, FileText, GitBranch, Lock } from "lucide-react";
+import { ExternalLink, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SkillMeta } from "../../../shared/types";
 import { useSkillStore } from "../../stores/skill-store";
 import HighlightText from "../shared/HighlightText";
+import SkillTypeIcon from "../shared/SkillTypeIcon";
 import { Badge } from "../ui/badge";
 import SkillContextMenu from "./SkillContextMenu";
 
@@ -80,17 +81,7 @@ export default function SkillCard({
       <div
         className={`flex items-start gap-2 mb-2 ${skill.source ? "pr-20" : ""}`}
       >
-        {skill.type === "workflow" ? (
-          <GitBranch
-            size={16}
-            className="mt-0.5 shrink-0 text-[hsl(var(--info))]"
-          />
-        ) : (
-          <FileText
-            size={16}
-            className="mt-0.5 shrink-0 text-[hsl(var(--primary))]"
-          />
-        )}
+        <SkillTypeIcon type={skill.type} size={16} className="mt-0.5" />
         <h3
           data-testid="skill-name"
           className="font-medium text-sm text-[hsl(var(--foreground))] leading-tight line-clamp-1"

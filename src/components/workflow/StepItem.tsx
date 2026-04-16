@@ -2,11 +2,10 @@
 // components/workflow/StepItem.tsx — 单个可拖拽工作流步骤项
 // ============================================================
 
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { ChevronDown, GripVertical, Trash2 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import type { WorkflowStep } from "../../../shared/types";
+import { useSortableStep } from "../../hooks/useSortableStep";
 import { Input } from "../ui/input";
 
 // 预设描述列表
@@ -51,28 +50,17 @@ export default function StepItem({
     attributes,
     listeners,
     setNodeRef,
-    transform,
-    transition,
+    style,
     isDragging,
-  } = useSortable({ id: (step.skillId ?? "unknown") + "-" + step.order });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.altKey && e.key === "ArrowUp" && !isFirst) {
-        e.preventDefault();
-        onMoveUp(index);
-      } else if (e.altKey && e.key === "ArrowDown" && !isLast) {
-        e.preventDefault();
-        onMoveDown(index);
-      }
-    },
-    [index, isFirst, isLast, onMoveUp, onMoveDown],
-  );
+    handleKeyDown,
+  } = useSortableStep({
+    id: (step.skillId ?? "unknown") + "-" + step.order,
+    index,
+    onMoveUp,
+    onMoveDown,
+    isFirst,
+    isLast,
+  });
 
   const handleSelectPreset = useCallback(
     (preset: string) => {

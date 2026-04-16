@@ -6,6 +6,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSkillStore } from "../../stores/skill-store";
+import SidebarItem from "../shared/SidebarItem";
 import { Badge } from "../ui/badge";
 
 /** 来源映射 — icon + 显示名称，硬编码 + 回退策略 */
@@ -81,24 +82,21 @@ export default function SourceTree() {
       {sources.map((source) => {
         const isActive = selectedSource === source.key;
         return (
-          <button
+          <SidebarItem
             key={source.key ?? "__all__"}
+            active={isActive}
+            icon={<span className="text-sm shrink-0">{source.icon}</span>}
+            label={source.name}
+            badge={
+              <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                {source.count}
+              </Badge>
+            }
+            onClick={() => setSource(source.key)}
             role="option"
             aria-selected={isActive}
-            aria-label={`${source.name}，${source.count} 个 Skill`}
-            onClick={() => setSource(source.key)}
-            className={`flex items-center gap-2 w-full px-4 py-1.5 text-sm transition-colors duration-200 cursor-pointer ${
-              isActive
-                ? "border-l-[3px] border-[hsl(var(--primary))] bg-[hsl(var(--accent))] text-[hsl(var(--primary))] font-medium pl-[13px]"
-                : "border-l-[3px] border-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))] pl-[13px]"
-            }`}
-          >
-            <span className="text-sm shrink-0">{source.icon}</span>
-            <span className="flex-1 text-left truncate">{source.name}</span>
-            <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
-              {source.count}
-            </Badge>
-          </button>
+            aria-label={`${source.name}，${source.count} ${t("skillBrowse.skillCount", { count: source.count }).replace(/\d+/, "")}`}
+          />
         );
       })}
     </div>

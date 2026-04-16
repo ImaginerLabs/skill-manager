@@ -2,14 +2,15 @@
 // components/workflow/SkillSelector.tsx — 左侧 Skill 选择列表
 // ============================================================
 
-import { Plus, Search, Zap } from "lucide-react";
+import { Plus, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { SkillMeta } from "../../../shared/types";
 import { useSkillSearch } from "../../hooks/useSkillSearch";
 import { useSkillStore } from "../../stores/skill-store";
 import { useWorkflowStore } from "../../stores/workflow-store";
+import SearchInput from "../shared/SearchInput";
 import { Badge } from "../ui/badge";
-import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
 
 /**
@@ -19,6 +20,7 @@ import { ScrollArea } from "../ui/scroll-area";
 export default function SkillSelector() {
   const { skills, loading, fetchSkills } = useSkillStore();
   const { steps, addStep } = useWorkflowStore();
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
 
   const filteredSkills = useSkillSearch(skills, query);
@@ -40,18 +42,11 @@ export default function SkillSelector() {
     <div className="flex flex-col h-full">
       {/* 搜索框 */}
       <div className="p-3 border-b border-[hsl(var(--border))]">
-        <div className="relative">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]"
-          />
-          <Input
-            placeholder="搜索 Skill..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-9 h-9 text-sm"
-          />
-        </div>
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder={t("skillBrowse.searchPlaceholder")}
+        />
       </div>
 
       {/* Skill 列表 */}
@@ -60,17 +55,19 @@ export default function SkillSelector() {
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                加载中...
+                {t("common.loading")}
               </p>
             </div>
           ) : filteredSkills.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Search
+              <Plus
                 size={32}
                 className="text-[hsl(var(--muted-foreground))] mb-2 opacity-40"
               />
               <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                {query ? "未找到匹配的 Skill" : "暂无可用 Skill"}
+                {query
+                  ? t("commandPalette.noResults")
+                  : t("skillBrowse.emptyTitle")}
               </p>
             </div>
           ) : (
@@ -86,7 +83,7 @@ export default function SkillSelector() {
                         ? "bg-[hsl(var(--primary)/0.1)] border border-[hsl(var(--primary)/0.3)]"
                         : "hover:bg-[hsl(var(--accent))] border border-transparent"
                     }`}
-                  aria-label={`添加 ${skill.name} 到工作流`}
+                  aria-label={t("workflow.addCustomStep")}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -106,7 +103,7 @@ export default function SkillSelector() {
                           variant="secondary"
                           className="text-[10px] px-1.5 py-0"
                         >
-                          已添加
+                          {t("workflow.addCustomStep")}
                         </Badge>
                       )}
                       <Plus
@@ -116,7 +113,7 @@ export default function SkillSelector() {
                     </div>
                   </div>
                   <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 line-clamp-2">
-                    {skill.description || "无描述"}
+                    {skill.description || t("common.noDescription")}
                   </p>
                   <div className="flex items-center gap-1.5 mt-1.5">
                     <Badge

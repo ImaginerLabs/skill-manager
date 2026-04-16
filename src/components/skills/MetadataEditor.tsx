@@ -6,20 +6,11 @@ import { FolderInput, Save, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SkillMeta } from "../../../shared/types";
+import { useConfirmDialog } from "../../hooks/useConfirmDialog";
 import { deleteSkill, moveSkillCategory, updateSkillMeta } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { useSkillStore } from "../../stores/skill-store";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../ui/alert-dialog";
+import ConfirmDialog from "../shared/ConfirmDialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
@@ -47,6 +38,23 @@ export default function MetadataEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 删除确认对话框状态
+  const {
+    confirmState: deleteState,
+    requestConfirm: requestDelete,
+    handleConfirm: handleConfirmDelete,
+    handleCancel: handleCancelDelete,
+  } = useConfirmDialog<SkillMeta>(async (target) => {
+    try {
+      await deleteSkill(target.id);
+      selectSkill(null);
+      onUpdated();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("metadata.deleteFailed"));
+    }
+  });
+
   // 保存元数据
   const handleSave = async () => {
     setSaving(true);
@@ -65,18 +73,6 @@ export default function MetadataEditor({
       setError(err instanceof Error ? err.message : t("metadata.saveFailed"));
     } finally {
       setSaving(false);
-    }
-  };
-
-  // 删除 Skill
-  const handleDelete = async () => {
-    try {
-      await deleteSkill(skill.id);
-      selectSkill(null);
-      onUpdated();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("metadata.deleteFailed"));
     }
   };
 
@@ -213,32 +209,28 @@ export default function MetadataEditor({
             {saving ? t("common.saving") : t("common.save")}
           </Button>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" className="gap-1">
-                <Trash2 size={14} />
-                {t("common.delete")}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {t("metadata.deleteConfirmTitle")}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("metadata.deleteConfirmDesc")}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>
-                  {t("metadata.deleteConfirmTitle")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-1"
+            onClick={() => requestDelete(skill)}
+          >
+            <Trash2 size={14} />
+            {t("common.delete")}
+          </Button>
         </div>
       </div>
+
+      {/* 删除确认对话框 */}
+      <ConfirmDialog
+        open={deleteState.open}
+        onOpenChange={(open) => !open && handleCancelDelete()}
+        variant="danger"
+        title={t("metadata.deleteConfirmTitle")}
+        description={t("metadata.deleteConfirmDesc")}
+        confirmLabel={t("common.delete")}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

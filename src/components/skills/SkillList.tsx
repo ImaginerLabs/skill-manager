@@ -2,11 +2,11 @@
 // components/skills/SkillList.tsx — Skill 列表视图（紧凑单行）
 // ============================================================
 
-import { FileText, GitBranch } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SkillMeta } from "../../../shared/types";
 import { useSkillStore } from "../../stores/skill-store";
 import HighlightText from "../shared/HighlightText";
+import SkillTypeIcon from "../shared/SkillTypeIcon";
 import { Badge } from "../ui/badge";
 import SkillContextMenu from "./SkillContextMenu";
 
@@ -48,11 +48,7 @@ function SkillListItem({ skill, rovingProps, onDelete }: SkillListItemProps) {
       }`}
     >
       {/* 图标 */}
-      {skill.type === "workflow" ? (
-        <GitBranch size={14} className="shrink-0 text-[hsl(var(--info))]" />
-      ) : (
-        <FileText size={14} className="shrink-0 text-[hsl(var(--primary))]" />
-      )}
+      <SkillTypeIcon type={skill.type} size={14} />
 
       {/* 名称 */}
       <span className="text-sm font-medium text-[hsl(var(--foreground))] truncate min-w-[120px] max-w-[200px]">
