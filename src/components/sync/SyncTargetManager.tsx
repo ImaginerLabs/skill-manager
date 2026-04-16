@@ -257,8 +257,9 @@ export default function SyncTargetManager() {
               />
               <PathPresetSelect
                 presets={pathPresets}
-                onSelect={(val) => {
-                  setNewPath(val);
+                onSelect={(preset) => {
+                  setNewPath(preset.path);
+                  setNewName(preset.label ?? "");
                   setPathStatus(null);
                 }}
               />

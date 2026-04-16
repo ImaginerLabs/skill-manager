@@ -579,7 +579,7 @@ export default function BundleManager() {
                             variant="outline"
                             className="h-5 px-1.5 text-[10px]"
                           >
-                            {t("category.skillCount", {
+                            {t("bundle.categoryCount", {
                               count: bundle.categoryNames.length,
                             })}
                           </Badge>

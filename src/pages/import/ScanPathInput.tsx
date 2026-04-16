@@ -11,7 +11,7 @@ interface ScanPathInputProps {
   scanPath: string;
   scanState: ScanState;
   pathPresets: PathPreset[];
-  onScanPathChange: (path: string) => void;
+  onScanPathChange: (path: string | PathPreset) => void;
   onScan: () => void;
 }
 
@@ -41,7 +41,10 @@ export const ScanPathInput = memo(function ScanPathInput({
             onChange={(e) => onScanPathChange(e.target.value)}
             placeholder="~/.codebuddy/skills"
           />
-          <PathPresetSelect presets={pathPresets} onSelect={onScanPathChange} />
+          <PathPresetSelect
+            presets={pathPresets}
+            onSelect={(preset) => onScanPathChange(preset.path)}
+          />
         </div>
       </div>
       <Button onClick={onScan} disabled={scanState.status === "loading"}>

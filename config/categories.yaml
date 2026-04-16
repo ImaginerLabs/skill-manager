@@ -26,3 +26,6 @@
 - name: meta-skills
   displayName: 元技能
   description: Skill 创建、AI 能力构建、提示词工程相关的 Skill
+- name: agent
+  displayName: 智能代理
+  description: 多角色智能 Agent Skills，模拟专业团队成员执行特定领域任务

@@ -6,7 +6,7 @@ sync:
       path: /Users/alex/.trae-cn/skills
       enabled: true
     - id: sync-mo1arcsq-51da
-      name: cb
+      name: codebuddy
       path: /Users/alex/.codebuddy/skills
       enabled: true
 ui:
@@ -39,10 +39,15 @@ skillBundles:
       - testing
       - design
       - meta-skills
-      - workflow
-      - tools
     createdAt: '2026-04-14T04:01:28.856Z'
     updatedAt: '2026-04-16T12:04:41.888Z'
+  - id: bundle-mo1heq2p-0c38
+    name: agent
+    displayName: 智能代理
+    categoryNames:
+      - agent
+    createdAt: '2026-04-16T12:54:52.800Z'
+    updatedAt: '2026-04-16T12:55:10.501Z'
 activeCategories:
   - coding
   - writing

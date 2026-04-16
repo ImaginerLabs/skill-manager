@@ -44,7 +44,7 @@ vi.mock("../../../../src/components/shared/PathPresetSelect", () => ({
     onSelect,
   }: {
     presets: { id: string; path: string; label?: string }[];
-    onSelect: (path: string) => void;
+    onSelect: (preset: { id: string; path: string; label?: string }) => void;
   }) => {
     if (presets.length === 0) return null;
     return (
@@ -52,7 +52,10 @@ vi.mock("../../../../src/components/shared/PathPresetSelect", () => ({
         data-testid="preset-select"
         title="从预设选择"
         onChange={(e) => {
-          if (e.target.value) onSelect(e.target.value);
+          if (e.target.value) {
+            const selected = presets.find((p) => p.path === e.target.value);
+            if (selected) onSelect(selected);
+          }
         }}
       >
         <option value="">从预设选择</option>

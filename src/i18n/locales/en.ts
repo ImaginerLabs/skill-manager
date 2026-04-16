@@ -218,6 +218,7 @@ export const en = {
     descriptionLabel: "Description",
     brokenRef: "{{count}} category references broken",
     deselectAll: "Deselect All",
+    categoryCount: "{{count}} categories",
   },
 
   // ── Category Management ───────────────────────────────────

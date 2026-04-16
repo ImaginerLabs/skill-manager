@@ -8,7 +8,7 @@ description: |
   「帮我做一次 code review」「代码能合并吗」「这个 PR 有没有问题」「检查一下代码规范」
   或携带 --path=、--file=、--commit=、--staged 参数时，务必使用此技能。
   即使用户只是笼统地说「看看代码」或「检查代码」，也应触发此技能。
-category: workflow
+category: testing
 ---
 
 # 代码综合审查工作流

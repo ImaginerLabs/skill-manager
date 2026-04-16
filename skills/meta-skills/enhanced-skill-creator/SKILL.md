@@ -1,7 +1,7 @@
 ---
 name: enhanced-skill-creator
 description: 当用户说「优化 Skill」「改进 Skill」「重构 Skill」「更新 Skill」「增强 Skill」「改善触发」「提升 Skill 质量」「重构现有 Skill」「升级 Skill 功能」时触发。根据用户的需求，对现有 Skill 进行分析、诊断、优化和改进，提升技能的功能完整性、触发准确性和执行效率。
-category: tools
+category: meta-skills
 ---
 
 # Claude Skill 增强与优化指引

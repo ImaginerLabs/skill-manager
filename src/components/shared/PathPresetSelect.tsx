@@ -60,8 +60,8 @@ export function PresetOption({ preset }: PresetOptionProps) {
 interface PathPresetSelectProps {
   /** 路径预设列表 */
   presets: PathPreset[];
-  /** 选中路径后的回调 */
-  onSelect: (path: string) => void;
+  /** 选中预设后的回调，接收完整 preset 对象 */
+  onSelect: (preset: PathPreset) => void;
   /** 占位文本 */
   placeholder?: string;
   /** 触发器标题（tooltip） */
@@ -89,7 +89,12 @@ export const PathPresetSelect = memo(function PathPresetSelect({
     <Select
       value=""
       onValueChange={(val) => {
-        if (val) onSelect(val);
+        if (val) {
+          const selected = presets.find((p) => p.path === val);
+          if (selected) {
+            onSelect(selected);
+          }
+        }
       }}
     >
       <SelectTrigger className={triggerClassName} title={title}>

@@ -214,6 +214,7 @@ export const zh = {
     descriptionLabel: "描述",
     brokenRef: "{{count}} 个分类引用已失效",
     deselectAll: "取消全选",
+    categoryCount: "{{count}} categories",
   },
 
   // ── 分类管理 ──────────────────────────────────────────────

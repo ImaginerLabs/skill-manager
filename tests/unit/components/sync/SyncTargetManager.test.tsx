@@ -2,6 +2,7 @@
 // tests/unit/components/sync/SyncTargetManager.test.tsx — 同步目标管理组件测试
 // ============================================================
 
+import type { PathPreset } from "@/shared/types";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -41,14 +42,21 @@ vi.mock("@/components/settings/ide-icons/ide-matcher", () => ({
 }));
 
 // Mock API
-vi.mock("@/lib/api", () => ({
-  fetchSyncTargets: vi.fn().mockResolvedValue([]),
-  fetchPathPresets: vi.fn().mockResolvedValue([]),
-  addSyncTarget: vi.fn(),
-  updateSyncTarget: vi.fn(),
-  deleteSyncTarget: vi.fn(),
-  validateSyncPath: vi.fn(),
-}));
+vi.mock("@/lib/api", () => {
+  const mockPresets: PathPreset[] = [
+    { id: "1", path: "/path/without-label", label: undefined },
+    { id: "2", path: "/path/with-label", label: "My Project" },
+  ];
+
+  return {
+    fetchSyncTargets: vi.fn().mockResolvedValue([]),
+    fetchPathPresets: vi.fn().mockResolvedValue(mockPresets),
+    addSyncTarget: vi.fn(),
+    updateSyncTarget: vi.fn(),
+    deleteSyncTarget: vi.fn(),
+    validateSyncPath: vi.fn(),
+  };
+});
 
 // Mock sync store
 vi.mock("@/stores/sync-store", () => ({

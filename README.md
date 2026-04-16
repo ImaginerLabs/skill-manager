@@ -27,6 +27,7 @@
 | 📋 快捷操作     | Skill 详情侧边栏支持一键复制路径；版本号与 `package.json` 自动同步                                                                                |
 | 🗂️ 二级导航     | 主页左侧二级侧边栏，支持「按分类」和「按来源」两种浏览维度切换；底部提供管理分类快捷入口                                                          |
 | 🌐 外部技能仓库 | 自动从 GitHub 仓库（如 anthropics/skills）拉取外部 Skill；来源标签可点击跳转；只读保护防止误操作；GitHub Action 定时同步                          |
+| 🤖 Agent Skills | 11 个专业 AI Agent 技能，覆盖 API 设计、云架构、代码实现、数据建模、调试、部署、边缘用例、性能优化、质量分析、安全审计、系统架构等领域            |
 | 📊 统计面板     | Sidebar 底部展示 Skill 总数、分类数、同步数等关键指标                                                                                             |
 | 🔥 活跃度热力图 | 可视化近期 Skill 文件修改活跃度，类 GitHub 贡献热力图风格；hover 浮窗展示当日修改次数与文件列表                                                   |
 | 🌓 主题切换     | 支持亮色/暗色主题切换，Header 右侧 Sun/Moon 按钮一键切换；偏好持久化到 localStorage，初始化跟随系统 `prefers-color-scheme`                        |
@@ -118,6 +119,7 @@ skill-package/
 │   └── middleware/         # Express 中间件
 ├── shared/                 # 前后端共享类型
 ├── skills/                 # Skill 文件目录
+│   ├── agent/             # AI Agent 技能（api-designer, cloud-architect 等）
 │   ├── coding/
 │   ├── writing/
 │   ├── devops/
