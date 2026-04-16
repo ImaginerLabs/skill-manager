@@ -14,23 +14,23 @@
 
 ## Features
 
-| Feature             | Description                                                                                                                                                    |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 📚 Browse           | Category tree, grid/list view, Markdown preview; case-insensitive category matching; click row in list view to open detail                                     |
-| 🔍 Search           | Fuse.js in-memory fuzzy search, < 200ms; Command Palette with description preview & type grouping                                                              |
-| 🔗 Workflow         | Drag-and-drop orchestration; supports adding natural language custom steps; generate workflow `.md`; Tab layout to manage existing workflows; draft auto-saved |
-| 🔄 Sync             | Three sync modes: Incremental (changed files only), Replace (full overwrite), Diff (preview changes); SplitButton for quick mode switching                     |
-| 📥 Import           | Scan and import Skills from IDE directory                                                                                                                      |
-| 🗂️ Category         | Tab-based settings page: category management + bundle management; batch remove Skills from category                                                            |
-| 📦 Bundles          | Save category combinations as bundles; one-click activate to switch entire category config; broken-reference warning                                           |
-| ⌨️ Hotkeys          | `⌘K` command palette (with description & type groups), `Alt+↑/↓` step reorder                                                                                  |
-| 📋 Quick Actions    | Copy Skill path from detail panel; version number auto-synced with `package.json`                                                                              |
-| 🖼️ Secondary Nav    | Left-side secondary sidebar on home page; supports "By Category" and "By Source" view tabs; bottom shortcut to manage categories                               |
-| 🌐 External Hub     | Auto-pull Skills from GitHub repos (e.g. anthropics/skills); source badge with clickable link; readonly protection; GitHub Action for scheduled sync           |
-| 📊 Stats Panel      | Sidebar footer shows total Skills, categories, and sync count                                                                                                  |
-| 🔥 Activity Heatmap | Visualize recent Skill file modification activity, GitHub contribution heatmap style; hover tooltip shows daily change count and file list                     |
-| 🌓 Theme Toggle     | Light/dark theme switch via Sun/Moon button in Header; preference persisted to localStorage, initialized from system `prefers-color-scheme`                    |
-| 🌍 i18n             | Supports Chinese (zh) and English (en); language follows browser settings; manual switch with persistence                                                      |
+| Feature             | Description                                                                                                                                                                                         |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 📚 Browse           | Category tree, grid/list view, Markdown preview; case-insensitive category matching; click row in list view to open detail                                                                          |
+| 🔍 Search           | Fuse.js in-memory fuzzy search, < 200ms; Command Palette with description preview & type grouping                                                                                                   |
+| 🔗 Workflow         | Drag-and-drop orchestration; supports adding natural language custom steps; generate workflow `.md`; Tab layout to manage existing workflows; draft auto-saved                                      |
+| 🔄 Sync             | Three sync modes: Incremental (changed files only), Replace (full overwrite), Diff (preview changes); SplitButton for quick mode switching; workflow sync optimization (UX enhancement in progress) |
+| 📥 Import           | Scan and import Skills from IDE directory                                                                                                                                                           |
+| 🗂️ Category         | Tab-based settings page: category management + bundle management; batch remove Skills from category                                                                                                 |
+| 📦 Bundles          | Save category combinations as bundles; one-click activate to switch entire category config; broken-reference warning                                                                                |
+| ⌨️ Hotkeys          | `⌘K` command palette (with description & type groups), `Alt+↑/↓` step reorder                                                                                                                       |
+| 📋 Quick Actions    | Copy Skill path from detail panel; version number auto-synced with `package.json`                                                                                                                   |
+| 🖼️ Secondary Nav    | Left-side secondary sidebar on home page; supports "By Category" and "By Source" view tabs; bottom shortcut to manage categories                                                                    |
+| 🌐 External Hub     | Auto-pull Skills from GitHub repos (e.g. anthropics/skills); source badge with clickable link; readonly protection; GitHub Action for scheduled sync                                                |
+| 📊 Stats Panel      | Sidebar footer shows total Skills, categories, and sync count                                                                                                                                       |
+| 🔥 Activity Heatmap | Visualize recent Skill file modification activity, GitHub contribution heatmap style; hover tooltip shows daily change count and file list                                                          |
+| 🌓 Theme Toggle     | Light/dark theme switch via Sun/Moon button in Header; preference persisted to localStorage, initialized from system `prefers-color-scheme`                                                         |
+| 🌍 i18n             | Supports Chinese (zh) and English (en); language follows browser settings; manual switch with persistence                                                                                           |
 
 ---
 
