@@ -163,7 +163,13 @@ export interface SyncDetail {
   skillId: string;
   skillName: string;
   targetPath: string;
-  status: "success" | "overwritten" | "failed" | "skipped" | "updated";
+  status:
+    | "success"
+    | "overwritten"
+    | "failed"
+    | "skipped"
+    | "updated"
+    | "deleted";
   error?: string;
 }
 
@@ -177,6 +183,8 @@ export interface SyncResult {
   skipped: number;
   /** 增量同步更新的文件数 */
   updated: number;
+  /** 替换同步删除的孤儿文件夹数 */
+  deleted: number;
   details: SyncDetail[];
 }
 

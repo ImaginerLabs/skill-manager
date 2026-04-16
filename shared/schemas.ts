@@ -135,7 +135,14 @@ export const SyncDetailSchema = z.object({
   skillId: z.string(),
   skillName: z.string(),
   targetPath: z.string(),
-  status: z.enum(["success", "overwritten", "failed", "skipped", "updated"]),
+  status: z.enum([
+    "success",
+    "overwritten",
+    "failed",
+    "skipped",
+    "updated",
+    "deleted",
+  ]),
   error: z.string().optional(),
 });
 
@@ -147,6 +154,7 @@ export const SyncResultSchema = z.object({
   failed: z.number().nonnegative(),
   skipped: z.number().nonnegative(),
   updated: z.number().nonnegative(),
+  deleted: z.number().nonnegative(),
   details: z.array(SyncDetailSchema),
 });
 

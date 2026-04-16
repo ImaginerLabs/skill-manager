@@ -331,6 +331,10 @@ export async function pushSync(
   let failedCount = 0;
   let skippedCount = 0;
   let updatedCount = 0;
+  let deletedCount = 0;
+
+  // 收集本次同步涉及的文件夹名（用于 replace 模式删除孤儿）
+  const syncedFolderNames = new Set<string>();
 
   for (const skillId of skillIds) {
     const meta = getSkillMeta(skillId);
@@ -349,6 +353,7 @@ export async function pushSync(
     }
 
     const { sourceDir, folderName } = resolveSkillDirs(meta, skillsRoot);
+    syncedFolderNames.add(folderName);
 
     for (const target of targets) {
       const destDir = path.join(target.path, folderName);
@@ -448,6 +453,62 @@ export async function pushSync(
     }
   }
 
+  // 替换模式：删除目标目录中不在本次同步列表中的孤儿 Skill 文件夹
+  if (mode === "replace") {
+    for (const target of targets) {
+      try {
+        const targetExists = await fs.pathExists(target.path);
+        if (!targetExists) continue;
+
+        const targetEntries = await fs.readdir(target.path, {
+          withFileTypes: true,
+        });
+
+        for (const entry of targetEntries) {
+          if (!entry.isDirectory() || syncedFolderNames.has(entry.name)) {
+            continue;
+          }
+
+          const entryPath = path.join(target.path, entry.name);
+
+          // 检查是否是 Skill 文件夹（包含 .md 文件）
+          try {
+            const entryFiles = await fs.readdir(entryPath);
+            const hasMd = entryFiles.some((f) => f.endsWith(".md"));
+            if (!hasMd) continue;
+          } catch {
+            continue;
+          }
+
+          // 路径安全校验
+          if (!isSubPath(entryPath, target.path)) continue;
+
+          try {
+            await fs.remove(entryPath);
+            details.push({
+              skillId: entry.name,
+              skillName: entry.name,
+              targetPath: entryPath,
+              status: "deleted",
+            });
+            deletedCount++;
+          } catch (err) {
+            details.push({
+              skillId: entry.name,
+              skillName: entry.name,
+              targetPath: entryPath,
+              status: "failed",
+              error: `删除孤儿文件夹失败: ${err instanceof Error ? err.message : String(err)}`,
+            });
+            failedCount++;
+          }
+        }
+      } catch {
+        // 目标目录读取失败，跳过该目标的孤儿清理
+      }
+    }
+  }
+
   return {
     total: details.length,
     success: successCount,
@@ -455,6 +516,7 @@ export async function pushSync(
     failed: failedCount,
     skipped: skippedCount,
     updated: updatedCount,
+    deleted: deletedCount,
     details,
   };
 }
