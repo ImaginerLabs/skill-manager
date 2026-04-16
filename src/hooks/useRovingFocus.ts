@@ -38,12 +38,12 @@ export function useRovingFocus({
   itemCount,
   isActive,
 }: UseRovingFocusOptions): UseRovingFocusReturn {
-  const [focusedIndex, setFocusedIndex] = useState(0);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const itemRefs = useRef<Map<number, HTMLElement>>(new Map());
 
   // itemCount 变化时重置 focusedIndex（筛选条件变化）
   useEffect(() => {
-    setFocusedIndex(0);
+    setFocusedIndex(-1);
   }, [itemCount]);
 
   // 聚焦变化时自动 scrollIntoView + focus
@@ -67,21 +67,24 @@ export function useRovingFocus({
       switch (e.key) {
         case "j":
         case "J": {
-          // [约定] J/K 键调用 e.preventDefault() 是为了阻止浏览器默认的
-          // 滚动行为（如 Space 键默认触发页面滚动），而 J/K 键本身没有
-          // 浏览器默认行为需要阻止。但为了保持一致性，我们仍然调用它。
-          // 注意：如果未来移除 e.preventDefault()，下游的 Space/Enter/
-          // Delete 处理仍可通过 !e.defaultPrevented 检查正常工作，
-          // 因为 J/K 键不调用 preventDefault 不会设置 defaultPrevented。
           e.preventDefault();
+          // 首次按键时激活焦点到当前项
+          if (focusedIndex === -1) {
+            setFocusedIndex(index);
+            break;
+          }
           const next = Math.min(index + 1, itemCount - 1);
           if (next !== index) setFocusedIndex(next);
           break;
         }
         case "k":
         case "K": {
-          // [约定] 同上，K 键与 J 键保持一致的 preventDefault 行为
           e.preventDefault();
+          // 首次按键时激活焦点到当前项
+          if (focusedIndex === -1) {
+            setFocusedIndex(index);
+            break;
+          }
           const prev = Math.max(index - 1, 0);
           if (prev !== index) setFocusedIndex(prev);
           break;
@@ -91,12 +94,13 @@ export function useRovingFocus({
           break;
       }
     },
-    [isActive, itemCount],
+    [isActive, itemCount, focusedIndex],
   );
 
   const getItemProps = useCallback(
     (index: number): ItemProps => ({
-      tabIndex: index === focusedIndex ? 0 : -1,
+      tabIndex:
+        index === focusedIndex || (focusedIndex === -1 && index === 0) ? 0 : -1,
       "data-focused": index === focusedIndex,
       "aria-current": index === focusedIndex ? "true" : undefined,
       ref: (el: HTMLElement | null) => {
