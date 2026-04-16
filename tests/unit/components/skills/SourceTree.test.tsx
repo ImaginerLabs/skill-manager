@@ -170,7 +170,7 @@ describe("SourceTree", () => {
       render(<SourceTree />);
 
       const allOption = screen.getByRole("option", {
-        name: /全部，3 个 Skill/,
+        name: /全部.*3/,
       });
       expect(allOption).toBeInTheDocument();
     });

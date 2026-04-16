@@ -91,7 +91,7 @@ describe("SyncTargetManager", () => {
     renderWithRoute("/sync");
 
     await waitFor(() => {
-      expect(screen.getByText("开始使用同步功能")).toBeInTheDocument();
+      expect(screen.getByText("暂无同步目标")).toBeInTheDocument();
     });
 
     // 引导按钮存在
@@ -107,7 +107,7 @@ describe("SyncTargetManager", () => {
     await waitFor(() => {
       // 添加表单展开后，应显示名称输入框
       expect(
-        screen.getByPlaceholderText("目标名称（如：CodeBuddy 项目）"),
+        screen.getByPlaceholderText("目标名称（如 My Project）"),
       ).toBeInTheDocument();
     });
   });
@@ -117,11 +117,11 @@ describe("SyncTargetManager", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText("目标名称（如：CodeBuddy 项目）"),
+        screen.getByPlaceholderText("目标名称（如 My Project）"),
       ).toBeInTheDocument();
     });
 
     // 引导卡片不应显示
-    expect(screen.queryByText("开始使用同步功能")).not.toBeInTheDocument();
+    expect(screen.queryByText("暂无同步目标")).not.toBeInTheDocument();
   });
 });

@@ -3,6 +3,35 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import CategoryTree from "../../../src/components/skills/CategoryTree";
 import { useSkillStore } from "../../../src/stores/skill-store";
 
+// Mock react-i18next
+vi.mock("react-i18next", async () => {
+  const { zh } = await import("../../../src/i18n/locales/zh");
+  function resolve(key: string, obj: Record<string, unknown>): string {
+    const parts = key.split(".");
+    let cur: unknown = obj;
+    for (const p of parts) {
+      if (cur && typeof cur === "object" && p in cur)
+        cur = (cur as Record<string, unknown>)[p];
+      else return key;
+    }
+    return typeof cur === "string" ? cur : key;
+  }
+  return {
+    useTranslation: () => ({
+      t: (key: string, params?: Record<string, unknown>) => {
+        let text = resolve(key, zh as unknown as Record<string, unknown>);
+        if (params) {
+          for (const [k, v] of Object.entries(params)) {
+            text = text.replace(new RegExp(`\\{\\{${k}\\}\\}`, "g"), String(v));
+          }
+        }
+        return text;
+      },
+      i18n: { language: "zh", changeLanguage: vi.fn() },
+    }),
+  };
+});
+
 // Mock react-router-dom
 const mockNavigate = vi.fn();
 let mockPathname = "/";
@@ -55,7 +84,7 @@ describe("CategoryTree", () => {
 
     it("渲染「全部」选项并显示总数", () => {
       render(<CategoryTree />);
-      expect(screen.getByText("全部")).toBeInTheDocument();
+      expect(screen.getByText("按分类")).toBeInTheDocument();
       expect(screen.getByText("8")).toBeInTheDocument();
     });
 
@@ -72,14 +101,14 @@ describe("CategoryTree", () => {
     it("无分类时显示提示文本", () => {
       setupStore({ categories: [] });
       render(<CategoryTree />);
-      expect(screen.getByText("暂无分类，请先导入 Skill")).toBeInTheDocument();
+      expect(screen.getByText("暂无分类")).toBeInTheDocument();
     });
   });
 
   describe("交互", () => {
     it("点击「全部」调用 setCategory(null)", () => {
       render(<CategoryTree />);
-      fireEvent.click(screen.getByText("全部"));
+      fireEvent.click(screen.getByText("按分类"));
       expect(mockSetCategory).toHaveBeenCalledWith(null);
     });
 
@@ -100,15 +129,15 @@ describe("CategoryTree", () => {
     it("selectedCategory 为 null 时「全部」高亮", () => {
       setupStore({ selectedCategory: null });
       render(<CategoryTree />);
-      const allButton = screen.getByText("全部").closest("button");
-      expect(allButton?.className).toContain("font-medium");
+      const allButton = screen.getByText("按分类").closest("button");
+      expect(allButton?.className).toContain("font-semibold");
     });
 
     it("selectedCategory 匹配时对应分类高亮", () => {
       setupStore({ selectedCategory: "coding" });
       render(<CategoryTree />);
       const codingButton = screen.getByText("编程开发").closest("button");
-      expect(codingButton?.className).toContain("font-medium");
+      expect(codingButton?.className).toContain("font-semibold");
     });
   });
 });
