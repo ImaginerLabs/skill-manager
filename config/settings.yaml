@@ -1,9 +1,9 @@
 version: 0.1.0
 sync:
   targets:
-    - id: sync-mnyessr6-1i07
-      name: codebuddy
-      path: /Users/alex/.codebuddy/skills
+    - id: sync-mo18ay8z-qj3x
+      name: trae-cn
+      path: /Users/alex/.trae-cn/skills
       enabled: true
 ui:
   defaultView: grid
@@ -17,6 +17,9 @@ pathPresets:
     path: /Users/alex/trae/workspace
   - id: preset-mnydi8vj-vosk
     path: /Users/alex/.codebuddy/skills
+  - id: preset-mo18alu9-b7j6
+    path: /Users/alex/.trae-cn/skills
+    label: trae-cn
 skillBundles:
   - id: bundle-default
     name: default
@@ -32,8 +35,9 @@ skillBundles:
       - testing
       - design
       - meta-skills
-    createdAt: "2026-04-14T04:01:28.856Z"
-    updatedAt: "2026-04-15T11:13:36.064Z"
+      - workflow
+    createdAt: '2026-04-14T04:01:28.856Z'
+    updatedAt: '2026-04-16T08:08:57.068Z'
 activeCategories:
   - coding
   - writing
