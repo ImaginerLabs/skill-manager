@@ -364,6 +364,20 @@ export const zh = {
     confirmDelete: "确认删除",
   },
 
+  // ── 确认对话框 ────────────────────────────────────────────
+  confirmDialog: {
+    defaultTitle: "确认操作",
+    defaultDesc: "确定要执行此操作吗？",
+  },
+
+  // ── 导入清理确认 ──────────────────────────────────────────
+  importCleanup: {
+    confirmTitle: "确认删除源文件",
+    confirmDesc:
+      "确认删除 {{count}} 个已导入的源文件？此操作不可撤销，将永久删除原始文件。",
+    confirmButton: "确认删除",
+  },
+
   // ── 错误码映射 ────────────────────────────────────────────
   errors: {
     SKILL_NOT_FOUND: "Skill 不存在",

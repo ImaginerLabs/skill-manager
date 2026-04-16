@@ -370,6 +370,20 @@ export const en = {
     pathCopied: "Path copied to clipboard",
     confirmDelete: "Confirm Delete",
   },
+  // ── Confirm Dialog ────────────────────────────────────────
+  confirmDialog: {
+    defaultTitle: "Confirm Action",
+    defaultDesc: "Are you sure you want to proceed?",
+  },
+
+  // ── Import Cleanup Confirm ────────────────────────────────
+  importCleanup: {
+    confirmTitle: "Confirm Delete Source Files",
+    confirmDesc:
+      "Confirm deletion of {{count}} imported source files? This action cannot be undone.",
+    confirmButton: "Confirm Delete",
+  },
+
   // ── Error Code Mapping ────────────────────────────────────
   errors: {
     SKILL_NOT_FOUND: "Skill not found",
