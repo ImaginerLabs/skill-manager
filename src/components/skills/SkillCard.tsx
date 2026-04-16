@@ -6,10 +6,24 @@ import { ExternalLink, FileText, GitBranch, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SkillMeta } from "../../../shared/types";
 import { useSkillStore } from "../../stores/skill-store";
+import HighlightText from "../shared/HighlightText";
 import { Badge } from "../ui/badge";
+import SkillContextMenu from "./SkillContextMenu";
 
 interface SkillCardProps {
   skill: SkillMeta;
+  /** Roving focus props（由 useRovingFocus 提供） */
+  rovingProps?: {
+    tabIndex: number;
+    "data-focused": boolean;
+    "aria-current": "true" | undefined;
+    ref: (el: HTMLElement | null) => void;
+    onKeyDown: (e: React.KeyboardEvent) => void;
+  };
+  /** 编辑元数据回调 */
+  onEditMeta?: () => void;
+  /** 删除回调 */
+  onDelete?: () => void;
 }
 
 /**
@@ -17,16 +31,30 @@ interface SkillCardProps {
  * 支持 hover/selected/focused 三种交互状态
  * 外部 Skill 显示来源标签（右上角）和锁图标（左下角）
  */
-export default function SkillCard({ skill }: SkillCardProps) {
-  const { selectedSkillId, selectSkill } = useSkillStore();
+export default function SkillCard({
+  skill,
+  rovingProps,
+  onEditMeta,
+  onDelete,
+}: SkillCardProps) {
+  const { selectedSkillId, selectSkill, searchQuery } = useSkillStore();
   const { t } = useTranslation();
   const isSelected = selectedSkillId === skill.id;
+  const isFocused = rovingProps?.["data-focused"] ?? false;
 
-  return (
+  const card = (
     <button
       data-testid="skill-card"
+      ref={rovingProps?.ref}
+      tabIndex={rovingProps?.tabIndex}
+      aria-current={rovingProps?.["aria-current"]}
       onClick={() => selectSkill(skill.id)}
+      onKeyDown={rovingProps?.onKeyDown}
       className={`group relative w-full text-left rounded-lg border p-4 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[hsl(var(--primary))] ${
+        isFocused
+          ? "ring-2 ring-[hsl(var(--primary))] ring-offset-1 ring-offset-[hsl(var(--background))]"
+          : ""
+      } ${
         isSelected
           ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))/0.08] shadow-[0_0_0_1px_hsl(var(--primary))]"
           : "border-[hsl(var(--border))] bg-[hsl(var(--card))] hover:border-[hsl(var(--muted))] hover:bg-[hsl(var(--surface-elevated))]"
@@ -67,7 +95,7 @@ export default function SkillCard({ skill }: SkillCardProps) {
           data-testid="skill-name"
           className="font-medium text-sm text-[hsl(var(--foreground))] leading-tight line-clamp-1"
         >
-          {skill.name}
+          <HighlightText text={skill.name} query={searchQuery} />
         </h3>
       </div>
 
@@ -76,7 +104,10 @@ export default function SkillCard({ skill }: SkillCardProps) {
         data-testid="skill-description"
         className="text-xs text-[hsl(var(--muted-foreground))] line-clamp-2 mb-3 min-h-[2.5em]"
       >
-        {skill.description || t("common.noDescription")}
+        <HighlightText
+          text={skill.description || t("common.noDescription")}
+          query={searchQuery}
+        />
       </p>
 
       {/* 底部标签 */}
@@ -126,5 +157,18 @@ export default function SkillCard({ skill }: SkillCardProps) {
         )}
       </div>
     </button>
+  );
+
+  return (
+    <SkillContextMenu
+      skillId={skill.id}
+      skillName={skill.name}
+      skillPath={`${skill.category}/${skill.id}.md`}
+      isReadonly={skill.readonly ?? false}
+      onEditMeta={onEditMeta}
+      onDelete={onDelete}
+    >
+      {card}
+    </SkillContextMenu>
   );
 }

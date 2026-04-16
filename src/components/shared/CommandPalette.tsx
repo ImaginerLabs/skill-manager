@@ -24,7 +24,7 @@ import { useUIStore } from "../../stores/ui-store";
  */
 export default function CommandPalette() {
   const { commandPaletteOpen, setCommandPaletteOpen } = useUIStore();
-  const { skills, selectSkill } = useSkillStore();
+  const { skills, selectSkill, setSearchQuery } = useSkillStore();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -67,19 +67,26 @@ export default function CommandPalette() {
 
   const handleSelectSkill = useCallback(
     (skillId: string) => {
+      // Story 9.2: 选中 Skill 后同步搜索状态
+      const skill = skills.find((s) => s.id === skillId);
       selectSkill(skillId);
       setCommandPaletteOpen(false);
+      if (skill) {
+        setSearchQuery(skill.name);
+      }
       navigate("/");
     },
-    [selectSkill, setCommandPaletteOpen, navigate],
+    [selectSkill, setCommandPaletteOpen, navigate, skills, setSearchQuery],
   );
 
   const handleSelectPage = useCallback(
     (path: string) => {
+      // Story 9.2: 页面跳转时清空搜索
+      setSearchQuery("");
       navigate(path);
       setCommandPaletteOpen(false);
     },
-    [navigate, setCommandPaletteOpen],
+    [navigate, setCommandPaletteOpen, setSearchQuery],
   );
 
   if (!commandPaletteOpen) return null;

@@ -49,6 +49,7 @@ export const en = {
     skillCount: "{{count}} Skills",
     skillCountFiltered: "{{filtered}} / {{total}} Skills",
     searchPlaceholder: "Filter Skills...",
+    searchMatchCount: "Found {{count}} matching Skills",
     cardView: "Card View",
     listView: "List View",
     refresh: "Refresh Skill List",
@@ -62,6 +63,12 @@ export const en = {
     errorTitle: "Load Failed",
     loadingText: "Loading...",
     previewEmpty: "Select a Skill to preview",
+    closePreview: "Close Preview",
+    // Story 9.5: Filter breadcrumb
+    breadcrumbAll: "All",
+    breadcrumbSource: "Source: {{source}}",
+    breadcrumbClearFilter: "Clear Filter",
+    breadcrumbNavLabel: "Filter Path",
   },
 
   // ── Sync Page ─────────────────────────────────────────────
@@ -118,6 +125,18 @@ export const en = {
     diffTargetHint: "Comparing against: {{name}}",
     execIncremental: "Run Incremental Sync",
     execReplace: "Run Replace Sync",
+    // Story 9.4: Sync flow progressive guidance
+    summaryTitle: "Sync Confirmation",
+    summarySkillCount: "Skill Count",
+    summaryTargets: "Target Paths",
+    summaryMode: "Sync Mode",
+    confirmSync: "Confirm Sync",
+    cancelSync: "Cancel",
+    progressText: "{{completed}}/{{total}} Skills synced",
+    retryButton: "Retry",
+    retryLimitReached: "Max retries reached",
+    retrySuccess: '"{{name}}" retry succeeded',
+    retryFailed: '"{{name}}" retry failed',
   },
 
   // ── Sync Target Manager ───────────────────────────────────
@@ -336,7 +355,7 @@ export const en = {
     workflowBadge: "Workflow",
   },
 
-  // ── External Skill Source Label ───────────────────────────
+  // ── External Skill Source Label ───────────────────────
   skill: {
     viewOnGithub: "View on GitHub",
     sourceInfo: "Source Info",
@@ -345,8 +364,12 @@ export const en = {
     readonlyEditTooltip:
       "External Skills are read-only, managed by upstream repository",
     readonlyDeleteTooltip: "External Skills cannot be deleted",
+    editMeta: "Edit Metadata",
+    syncToIDE: "Sync to IDE",
+    copyPath: "Copy Path",
+    pathCopied: "Path copied to clipboard",
+    confirmDelete: "Confirm Delete",
   },
-
   // ── Error Code Mapping ────────────────────────────────────
   errors: {
     SKILL_NOT_FOUND: "Skill not found",

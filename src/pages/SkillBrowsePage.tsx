@@ -9,6 +9,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import FilterBreadcrumb from "../components/shared/FilterBreadcrumb";
 import SkillGrid from "../components/skills/SkillGrid";
 import SkillListView from "../components/skills/SkillListView";
 import { Badge } from "../components/ui/badge";
@@ -16,6 +17,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { useFilteredSkills } from "../hooks/useFilteredSkills";
 import { useSkillSearch } from "../hooks/useSkillSearch";
+import { useSyncSearchParams } from "../hooks/useSyncSearchParams";
 import { detectCodeBuddy, refreshSkills } from "../lib/api";
 import { useSkillStore } from "../stores/skill-store";
 
@@ -39,6 +41,9 @@ export default function SkillBrowsePage() {
     selectedSkillId,
   } = useSkillStore();
   const { t } = useTranslation();
+
+  // 筛选状态 ↔ URL 参数双向同步（Story 9.5, AD-46）
+  useSyncSearchParams();
 
   const navigate = useNavigate();
   const [coldStart, setColdStart] = useState<{
@@ -159,9 +164,28 @@ export default function SkillBrowsePage() {
             placeholder={t("skillBrowse.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 pr-16"
           />
+          {/* 搜索匹配计数（Story 9.2） */}
+          {searchQuery.trim() && (
+            <span
+              data-testid="search-match-count"
+              className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${
+                filteredSkills.length === 0 ? "text-red-400" : "text-slate-500"
+              }`}
+            >
+              {filteredSkills.length}/{categorySourceFiltered.length}
+            </span>
+          )}
         </div>
+        {/* 搜索匹配计数无障碍播报（Story 9.2） */}
+        {searchQuery.trim() && (
+          <span className="sr-only" aria-live="polite" role="status">
+            {t("skillBrowse.searchMatchCount", {
+              count: filteredSkills.length,
+            })}
+          </span>
+        )}
 
         {/* 视图切换 */}
         <div
@@ -199,6 +223,9 @@ export default function SkillBrowsePage() {
           <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
+
+      {/* 筛选面包屑（Story 9.5, AD-46） */}
+      <FilterBreadcrumb />
 
       {/* 冷启动引导 */}
       {!loading && skills.length === 0 && coldStart?.detected && (

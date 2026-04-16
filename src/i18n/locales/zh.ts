@@ -49,6 +49,7 @@ export const zh = {
     skillCount: "{{count}} 个 Skill",
     skillCountFiltered: "{{filtered}} / {{total}} 个 Skill",
     searchPlaceholder: "筛选 Skill...",
+    searchMatchCount: "找到 {{count}} 个匹配的 Skill",
     cardView: "卡片视图",
     listView: "列表视图",
     refresh: "刷新 Skill 列表",
@@ -62,6 +63,12 @@ export const zh = {
     errorTitle: "加载失败",
     loadingText: "加载中...",
     previewEmpty: "选择一个 Skill 查看预览",
+    closePreview: "关闭预览",
+    // Story 9.5: 面包屑导航
+    breadcrumbAll: "全部",
+    breadcrumbSource: "来源: {{source}}",
+    breadcrumbClearFilter: "清除筛选",
+    breadcrumbNavLabel: "筛选路径",
   },
 
   // ── 同步页 ────────────────────────────────────────────────
@@ -117,6 +124,18 @@ export const zh = {
     diffTargetHint: "对比目标：{{name}}",
     execIncremental: "执行增量同步",
     execReplace: "执行替换同步",
+    // Story 9.4: 同步流程渐进引导
+    summaryTitle: "同步确认",
+    summarySkillCount: "Skill 数量",
+    summaryTargets: "目标路径",
+    summaryMode: "同步模式",
+    confirmSync: "确认同步",
+    cancelSync: "取消",
+    progressText: "{{completed}}/{{total}} Skill 已同步",
+    retryButton: "重试",
+    retryLimitReached: "已达最大重试次数",
+    retrySuccess: "「{{name}}」重试成功",
+    retryFailed: "「{{name}}」重试失败",
   },
 
   // ── 同步目标管理 ──────────────────────────────────────────
@@ -338,6 +357,11 @@ export const zh = {
     readonlyTooltip: "外部 Skill（只读）",
     readonlyEditTooltip: "外部 Skill 为只读，由上游仓库管理",
     readonlyDeleteTooltip: "外部 Skill 不可删除",
+    editMeta: "编辑元数据",
+    syncToIDE: "同步到 IDE",
+    copyPath: "复制路径",
+    pathCopied: "路径已复制到剪贴板",
+    confirmDelete: "确认删除",
   },
 
   // ── 错误码映射 ────────────────────────────────────────────

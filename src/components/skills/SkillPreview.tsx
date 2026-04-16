@@ -14,7 +14,7 @@ import {
   Tag,
   User,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -40,6 +40,9 @@ export default function SkillPreview() {
   const [error, setError] = useState<string | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Story 9.1: 内容切换过渡效果
+  const [contentSwitching, setContentSwitching] = useState(false);
+  const prevSkillIdRef = useRef<string | null>(null);
 
   const handleCopyPath = useCallback(async () => {
     if (!skill?.filePath) return;
@@ -56,8 +59,17 @@ export default function SkillPreview() {
   useEffect(() => {
     if (!selectedSkillId) {
       setSkill(null);
+      prevSkillIdRef.current = null;
       return;
     }
+
+    // 内容切换过渡：仅在已有 Skill 显示时触发（非首次加载）
+    let transitionTimer: ReturnType<typeof setTimeout> | null = null;
+    if (prevSkillIdRef.current && prevSkillIdRef.current !== selectedSkillId) {
+      setContentSwitching(true);
+      transitionTimer = setTimeout(() => setContentSwitching(false), 150);
+    }
+    prevSkillIdRef.current = selectedSkillId;
 
     let cancelled = false;
     setLoading(true);
@@ -79,6 +91,7 @@ export default function SkillPreview() {
 
     return () => {
       cancelled = true;
+      if (transitionTimer) clearTimeout(transitionTimer);
     };
   }, [selectedSkillId]);
 
@@ -124,7 +137,7 @@ export default function SkillPreview() {
   return (
     <ScrollArea
       data-testid="preview-panel"
-      className="h-full [&_[data-radix-scroll-area-viewport]>div]:!block"
+      className={`h-full [&_[data-radix-scroll-area-viewport]>div]:!block ${contentSwitching ? "preview-content-switching" : "preview-content-active"}`}
     >
       {/* Frontmatter 元数据头部 */}
       <div className="p-4 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">

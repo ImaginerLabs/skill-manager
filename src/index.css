@@ -88,6 +88,10 @@
   --sidebar-width: 240px;
   --secondary-sidebar-width: 180px;
   --preview-width: 400px;
+
+  /* 预览面板（Story 9.1） */
+  --preview-panel-width-std: 360px;
+  --preview-transition-duration: 200ms;
 }
 
 /* ---- 全局样式 ---- */
@@ -160,6 +164,24 @@
   background: hsl(var(--muted));
 }
 
+/* ---- Skill 卡片淡入过渡动效（Story 9.5, AD-47） ---- */
+
+.skill-grid-item {
+  transition:
+    opacity 150ms ease-in-out,
+    transform 150ms ease-in-out;
+}
+
+.skill-grid-item[data-entering] {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.skill-grid-item:not([data-entering]) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ---- 减少动画偏好 ---- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -186,6 +208,35 @@
 
 .animate-slide-in-preview {
   animation: slide-in-from-right-preview 0.2s ease-out;
+}
+
+/* ---- 预览面板推拉式过渡（Story 9.1） ---- */
+
+.preview-panel {
+  transition: transform var(--preview-transition-duration) ease-in-out;
+}
+
+.preview-panel-hidden {
+  transform: translateX(100%);
+}
+
+.preview-panel-overlay {
+  position: fixed;
+  right: 0;
+  top: 48px;
+  bottom: 28px;
+  z-index: 50;
+  width: 100%;
+}
+
+.preview-content-switching {
+  opacity: 0.3;
+  transition: opacity 150ms ease-in-out;
+}
+
+.preview-content-active {
+  opacity: 1;
+  transition: opacity 150ms ease-in-out;
 }
 
 /* ---- 亮色主题变量覆盖 ---- */

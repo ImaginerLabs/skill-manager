@@ -8,12 +8,15 @@ import {
   FileWarning,
   Loader2,
   RefreshCw,
+  RotateCcw,
   SkipForward,
   XCircle,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SyncDetail, SyncMode } from "../../../shared/types";
+import { useSyncFlow } from "../../hooks/useSyncFlow";
+import { pushSync } from "../../lib/api";
 import { useSyncStore } from "../../stores/sync-store";
 import { toast } from "../shared/toast-store";
 import { Badge } from "../ui/badge";
@@ -21,11 +24,14 @@ import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
 import DiffReportView from "./DiffReportView";
 import ReplaceSyncConfirmDialog from "./ReplaceSyncConfirmDialog";
+import SyncProgressBar from "./SyncProgressBar";
 import SyncSplitButton from "./SyncSplitButton";
+import SyncSummaryPanel from "./SyncSummaryPanel";
 
 /**
- * SyncExecutor — 同步执行按钮 + 进度展示 + 结果日志
+ * SyncExecutor — 同步执行按钮 + 摘要确认 + 进度展示 + 结果日志
  * V2: 支持增量同步、替换同步、Diff 查看三种模式
+ * Story 9.4: 新增同步前摘要面板、进度条、失败重试
  */
 export default function SyncExecutor() {
   const {
@@ -42,67 +48,112 @@ export default function SyncExecutor() {
   } = useSyncStore();
   const { t } = useTranslation();
 
+  // 同步流程状态机（Story 9.4）
+  const syncFlow = useSyncFlow();
+
   // 替换同步确认对话框状态
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   // 当前加载模式
   const [loadingMode, setLoadingMode] = useState<"sync" | "diff" | null>(null);
+  // 重试中的 Skill ID
+  const [retryingSkillId, setRetryingSkillId] = useState<string | null>(null);
+  // 当前待确认的同步模式（用于摘要面板确认后执行）
+  const [pendingMode, setPendingMode] = useState<SyncMode>("incremental");
 
   const enabledTargets = targets.filter((t) => t.enabled);
   const canSync = selectedSkillIds.length > 0 && enabledTargets.length > 0;
-  const isBusy = syncStatus === "syncing" || syncStatus === "diffing";
+  const isBusy =
+    syncStatus === "syncing" ||
+    syncStatus === "diffing" ||
+    syncFlow.state.phase === "syncing";
 
-  // 执行同步（增量或替换）
+  // 点击同步按钮 → 展示摘要面板（而非直接执行）
   const handleSync = useCallback(
-    async (mode: SyncMode) => {
+    (mode: SyncMode) => {
       if (mode === "replace") {
-        setShowReplaceConfirm(true);
+        // 替换同步：先展示摘要，确认后再弹出替换确认对话框
+        setPendingMode("replace");
+        syncFlow.startSummary(
+          selectedSkillIds.length,
+          enabledTargets,
+          "replace",
+        );
         return;
       }
 
-      setLoadingMode("sync");
-      try {
-        const result = await executePush(undefined, mode);
-        if (mode === "incremental") {
-          // 增量同步结果 Toast
-          if (result.failed > 0) {
-            toast.error(t("sync.syncPartialFail", { failed: result.failed }));
-          } else {
-            toast.success(
-              t("sync.incrementalSyncSuccess", {
-                added: result.success,
-                updated: result.updated,
-                skipped: result.skipped,
-              }),
-              { duration: 5000 },
-            );
-          }
-        } else {
-          // full 模式
-          if (result.failed > 0) {
-            toast.error(t("sync.syncPartialFail", { failed: result.failed }));
-          } else {
-            toast.success(
-              t("sync.syncSuccess", {
-                count: result.success + result.overwritten,
-              }),
-            );
-          }
-        }
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : t("sync.syncFailed"));
-      } finally {
-        setLoadingMode(null);
-      }
+      // 增量/全量同步：展示摘要面板
+      setPendingMode(mode);
+      syncFlow.startSummary(selectedSkillIds.length, enabledTargets, mode);
     },
-    [executePush, t],
+    [selectedSkillIds.length, enabledTargets, syncFlow],
   );
+
+  // 摘要面板确认 → 执行同步
+  const handleSummaryConfirm = useCallback(async () => {
+    // 防重复提交：同步进行中时忽略重复点击
+    if (loadingMode === "sync") return;
+
+    if (pendingMode === "replace") {
+      // 替换同步需要二次确认
+      setShowReplaceConfirm(true);
+      return;
+    }
+
+    syncFlow.confirmSync();
+    setLoadingMode("sync");
+    try {
+      const result = await executePush(undefined, pendingMode);
+      syncFlow.complete(result);
+      if (pendingMode === "incremental") {
+        if (result.failed > 0) {
+          toast.error(t("sync.syncPartialFail", { failed: result.failed }));
+        } else {
+          toast.success(
+            t("sync.incrementalSyncSuccess", {
+              added: result.success,
+              updated: result.updated,
+              skipped: result.skipped,
+            }),
+            { duration: 5000 },
+          );
+        }
+      } else {
+        if (result.failed > 0) {
+          toast.error(t("sync.syncPartialFail", { failed: result.failed }));
+        } else {
+          toast.success(
+            t("sync.syncSuccess", {
+              count: result.success + result.overwritten,
+            }),
+          );
+        }
+      }
+    } catch (err) {
+      syncFlow.setError(
+        err instanceof Error ? err.message : t("sync.syncFailed"),
+      );
+      toast.error(err instanceof Error ? err.message : t("sync.syncFailed"));
+    } finally {
+      setLoadingMode(null);
+    }
+  }, [pendingMode, loadingMode, syncFlow, executePush, t]);
+
+  // 摘要面板取消
+  const handleSummaryCancel = useCallback(() => {
+    syncFlow.cancel();
+  }, [syncFlow]);
 
   // 确认替换同步
   const handleConfirmReplace = useCallback(async () => {
+    // 防重复提交：同步进行中时忽略重复点击
+    if (loadingMode === "sync") return;
+
     setShowReplaceConfirm(false);
+    syncFlow.confirmSync();
     setLoadingMode("sync");
     try {
       const result = await executePush(undefined, "replace");
+      syncFlow.complete(result);
       if (result.failed > 0) {
         toast.error(t("sync.syncPartialFail", { failed: result.failed }));
       } else {
@@ -111,16 +162,18 @@ export default function SyncExecutor() {
         });
       }
     } catch (err) {
+      syncFlow.setError(
+        err instanceof Error ? err.message : t("sync.syncFailed"),
+      );
       toast.error(err instanceof Error ? err.message : t("sync.syncFailed"));
     } finally {
       setLoadingMode(null);
     }
-  }, [executePush, t]);
+  }, [syncFlow, loadingMode, executePush, t]);
 
   // 执行 Diff（预览变更）
   const handleDiff = useCallback(async () => {
     if (enabledTargets.length === 0) return;
-    // 对比第一个启用的目标，多目标时提示用户当前对比的目标
     const target = enabledTargets[0];
     if (enabledTargets.length > 1) {
       toast.info(
@@ -140,19 +193,49 @@ export default function SyncExecutor() {
   // 从 Diff 报告执行同步
   const handleDiffSyncIncremental = useCallback(async () => {
     setDiffReport(null);
-    await handleSync("incremental");
+    handleSync("incremental");
   }, [handleSync, setDiffReport]);
 
   const handleDiffSyncReplace = useCallback(() => {
     setDiffReport(null);
-    setShowReplaceConfirm(true);
-  }, [setDiffReport]);
+    handleSync("replace");
+  }, [handleSync, setDiffReport]);
+
+  // 失败项重试
+  const handleRetry = useCallback(
+    async (detail: SyncDetail) => {
+      const retryCount = syncFlow.getRetryCount(detail.skillId);
+      if (retryCount >= syncFlow.maxRetries) return;
+
+      setRetryingSkillId(detail.skillId);
+      try {
+        // 从 targets 中通过精确路径匹配找到 targetId
+        // 使用 endsWith 替代 startsWith，避免路径前缀包含导致的误匹配
+        const target = targets.find(
+          (t) =>
+            detail.targetPath === t.path ||
+            detail.targetPath.endsWith("/" + t.path),
+        );
+        const targetIds = target ? [target.id] : undefined;
+        await pushSync([detail.skillId], targetIds, pendingMode);
+        syncFlow.retrySuccess(detail.skillId);
+        toast.success(t("sync.retrySuccess", { name: detail.skillName }));
+      } catch {
+        syncFlow.retryFailed(detail.skillId);
+        toast.error(t("sync.retryFailed", { name: detail.skillName }));
+      } finally {
+        setRetryingSkillId(null);
+      }
+    },
+    [syncFlow, targets, pendingMode, t],
+  );
 
   const handleReset = useCallback(() => {
     setSyncStatus("idle");
     setSyncResult(null);
     setDiffReport(null);
-  }, [setSyncStatus, setSyncResult, setDiffReport]);
+    syncFlow.reset();
+  }, [setSyncStatus, setSyncResult, setDiffReport, syncFlow]);
 
   // 结果详情中的状态图标
   const StatusIcon = ({ status }: { status: SyncDetail["status"] }) => {
@@ -199,6 +282,9 @@ export default function SyncExecutor() {
     }
   };
 
+  // 当前显示的结果（优先使用 syncFlow 的结果）
+  const displayResult = syncFlow.state.result ?? syncResult;
+
   return (
     <div className="space-y-4">
       {/* 同步按钮区域 */}
@@ -225,7 +311,7 @@ export default function SyncExecutor() {
         </div>
 
         {/* 重置按钮（有结果时显示） */}
-        {(syncResult || diffReport) && (
+        {(displayResult || diffReport) && (
           <Button
             variant="ghost"
             size="sm"
@@ -237,6 +323,25 @@ export default function SyncExecutor() {
           </Button>
         )}
       </div>
+
+      {/* 同步前摘要面板（Story 9.4） */}
+      {syncFlow.state.phase === "summary" && (
+        <SyncSummaryPanel
+          skillCount={syncFlow.state.skillCount}
+          targets={syncFlow.state.targets}
+          mode={syncFlow.state.mode}
+          onConfirm={handleSummaryConfirm}
+          onCancel={handleSummaryCancel}
+        />
+      )}
+
+      {/* 同步进度条（Story 9.4） */}
+      {syncFlow.state.phase === "syncing" && (
+        <SyncProgressBar
+          completed={syncFlow.state.completed}
+          total={syncFlow.state.total}
+        />
+      )}
 
       {/* Diff 差异报告 */}
       {diffReport && (
@@ -263,11 +368,11 @@ export default function SyncExecutor() {
       )}
 
       {/* 同步结果摘要 */}
-      {syncResult && (
+      {displayResult && (
         <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
           {/* 摘要统计 */}
           <div className="flex items-center gap-4 px-4 py-3 border-b border-[hsl(var(--border))]">
-            {syncResult.failed > 0 ? (
+            {displayResult.failed > 0 ? (
               <AlertCircle
                 size={18}
                 className="text-[hsl(var(--destructive))] shrink-0"
@@ -282,40 +387,40 @@ export default function SyncExecutor() {
               <span className="font-medium text-[hsl(var(--foreground))]">
                 {t("sync.syncComplete")}
               </span>
-              {syncResult.success > 0 && (
+              {displayResult.success > 0 && (
                 <Badge variant="default" className="text-[10px] px-1.5 py-0">
-                  {t("sync.successCount", { count: syncResult.success })}
+                  {t("sync.successCount", { count: displayResult.success })}
                 </Badge>
               )}
-              {syncResult.updated > 0 && (
+              {displayResult.updated > 0 && (
                 <Badge
                   variant="secondary"
                   className="text-[10px] px-1.5 py-0 bg-blue-500/15 text-blue-400"
                 >
-                  {t("sync.updatedCount", { count: syncResult.updated })}
+                  {t("sync.updatedCount", { count: displayResult.updated })}
                 </Badge>
               )}
-              {syncResult.overwritten > 0 && (
+              {displayResult.overwritten > 0 && (
                 <Badge
                   variant="secondary"
                   className="text-[10px] px-1.5 py-0 bg-yellow-500/15 text-yellow-500"
                 >
                   {t("sync.overwrittenCount", {
-                    count: syncResult.overwritten,
+                    count: displayResult.overwritten,
                   })}
                 </Badge>
               )}
-              {syncResult.skipped > 0 && (
+              {displayResult.skipped > 0 && (
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                  {t("sync.skippedCount", { count: syncResult.skipped })}
+                  {t("sync.skippedCount", { count: displayResult.skipped })}
                 </Badge>
               )}
-              {syncResult.failed > 0 && (
+              {displayResult.failed > 0 && (
                 <Badge
                   variant="destructive"
                   className="text-[10px] px-1.5 py-0"
                 >
-                  {t("sync.failedCount", { count: syncResult.failed })}
+                  {t("sync.failedCount", { count: displayResult.failed })}
                 </Badge>
               )}
             </div>
@@ -324,48 +429,81 @@ export default function SyncExecutor() {
           {/* 详细列表 */}
           <ScrollArea className="max-h-[300px]">
             <div className="divide-y divide-[hsl(var(--border))]">
-              {syncResult.details.map((detail, index) => (
-                <div
-                  key={`${detail.skillId}-${detail.targetPath}-${index}`}
-                  className="flex items-start gap-3 px-4 py-2.5"
-                >
-                  <StatusIcon status={detail.status} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-[var(--font-code)] text-[hsl(var(--foreground))] truncate">
-                      {detail.skillName}
-                    </p>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] truncate mt-0.5">
-                      → {detail.targetPath}
-                    </p>
-                    {detail.error && (
-                      <p className="text-xs text-[hsl(var(--destructive))] mt-0.5">
-                        {detail.error}
-                      </p>
-                    )}
-                  </div>
-                  <Badge
-                    variant={
-                      detail.status === "success"
-                        ? "default"
-                        : detail.status === "overwritten" ||
-                            detail.status === "updated"
-                          ? "secondary"
-                          : detail.status === "skipped"
-                            ? "outline"
-                            : "destructive"
-                    }
-                    className={`text-[10px] px-1.5 py-0 shrink-0 ${
-                      detail.status === "overwritten"
-                        ? "bg-yellow-500/15 text-yellow-500"
-                        : detail.status === "updated"
-                          ? "bg-blue-500/15 text-blue-400"
-                          : ""
-                    }`}
+              {displayResult.details.map((detail, index) => {
+                const retryCount = syncFlow.getRetryCount(detail.skillId);
+                const canRetry =
+                  detail.status === "failed" &&
+                  retryCount < syncFlow.maxRetries;
+                const isRetrying = retryingSkillId === detail.skillId;
+
+                return (
+                  <div
+                    key={`${detail.skillId}-${detail.targetPath}-${index}`}
+                    className="flex items-start gap-3 px-4 py-2.5"
                   >
-                    {getStatusLabel(detail.status)}
-                  </Badge>
-                </div>
-              ))}
+                    <StatusIcon status={detail.status} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-[var(--font-code)] text-[hsl(var(--foreground))] truncate">
+                        {detail.skillName}
+                      </p>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))] truncate mt-0.5">
+                        → {detail.targetPath}
+                      </p>
+                      {detail.error && (
+                        <p className="text-xs text-[hsl(var(--destructive))] mt-0.5">
+                          {detail.error}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* 失败项重试按钮（Story 9.4） */}
+                      {detail.status === "failed" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleRetry(detail)}
+                          disabled={!canRetry || isRetrying}
+                          title={
+                            retryCount >= syncFlow.maxRetries
+                              ? t("sync.retryLimitReached")
+                              : t("sync.retryButton")
+                          }
+                        >
+                          {isRetrying ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <RotateCcw size={12} />
+                          )}
+                        </Button>
+                      )}
+
+                      <Badge
+                        variant={
+                          detail.status === "success"
+                            ? "default"
+                            : detail.status === "overwritten" ||
+                                detail.status === "updated"
+                              ? "secondary"
+                              : detail.status === "skipped"
+                                ? "outline"
+                                : "destructive"
+                        }
+                        className={`text-[10px] px-1.5 py-0 ${
+                          detail.status === "overwritten"
+                            ? "bg-yellow-500/15 text-yellow-500"
+                            : detail.status === "updated"
+                              ? "bg-blue-500/15 text-blue-400"
+                              : ""
+                        }`}
+                      >
+                        {getStatusLabel(detail.status)}
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </ScrollArea>
         </div>
