@@ -74,7 +74,7 @@
 # - NEVER skip qa or review — these are mandatory quality gates
 
 generated: 2026-04-10T15:38:50
-last_updated: 2026-04-14T22:13:00
+last_updated: 2026-04-15T21:44:00
 project: skill-package
 project_key: NOKEY
 tracking_system: file-system
@@ -336,3 +336,17 @@ development_status:
   v2-4-2-workflow-generation-spec-alignment: done
   v2-4-3-backward-compatibility-and-polish: done
   v2-epic-4-retrospective: done
+
+  # ============================================================
+  # Epic 9: 交互体验优化 — 预览面板、搜索高亮、键盘导航、同步引导、过渡动效
+  # 基于代码实现与 UX 规范差距分析，弥合五个高价值交互体验落差
+  # Priority: P0/P1/P2 | FRs: FR-UX-01~20 | NFRs: NFR-UX-01~05 | Architecture: AD-41~47
+  # Dependencies: Epic 1（Skill 浏览基础）、Epic 4（IDE 同步基础）、Epic 6（UX 优化基础）
+  # ============================================================
+  epic-9: done
+  9-1-preview-panel-smart-push-pull: done
+  9-2-search-highlight-and-command-palette-linkage: done
+  9-3-keyboard-navigation-and-context-menu: done
+  9-4-sync-flow-progressive-guidance: done
+  9-5-breadcrumb-and-transition-animation: done
+  epic-9-retrospective: done
