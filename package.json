@@ -1,6 +1,6 @@
 {
   "name": "skill-manager",
-  "version": "0.4.14",
+  "version": "0.4.15",
   "description": "本地 Skill 管理工具 — 浏览、编排、同步 AI Skill 文件",
   "type": "module",
   "engines": {
