@@ -1,286 +1,178 @@
 ---
 name: code-comment-writer
-description: 当用户说「帮我写注释」「给这段代码加注释」「新人接手」「需求改造注释」「写代码注释」「添加文档注释」「代码可读性」「解释这段代码」「代码说明」「加文档」时触发。根据用户指定的阅读场景，精读代码逻辑与改造背景，为代码补充精简、有效、优雅的注释。注释以"读者视角"为核心，只写代码本身无法表达的信息。
+description: >
+  Writes precise, reader-oriented code comments tailored to the reading scenario — onboarding, refactoring,
+  algorithm explanation, tech debt marking, or API integration. Comments explain "why" (intent, edge cases,
+  pitfalls, migration context), never "what" (restating logic). Use this skill whenever the user asks to add
+  comments, annotate code, write documentation comments, explain code for others, prepare code for handoff,
+  or make code more readable. Also trigger when the user mentions onboarding, code handoff, migration notes,
+  or any situation where someone else needs to understand the code. This includes phrases like "add comments",
+  "write comments", "annotate code", "code documentation", "explain this code", "code readability",
+  "help me understand this", "新人接手", "帮我写注释", "给这段代码加注释", "需求改造注释",
+  "添加文档注释", "代码说明", "加文档". Even if the user just says "this code is hard to read" or
+  "I need to hand this off", use this skill — good comments are the bridge between author and reader.
 category: coding
 ---
 
-# 代码注释撰写
+# Code Comment Writer
 
-## 核心理念
+## Core Philosophy
 
-> **好注释解释"为什么"，代码本身解释"是什么"。**
+Code already tells you _what_ it does. Comments exist to tell you _why_ — the intent, constraints, and context that the code alone cannot express. A comment that restates the logic is noise; a comment that reveals the thinking behind it is gold.
 
-注释的价值不在于多，而在于**精准传递代码无法自述的意图**。遵循三原则：
+Three principles guide every comment:
 
-- **精简**：一句话说清楚，不写废话注释（如 `// 加一` 注释 `i++`）
-- **有效**：聚焦意图、边界、陷阱、改造背景，而非复述代码逻辑
-- **优雅**：语言简洁自然，与代码风格一致，不破坏代码可读性
+- **Concise** — One idea per comment. No `// increment` above `i++`.
+- **Effective** — Focus on intent, boundaries, pitfalls, and migration context. Never restate logic.
+- **Elegant** — Natural language that blends with the code style, never disrupting readability.
 
-## 适用场景
+## When to Use
 
-- **新人交接**：为新人快速理解代码提供必要的上下文说明
-- **需求改造**：记录改造背景、新旧逻辑差异，方便后续维护
-- **复杂算法**：解释算法思路、关键步骤、边界条件
-- **技术债标记**：标注临时方案、已知问题、后续改进方向
-- **接口对接**：说明第三方协议、字段含义、异常处理规则
-- **重构准备**：在重构前为关键逻辑补充注释，降低重构风险
+- **Onboarding / handoff** — Help newcomers quickly grasp module purpose, data flow, key dependencies
+- **Refactoring / migration** — Record migration reasons, old vs. new logic differences
+- **Complex algorithms** — Explain algorithmic thinking, key steps, edge conditions
+- **Tech debt** — Mark temporary solutions, known issues, improvement directions
+- **API integration** — Document third-party protocols, field meanings, error handling rules
+- **Pre-refactor prep** — Annotate critical logic before refactoring to reduce risk
+
+## When NOT to Use
+
+- Code is self-explanatory with clear naming and simple logic
+- Standard library or framework usage with no surprises
+- You'd be restating what the code already says
 
 ---
 
-## 执行流程
+## Workflow
 
-### Step 1：理解阅读场景
+### Step 1: Understand the Reading Scenario
 
-用户会指定一个**阅读场景**，决定注释的侧重点：
+The scenario determines what to emphasize. If the user doesn't specify, default to **maintainability** — add intent-level comments.
 
-| 场景关键词              | 注释侧重方向                       |
-| ----------------------- | ---------------------------------- |
-| `新人接手` / `交接`     | 模块职责、数据流向、关键依赖说明   |
-| `需求改造` / `业务背景` | 改造原因、影响范围、与旧逻辑的差异 |
-| `复杂算法` / `核心逻辑` | 算法思路、关键步骤、边界条件       |
-| `性能优化`              | 优化手段、优化前的问题、注意事项   |
-| `临时方案` / `技术债`   | 为什么这样写、后续应如何改进       |
-| `接口对接` / `第三方`   | 字段含义、协议约定、异常处理规则   |
+| Scenario                       | Focus                                                |
+| ------------------------------ | ---------------------------------------------------- |
+| Onboarding / handoff           | Module purpose, data flow, key dependencies          |
+| Refactoring / migration        | Reason for change, impact scope, old vs. new logic   |
+| Complex algorithm              | Algorithmic thinking, key steps, edge conditions     |
+| Performance optimization       | Optimization method, original problem, caveats       |
+| Temporary solution / tech debt | Why written this way, how to improve later           |
+| API integration / third-party  | Field meanings, protocol conventions, error handling |
 
-若用户未指定场景，默认以**代码可维护性**为目标，补充意图类注释。
+### Step 2: Read the Code Thoroughly
 
-### Step 2：精读代码逻辑
+- Grasp overall structure: module purpose, data flow, call chain
+- Identify key nodes: conditionals, async flows, side effects, boundary handling
+- Understand old vs. new logic differences if the user described a migration context
+- Mark positions that need comments (not every line)
+- Identify scenarios where ASCII diagrams would be clearer than text — see [diagram-guide.md](references/diagram-guide.md) for conventions and examples
 
-- 理解整体结构：模块职责、数据流、调用链
-- 识别关键节点：条件分支、异步流程、副作用、边界处理
-- 结合用户描述的**改造背景**，理解新旧逻辑的差异点
-- 标记需要注释的位置（不是每行都需要）
-- **识别适合图示的场景**：以下情况优先考虑用 ASCII 图替代文字描述
-  - 多步骤异步流程（如支付链路、鉴权流程）
-  - 组件层级 / 插槽布局结构
-  - 状态机 / 条件分支决策树
-  - 数据结构的嵌套关系
+### Step 3: Write the Comments
 
-### Step 3：撰写注释
+#### Comment Types
 
-#### 注释类型与适用位置
-
-**① 文件/模块级注释**（文件顶部）
-
-说明模块职责、所属业务域、重要依赖关系。
+**① File/Module-level** (file top) — Module purpose, business domain, key dependencies.
 
 ```typescript
 /**
- * 购物车结算模块
- * 负责价格计算、优惠券核销、库存校验的聚合处理。
- * 依赖：CartStore、CouponService、InventoryAPI
+ * Cart checkout module
+ * Aggregates price calculation, coupon redemption, and inventory validation.
+ * Depends on: CartStore, CouponService, InventoryAPI
  */
 ```
 
-**② 函数/方法级注释**（函数上方）
-
-说明函数意图、关键参数含义、返回值语义、副作用或注意事项。
-简单函数（命名已自解释）无需注释。
+**② Function/Method-level** (above function) — Intent, key params, return semantics, side effects. Simple, self-explaining functions need no comment.
 
 ```typescript
 /**
- * 计算实付金额
- * 优先抵扣优惠券，再叠加积分，最终结果向下取整（避免精度问题）。
- * @param couponId 为空时跳过优惠券抵扣
+ * Calculate actual payment amount
+ * Applies coupon first, then points, finally rounds down (avoids precision issues).
+ * @param couponId When empty, skips coupon deduction
  */
 ```
 
-**③ 行内注释**（关键逻辑旁）
-
-仅用于：非直觉的边界处理、业务特殊规则、已知陷阱、临时方案。
+**③ Inline** (beside key logic) — Only for: non-intuitive boundary handling, special business rules, known pitfalls, temporary solutions.
 
 ```typescript
-// 后端返回 null 表示"不限制"，需转为 Infinity 参与比较
+// Backend returns null meaning "no limit" — convert to Infinity for comparison
 const maxQty = res.maxQty ?? Infinity;
 
-// FIXME: 接口暂不支持批量，临时串行处理，待后端支持后改为并发
+// FIXME: API doesn't support batch yet — temporary serial processing,
+// switch to parallel when backend supports it
 for (const id of ids) {
   await api.delete(id);
 }
 ```
 
-**④ 改造标记注释**（需求改造场景专用）
-
-当代码经过需求改造时，标注改造背景，方便后续维护。
+**④ Migration marker** (refactoring scenario) — Label migration context for future maintainers.
 
 ```typescript
-// [改造] 原逻辑：直接跳转支付页
-// 现逻辑：先校验库存，库存不足时展示缺货弹窗（需求：STORY-456）
+// [Migration] Old logic: navigate directly to payment page
+// New logic: validate inventory first, show out-of-stock popup when insufficient (STORY-456)
 const handleCheckout = async () => { ... };
 ```
 
-**⑤ 图示注释**（复杂流程 / 组件布局专用）
+**⑤ Diagram comments** (complex flows / component layout) — When text alone can't express it clearly, embed an ASCII diagram. See [diagram-guide.md](references/diagram-guide.md) for full examples and drawing conventions.
 
-当逻辑流程或 UI 结构用文字难以直观表达时，用 **ASCII 图** 内嵌在注释中，一图胜千言。
+#### Comment Anti-patterns
 
-**适用场景 1：复杂异步流程**
+| Never write                          | Why                                      |
+| ------------------------------------ | ---------------------------------------- |
+| `// Loop through array`              | Restates code, zero information          |
+| `// This is important`               | Doesn't explain _why_ it's important     |
+| Outdated comments (don't match code) | Misleads readers — worse than no comment |
+| Commented-out dead code              | Delete it; use Git for history           |
 
-```typescript
-/*
- * 支付流程（主链路）
- *
- * 用户点击支付
- *      │
- *      ▼
- * 校验库存 ──失败──▶ 弹出缺货弹窗 ──▶ 结束
- *      │成功
- *      ▼
- * 创建预支付订单
- *      │
- *      ├── 微信支付 ──▶ wx.requestPayment ──▶ 轮询订单状态
- *      │                                            │
- *      └── 余额支付 ──▶ 直接扣款 ──────────────────┘
- *                                                   │
- *                                          成功 ◀───┤
- *                                          失败 ──▶ 重试 / 提示
- */
-const handlePay = async () => { ... };
-```
+### Step 4: Output Annotated Code
 
-**适用场景 2：组件布局结构**
-
-```tsx
-/*
- * 商品卡片布局结构
- *
- * ┌─────────────────────────────┐
- * │        商品图片（封面）       │  ← coverImage
- * ├─────────────────────────────┤
- * │ 商品名称（最多2行截断）        │  ← title
- * │ 标签组  [新品] [热销]         │  ← tags
- * ├──────────────┬──────────────┤
- * │  ¥ 实付价格  │   原价划线    │  ← price / originPrice
- * ├──────────────┴──────────────┤
- * │  [加入购物车]      [立即购买] │  ← ActionBar
- * └─────────────────────────────┘
- */
-const GoodsCard: React.FC<Props> = () => { ... };
-```
-
-**适用场景 3：状态机 / 条件分支**
-
-```typescript
-/*
- * 订单状态流转
- *
- * 待付款 ──超时──▶ 已取消
- *   │
- *   │ 付款成功
- *   ▼
- * 待发货 ──退款──▶ 退款中 ──▶ 已退款
- *   │
- *   │ 商家发货
- *   ▼
- * 待收货 ──确认──▶ 已完成
- */
-```
-
-**图示绘制规范**
-
-| 元素     | 符号                    | 用途         |
-| -------- | ----------------------- | ------------ |
-| 流程箭头 | `──▶` `│` `▼`           | 流程方向     |
-| 条件分支 | `──条件──▶` `├──` `└──` | 分支走向     |
-| 布局边框 | `┌ ┐ └ ┘ ─ │ ├ ┤ ┬ ┴ ┼` | 组件区域     |
-| 注释引用 | `← 说明文字`            | 标注关键区域 |
-| 省略内容 | `...`                   | 非关键部分   |
-
-> 图示注释放在**函数或组件定义的正上方**，使用 `/* */` 块注释包裹，保持缩进对齐。
-
-#### 注释禁忌
-
-| ❌ 禁止写                | 原因                        |
-| ------------------------ | --------------------------- |
-| `// 循环遍历数组`        | 复述代码，零信息量          |
-| `// 这里很重要`          | 没有说明为什么重要          |
-| 过时的注释（与代码不符） | 误导读者，比没有注释更危险  |
-| 注释掉的废弃代码         | 应直接删除，用 Git 追溯历史 |
-
-### Step 4：输出带注释的代码
-
-- 输出**完整的代码文件**（或指定代码块），注释已嵌入
-- 对新增的每条注释，在报告中简要说明**注释意图**
-- 若发现代码存在可读性问题（命名不清、逻辑过深），附带**可读性建议**（不修改代码本身）
+- Output the **complete code file** (or specified block) with comments embedded
+- Briefly explain the **intent** of each new comment in a summary table
+- If code has readability issues (unclear naming, deep nesting), add **readability suggestions** without modifying the code itself
 
 ---
 
-## 输出格式
+## Output Format
 
 ```markdown
-## 代码注释报告：`[文件名]`
+## Code Comment Report: `[filename]`
 
-### 阅读场景
+### Reading Scenario
 
-[用户指定的场景，如：新人接手 / 需求改造 / 复杂算法 / ...]
-
----
-
-### 带注释的代码
-
-[输出完整的代码文件或指定代码块，注释已嵌入]
+[User-specified scenario, e.g., onboarding / refactoring / algorithm / ...]
 
 ---
 
-### 注释说明
+### Annotated Code
 
-| 位置（行/函数） | 注释类型   | 注释意图                   |
-| --------------- | ---------- | -------------------------- |
-| `funcName`      | 函数级注释 | [说明该注释传递了什么信息] |
-| L42             | 行内注释   | [说明该注释传递了什么信息] |
-| 文件顶部        | 模块级注释 | [说明该注释传递了什么信息] |
+[Complete code file or specified block with comments embedded]
 
 ---
 
-### 可读性建议（如有）
+### Comment Summary
 
-- [命名/逻辑层面的改进建议，不修改代码本身]
+| Location (line/function) | Comment type   | Intent                                  |
+| ------------------------ | -------------- | --------------------------------------- |
+| `funcName`               | Function-level | [What information this comment conveys] |
+| L42                      | Inline         | [What information this comment conveys] |
+| File top                 | Module-level   | [What information this comment conveys] |
+
+---
+
+### Readability Suggestions (if any)
+
+- [Naming/logic-level improvement suggestions, no code modifications]
 ```
 
 ---
 
-## 技能协作
+## Skill Collaboration
 
-本技能可与其他技能配合使用，形成完整的代码质量提升流程：
+| Skill                  | Scenario                                  | How                                            |
+| ---------------------- | ----------------------------------------- | ---------------------------------------------- |
+| `context-learning`     | Understand code context before commenting | Run context analysis first, then add comments  |
+| `frontend-code-review` | Discover readability issues during review | Add comments for problematic code after review |
+| `staged-code-review`   | Check comment completeness before commit  | Review whether key logic has comments          |
 
-| 协作技能               | 协作场景                 | 协作方式                     |
-| ---------------------- | ------------------------ | ---------------------------- |
-| `context-learning`     | 注释前先理解代码上下文   | 先调用上下文分析，再补充注释 |
-| `frontend-code-review` | 代码审查时发现可读性问题 | 审查后针对问题代码补充注释   |
-| `staged-code-review`   | 提交前检查注释完整性     | 审查时检查关键逻辑是否有注释 |
+**Recommended workflows:**
 
-**推荐工作流**：
-
-1. 新接手项目 → `context-learning` → `code-comment-writer`
-2. 提交前检查 → `staged-code-review` → `code-comment-writer`（补充缺失注释）
-
----
-
-## 最佳实践
-
-### 注释时机
-
-✅ **应该添加注释的场景**：
-
-- 业务逻辑复杂，包含多个条件分支
-- 使用了非直觉的技巧或边界处理
-- 存在已知的限制或技术债
-- 对接第三方 API，有特殊的协议约定
-- 修复过 Bug，需要记录原因避免复发
-
-❌ **不需要添加注释的场景**：
-
-- 命名清晰、逻辑简单的代码
-- 标准库或框架的常规用法
-- 自解释的变量名和函数名
-
-### 注释维护
-
-- **同步更新**：代码修改时，务必检查相关注释是否需要更新
-- **删除过时注释**：发现与代码不符的注释，立即删除或修正
-- **定期清理**：重构时顺便清理不再适用的注释
-
-### 团队协作
-
-- **统一风格**：团队内约定注释格式（JSDoc / TSDoc / 纯文本）
-- **Code Review 检查**：审查时关注注释的准确性和必要性
-- **文档化**：复杂模块的顶层注释可作为文档生成源（如 TypeDoc）
+1. New project → `context-learning` → `code-comment-writer`
+2. Pre-commit check → `staged-code-review` → `code-comment-writer` (fill missing comments)

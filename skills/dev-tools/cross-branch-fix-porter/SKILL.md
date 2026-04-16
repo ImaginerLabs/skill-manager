@@ -1,163 +1,137 @@
 ---
 name: cross-branch-fix-porter
-description: 跨分支修复移植专家。当用户提供一个 commit ID、或在历史对话中已分析过某个修复/改动，且当前所在分支与修复分支项目结构存在较大差异、无法直接 cherry-pick 时触发。自动分析修复意图，读取当前分支的对应文件，以当前代码逻辑为准重新应用修复。当用户说「移植这个修复」「把这个 commit 的改动应用到当前分支」「跨分支应用修复」「这个 fix 怎么在我这边实现」时触发。
+description: >
+  Cross-branch fix porting expert. When two projects have significantly different structures and direct
+  cherry-pick isn't feasible, this skill understands the fix intent and re-implements the same fix goal
+  in the current branch's code context. Use this skill whenever the user needs to apply a fix from one
+  branch or project to another — especially when the codebases differ enough that a simple cherry-pick
+  would fail or produce incorrect results. Trigger on phrases like "port this fix", "apply this commit's
+  changes to current branch", "cross-branch apply fix", "cherry-pick this fix", "移植这个修复",
+  "把这个 commit 的改动应用到当前分支", "跨分支应用修复", "移植修复", "应用这个改动",
+  "port the fix", "apply fix from another branch". Also use when the user mentions a fix that was made
+  in one project and needs to be applied to another, or when cherry-pick produces conflicts — the key
+  signal is that the same logical fix needs to be expressed in different code.
 category: dev-tools
 ---
 
-# 跨分支修复移植
+# Cross-Branch Fix Porting
 
-> 适用场景：两个项目结构差异较大，无法 cherry-pick，需要理解修复意图后在当前分支重新实现。
+## Core Approach
+
+**Don't copy code — copy intent.** First understand what problem the fix solves and why it was done that way, then re-implement the same fix goal within the current branch's code logic.
+
+## When to Use
+
+- User provides a commit ID that needs to be ported to the current branch
+- Two projects have significantly different structures (different frameworks, different directory layouts)
+- Direct cherry-pick would produce many conflicts or logical errors
+
+## Workflow
+
+### Phase 1: Get Fix Information
+
+**Case A: User provided a commit ID**
+
+```
+1. Get commit basic info (message, author, time)
+2. Get commit code diff
+3. Analyze diff, extract fix intent
+```
+
+**Case B: From conversation context**
+
+```
+1. Search conversation history for fix-related content
+2. Extract already-analyzed fix content and intent
+```
+
+### Phase 2: Analyze Fix Intent
+
+After reading the diff, answer these questions:
+
+```
+1. [Root cause] What bug did this fix solve, or what requirement did it fulfill?
+2. [Change scope] Which files are involved? What's the purpose of each file's change?
+3. [Core logic] What's the key behavioral change (not code change)?
+4. [Dependencies] Does the fix depend on specific utility functions, components, or type definitions?
+```
+
+### Phase 3: Locate Corresponding Files in Current Branch
+
+```
+1. Based on the functional modules involved in the fix, search for corresponding files in the current branch
+2. Read candidate file contents to confirm they handle the same functionality
+3. If no corresponding file is found, inform the user and explain why
+```
+
+### Phase 4: Determine if Direct Copy is Possible
+
+Direct copy is only appropriate when **all** of these conditions are met:
+
+1. The file in the original commit diff is marked as "new file" (entirely new creation)
+2. No file at the same path or with the same functionality exists in the current branch
+3. The file content doesn't depend on modules or types that don't exist in the current branch
+
+If conditions are met: copy the file directly.
+If not: proceed to Phase 5.
+
+### Phase 5: Re-implement the Fix
+
+**Use the current branch's logic as the source of truth.** Don't copy the original code:
+
+```
+1. Read the current branch's corresponding file's complete logic
+2. Understand the current branch's code style, encapsulation patterns, utility functions
+3. "Translate" the fix intent into the current branch's implementation style
+4. If the current branch already has similar logic, modify it in place
+```
+
+**Porting principles:**
+
+| Principle                 | Description                                                          |
+| ------------------------- | -------------------------------------------------------------------- |
+| **Intent first**          | Reproduce the behavioral effect of the fix, not the code             |
+| **Respect current style** | Use the current branch's utility functions, types, and encapsulation |
+| **Minimal change**        | Only modify what's necessary, don't introduce unrelated changes      |
+| **Consistency**           | Match the current branch's code style and conventions                |
 
 ---
 
-## 概述
+## Output Report
 
-本 Skill 帮助开发者将一个分支上的修复/改动，移植到结构不同的另一个分支。核心思路是：
+```markdown
+## Cross-Branch Fix Porting Report
 
-**不复制代码，而是复制意图** — 先理解修复解决了什么问题、为什么这样改，再在当前分支的代码逻辑下重新实现相同的修复目标。
+### Fix Intent Summary
 
----
+[One-sentence description of the problem the fix solves]
 
-## 何时使用
+### File Mapping
 
-- 提供了一个 commit ID，需要将其修复移植到当前分支
-- 历史对话中已分析过某个修复，现在需要在当前分支应用
-- 两个项目结构差异较大（不同框架、不同目录结构、不同封装方式）
-- 直接 cherry-pick 会产生大量冲突或逻辑错误
+| Original fix file | Current branch file | Handling       |
+| ----------------- | ------------------- | -------------- |
+| src/a.ts          | src/b.ts            | Re-implemented |
+| src/new.ts        | —                   | Direct copy    |
 
----
+### Key Differences
 
-## 工作流程
+[Structural differences, implementation differences]
 
-### 第一阶段：获取修复信息
+### Applied Changes
 
-**情况 A：用户提供了 commit ID**
+- [Change 1]
+- [Change 2]
 
-使用 MCP 工具读取 commit 信息：
+### Items Requiring User Confirmation (if any)
 
-```
-1. 调用 get_commit_info 获取 commit 的基本信息（message、作者、时间）
-2. 调用 get_commit_diff 获取具体的代码变更（diff）
-3. 分析 diff，提取修复意图（见第二阶段）
-```
-
-**情况 B：从历史对话上下文获取**
-
-```
-1. 调用 grep_history_context / read_history_context 工具
-2. 搜索关键词：修复、fix、bug、改动、commit
-3. 提取已分析过的修复内容和意图
-```
-
----
-
-### 第二阶段：分析修复意图（最关键）
-
-读取 diff 后，必须回答以下问题，并向用户确认：
-
-```
-1. 【问题根因】这个修复解决了什么 Bug 或满足了什么需求？
-2. 【改动范围】涉及哪些文件？每个文件的改动目的是什么？
-3. 【核心逻辑】关键的逻辑变化是什么？（不是"改了什么代码"，而是"改变了什么行为"）
-4. 【依赖关系】修复是否依赖特定的工具函数、组件、类型定义？
-```
-
-向用户输出分析摘要，格式参考 `references/analysis-template.md`。
-
----
-
-### 第三阶段：定位当前分支的对应文件
-
-**不要假设路径相同**，需要主动搜索：
-
-```
-1. 根据修复涉及的功能模块，在当前分支搜索对应文件
-   - 使用 codebase_search 搜索功能描述
-   - 使用 grep_search 搜索关键函数名、变量名
-   - 使用 search_files 搜索文件名关键词
-
-2. 找到候选文件后，读取文件内容，确认是否是对应的功能模块
-
-3. 如果找不到对应文件，告知用户并说明原因
-```
-
----
-
-### 第三点五阶段：判断是否可直接复制（快捷路径）
-
-在定位到对应文件后，**优先判断**该文件是否属于"完全新增"类型：
-
-```
-判断标准（满足以下全部条件，才可直接复制）：
-1. 原始 commit diff 中该文件标记为 new file（全新创建，非修改）
-2. 当前分支中不存在同路径或同功能的对应文件
-3. 文件内容不依赖当前分支中不存在的模块、工具函数或类型
-
-若满足以上条件 → 使用终端 cp 命令直接复制，跳过第四阶段的重新实现
-若不满足       → 进入第四阶段，以当前分支逻辑为准重新实现
-```
-
-**直接复制的操作方式**：
-
-```bash
-# 从原始分支（或临时 checkout 出来的文件）复制到当前项目对应目录
-cp /path/to/source/new-file.ts /path/to/current-project/target-dir/new-file.ts
-
-# 如果需要先 checkout 原始文件到临时位置
-git show <commit_id>:<原始文件相对路径> > /path/to/current-project/target-dir/new-file.ts
-```
-
-> ⚡ **为什么这样做**：完全新增的文件没有"当前分支逻辑"需要兼容，直接复用可以节省大量时间，同时避免手动重写引入的错误。
-
----
-
-### 第四阶段：重新应用修复
-
-**以当前分支逻辑为准**，不要照搬原始代码：
-
-```
-1. 阅读当前分支对应文件的完整逻辑
-2. 理解当前分支的代码风格、封装方式、工具函数
-3. 将修复意图"翻译"为当前分支的实现方式
-4. 如果当前分支已有类似逻辑，在其基础上修改，而非新增重复代码
-```
-
-**移植原则**：
-
-| 原则             | 说明                               |
-| ---------------- | ---------------------------------- |
-| **意图优先**     | 复现修复的行为效果，而非复制代码   |
-| **尊重当前风格** | 使用当前分支的工具函数、类型、封装 |
-| **最小改动**     | 只改动必要的部分，不引入无关变更   |
-| **保持一致性**   | 与当前分支的代码风格保持一致       |
-
----
-
-### 第五阶段：输出移植报告
-
-完成移植后，输出报告，包含：
-
-```
-1. 修复意图摘要（一句话）
-2. 原始修复涉及的文件 → 当前分支对应文件的映射
-3. 主要差异说明（结构差异、实现差异）
-4. 已应用的改动列表
-5. 需要用户确认的事项（如有）
+- [Confirmation item]
 ```
 
 ---
 
-## 注意事项
+## Important Notes
 
-- **新增文件优先直接复制**：如果原始修复中某文件是全新创建且无当前分支依赖冲突，直接用 `cp` 或 `git show` 复制，无需重新实现
-- **不要盲目复制代码**：原始代码可能依赖当前分支不存在的工具函数或类型
-- **先分析再动手**：在修改文件前，必须完成第二阶段的意图分析
-- **遇到歧义主动询问**：如果不确定某个改动的意图，向用户确认，而非猜测
-- **结构差异很大时分步进行**：先移植核心逻辑，再处理边缘情况
-
----
-
-## 可用资源
-
-- `references/workflow.md`：详细的工作流程说明与决策树
-- `references/analysis-template.md`：修复意图分析报告模板
+- **Don't blindly copy code** — Original code may depend on utility functions or types that don't exist in the current branch
+- **Analyze before acting** — Complete intent analysis before modifying any files
+- **Ask when uncertain** — If the intent of a change is ambiguous, confirm with the user
+- **Go step by step for large structural differences** — Port core logic first, then handle edge cases

@@ -1,155 +1,126 @@
 ---
 name: react-performance
 description: >
-  Audits and optimizes React component code for performance and correctness.
-  Covers stale closure traps, unnecessary re-renders, useEffect cleanup,
-  state design, debounce/throttle for high-frequency events, and race conditions.
-  This skill should be used when the user mentions React performance optimization,
-  stale closures, useMemo, useCallback, avoiding re-renders, useEffect issues,
-  or requests a React code quality review.
+  Reviews and optimizes React component performance and correctness. Covers stale closures, unnecessary
+  re-renders, useEffect cleanup, state design, debounce/throttle for high-frequency events, and race
+  conditions. Use this skill whenever the user is concerned about React performance — whether they're
+  seeing slow renders, suspect stale closure bugs, or want to optimize useMemo/useCallback usage.
+  Trigger on phrases like "React performance", "stale closure", "useMemo", "useCallback", "avoid re-renders",
+  "useEffect issues", "React 性能优化", "闭包陷阱", "避免重渲染", "渲染性能", "性能审查",
+  "component re-rendering", "React slow", "optimize React". Also use when the user mentions React
+  performance problems, unnecessary re-renders, or Hook-related bugs — these issues are subtle and
+  often missed in regular code reviews, so this skill provides the focused deep dive they need.
 category: coding
 ---
 
-# React 性能优化与常见错误规范
+# React Performance & Common Pitfalls
 
-## 核心能力
+## Core Capability
 
-对 React 代码进行性能审查与错误预防，确保生成的代码符合 React 最佳实践，避免常见的运行时陷阱与性能瓶颈。适用于：AI 生成 React 组件代码时的输出规范、性能问题排查与优化、Hook 使用规范审查、复杂状态逻辑重构。
+Audit React code for performance issues and prevent common runtime pitfalls. The problems this skill catches are subtle — stale closures silently read outdated values, missing cleanup silently leaks memory, and unnecessary re-renders silently degrade performance. They're easy to miss in regular code review but cause real user-facing bugs.
 
----
+## Workflow
 
-## 一、闭包陷阱（Stale Closure）
-
-### 1.1 问题描述
-
-React 函数组件中，事件处理函数、`useEffect`、`useCallback` 等闭包捕获的是**创建时**的变量快照，若依赖未正确声明，会读取到过期的旧值。
-
-### 1.2 常见错误模式
-
-> 📖 错误/正确代码对比见 [code-examples.md](references/code-examples.md#1-闭包陷阱stale-closure)
-
-### 1.3 规范要求
-
-- [ ] `useEffect` / `useCallback` / `useMemo` 的依赖数组必须完整声明所有外部变量。
-- [ ] 状态更新若依赖当前值，**必须**使用函数式更新 `setState(prev => ...)`。
-- [ ] 需要在闭包中访问最新值但不触发重渲染时，使用 `useRef` 保存。
-- [ ] 启用 ESLint `react-hooks/exhaustive-deps` 规则，不得随意 `// eslint-disable`。
+1. **Stale closure check** — Scan all Hook dependency arrays for missing dependencies
+2. **Render analysis** — Identify unnecessary re-renders, add memo / useMemo / useCallback
+3. **Side effect audit** — Confirm all useEffect have corresponding cleanup
+4. **State rationality** — Check for redundant state or direct state mutation
+5. **High-frequency events** — Confirm debounce/throttle is correctly applied
 
 ---
 
-## 二、渲染性能优化
+## 1. Stale Closure
 
-### 2.1 避免不必要的重渲染
+### The Problem
 
-> 📖 完整示例见 [code-examples.md](references/code-examples.md#21-避免不必要的重渲染)
+Closures in function components capture a **snapshot** of variables at creation time. If dependencies aren't correctly declared, the closure reads stale values — and the bug is silent: no error, just wrong behavior.
 
-### 2.2 规范要求
+### Rules
 
-- [ ] 纯展示子组件必须用 `React.memo` 包裹，避免父组件无关状态变化导致重渲染。
-- [ ] 传递给子组件的**对象**和**函数** props，必须用 `useMemo` / `useCallback` 包裹。
-- [ ] `useMemo` 用于**计算开销大**的派生数据；`useCallback` 用于**传递给子组件**的回调函数。
-- [ ] 不要滥用 `useMemo` / `useCallback`，简单值或不传递给子组件的函数无需包裹。
-
-### 2.3 列表渲染
-
-- [ ] 列表 `key` 必须使用**稳定且唯一**的业务标识（如 `id`），禁止使用数组 `index`（静态不变的列表除外）。
-
-> 📖 示例见 [code-examples.md](references/code-examples.md#22-列表渲染)
+- useEffect / useCallback / useMemo dependency arrays must declare all external variables
+- State updates that depend on the current value must use functional updates `setState(prev => ...)`
+- When you need the latest value in a closure without triggering re-renders, use `useRef`
+- Enable ESLint `react-hooks/exhaustive-deps` — don't casually `// eslint-disable`
 
 ---
 
-## 三、useEffect 规范
+## 2. Render Performance
 
-### 3.1 副作用清理
+### Avoid Unnecessary Re-renders
 
-> 📖 AbortController 完整示例见 [code-examples.md](references/code-examples.md#31-副作用清理--异步请求)
+- Pure display sub-components should be wrapped in `React.memo`
+- Object and function props passed to child components should be wrapped in `useMemo` / `useCallback`
+- `useMemo` is for **computationally expensive** derived data; `useCallback` is for **callbacks passed to children**
+- Don't overuse useMemo / useCallback — simple values or functions not passed to children don't need wrapping
 
-### 3.2 规范要求
+### List Rendering
 
-- [ ] `useEffect` 中注册的**事件监听器、定时器、订阅**必须在返回的清理函数中注销。
-- [ ] 发起异步请求必须处理组件卸载场景（AbortController 或 `isMounted` 标志位）。
-- [ ] 避免在 `useEffect` 中直接 `async`，应在内部定义异步函数再调用。
-
-> 📖 async useEffect 正确写法见 [code-examples.md](references/code-examples.md#32-async-useeffect-写法)
-
----
-
-## 四、状态管理规范
-
-### 4.1 状态设计原则
-
-> 📖 派生数据 & 直接修改 state 示例见 [code-examples.md](references/code-examples.md#4-状态管理规范)
-
-### 4.2 避免状态污染
-
-### 4.3 规范要求
-
-- [ ] **禁止**直接修改 state 对象或数组，必须返回新引用。
-- [ ] 可由现有 state 派生的数据，不得单独存入 state。
-- [ ] 多个相关联的 state 更新，考虑合并为一个对象或使用 `useReducer`。
+- List `key` must use **stable and unique** business identifiers (e.g., `id`), not array `index` (unless the list is static and never changes)
 
 ---
 
-## 五、高频事件处理
+## 3. useEffect Standards
 
-- [ ] 搜索输入、窗口 Resize、滚动监听等高频事件必须使用 `debounce`（防抖）或 `throttle`（节流）。
-- [ ] `debounce` / `throttle` 函数实例必须用 `useMemo` 或 `useRef` 保持稳定，不得在渲染函数中直接创建。
+### Side Effect Cleanup
 
-> 📖 debounce 完整示例见 [code-examples.md](references/code-examples.md#5-高频事件处理)
-
----
-
-## 六、竞态条件（Race Condition）
-
-- [ ] 依赖外部参数的异步请求，必须处理竞态：组件卸载或参数变化时，忽略旧请求结果。
-
-> 📖 cancelled 标志位完整示例见 [code-examples.md](references/code-examples.md#6-竞态条件race-condition)
+- Event listeners, timers, and subscriptions registered in useEffect must be unregistered in the returned cleanup function
+- Async requests must handle component unmount (AbortController or `isMounted` flag)
+- Avoid making the useEffect callback itself `async` — define an async function inside and call it
 
 ---
 
-## 执行流程
+## 4. State Management
 
-1. **闭包检查**：扫描所有 Hook 依赖数组，确认无遗漏依赖。
-2. **渲染分析**：识别不必要的重渲染，补充 `memo` / `useMemo` / `useCallback`。
-3. **副作用审查**：确认所有 `useEffect` 有对应清理逻辑。
-4. **状态合理性**：检查是否存在冗余 state 或直接修改 state。
-5. **高频事件**：确认防抖/节流已正确应用。
+- Never directly mutate state objects or arrays — always return new references
+- Data derivable from existing state should not be stored as separate state (use `useMemo` instead)
+- Multiple related state updates should be merged into a single object or use `useReducer`
 
 ---
 
-## 输出格式
+## 5. High-Frequency Events
 
-请按以下 Markdown 格式输出检查报告：
+- Search input, window resize, scroll listeners must use debounce or throttle
+- Debounce/throttle function instances must be kept stable via `useMemo` or `useRef` — never create them directly in the render function
+
+---
+
+## 6. Race Conditions
+
+- Async requests that depend on external parameters must handle races: when the component unmounts or parameters change, ignore the old request's result
+
+---
+
+## Output Format
 
 ```markdown
-## React 性能与规范检查报告
+## React Performance & Standards Check Report
 
-### 1. 闭包陷阱检查
+### 1. Stale Closure Check
 
-- 状态：✅ PASS / ⚠️ WARN / ❌ FAIL
-- 问题：[文件名/行号]: [问题描述] -> [修复建议]
+- Status: ✅ PASS / ⚠️ WARN / ❌ FAIL
+- Issue: [filename/line]: [description] -> [fix suggestion]
 
-### 2. 渲染性能
+### 2. Render Performance
 
-- **不必要重渲染**：[组件名] -> [优化建议]
-- **列表 key**：✅ PASS / ❌ FAIL
+- **Unnecessary re-renders**: [component name] -> [optimization suggestion]
+- **List key**: ✅ PASS / ❌ FAIL
 
-### 3. useEffect 副作用
+### 3. useEffect Side Effects
 
-- **清理函数**：✅ 已清理 / ❌ 缺少清理 -> [具体位置]
-- **竞态处理**：✅ 已处理 / ❌ 存在风险
+- **Cleanup function**: ✅ Cleaned / ❌ Missing cleanup -> [specific location]
+- **Race handling**: ✅ Handled / ❌ At risk
 
-### 4. 状态管理
+### 4. State Management
 
-- **直接修改**：✅ PASS / ❌ FAIL -> [具体位置]
-- **冗余 state**：[派生数据建议改为 useMemo]
+- **Direct mutation**: ✅ PASS / ❌ FAIL -> [specific location]
+- **Redundant state**: [derived data suggestion: switch to useMemo]
 
-### 5. 高频事件
+### 5. High-Frequency Events
 
-- [事件名]: ✅ 已防抖 / ❌ 缺少防抖
+- [event name]: ✅ Debounced / ❌ Missing debounce
 
-### 总结
+### Summary
 
-- 评分：🟢 优秀 / 🟡 良好 / 🔴 需改进
-- [ ] 建议提交 / [ ] 需修改后提交
+- Score: 🟢 Excellent / 🟡 Good / 🔴 Needs improvement
+- [ ] Safe to commit / [ ] Fix before commit
 ```

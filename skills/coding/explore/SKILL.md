@@ -1,111 +1,112 @@
 ---
 name: explore
 description: >
-  Analyzes codebases, explores project structure, identifies issues, and provides contextual insights.
-  This skill should be used when the user mentions code exploration, project analysis, bug investigation,
-  context research, or needs help understanding unfamiliar codebases.
+  Explores unfamiliar codebases, diagnoses problems, and provides contextual insights. Analyzes project
+  structure, traces code logic, identifies issues, and generates actionable recommendations with file
+  references and line numbers. Use this skill whenever the user needs to explore or investigate a codebase
+  — whether it's understanding project structure, diagnosing a bug, tracing a feature implementation, or
+  assessing code quality. Trigger on phrases like "explore this code", "analyze project structure",
+  "investigate this bug", "understand this codebase", "how is this organized", "find where X is implemented",
+  "trace this feature", "分析项目结构", "探索代码", "排查问题", "这个项目是怎么组织的", "帮我看看这个代码库",
+  "定位问题", "梳理代码逻辑", "代码库探索", "项目分析". Also use when the user is new to a project,
+  investigating unexpected behavior, or needs help understanding how something works — even if they don't
+  explicitly say "explore", any request to understand or diagnose code in a project is a good fit for this skill.
 category: coding
 ---
 
-# Code Exploration & Analysis Skill
+# Code Exploration & Analysis
 
-## 概述
+## Core Capabilities
 
-本Skill专注于代码库探索、问题分析和上下文研究。根据用户需求提供针对性的代码分析服务，包括项目结构分析、问题诊断、bug修复建议和上下文理解。
+- **Codebase exploration** — Analyze project structure, tech stack, dependency relationships
+- **Problem diagnosis** — Identify code issues, performance bottlenecks, potential bugs
+- **Context research** — Map code logic, call chains, module responsibilities
+- **Solution recommendations** — Provide fix suggestions, optimization approaches, best practices
 
-## 核心能力
+## When to Use
 
-- 🔍 **代码库探索**：分析项目结构、技术栈、依赖关系
-- 🐛 **问题诊断**：识别代码问题、性能瓶颈、潜在bug
-- 📚 **上下文研究**：梳理代码逻辑、调用链、模块职责
-- 💡 **解决方案**：提供修复建议、优化方案、最佳实践
-- 📊 **分析报告**：生成结构化分析结果和结论
+- Exploring an unfamiliar codebase or project
+- Investigating a bug or unexpected behavior
+- Understanding how a feature is implemented
+- Assessing code quality or architectural health
 
-## 工作流程
+## When NOT to Use
 
-### 1. 需求分析阶段
+- Simple, single-file reads — just read the file directly
+- When you already know exactly which function to look at — use a targeted search instead
+- When you need a structured context analysis report — use `context-learning` instead
 
-- [ ] 理解用户的具体问题和需求场景
-- [ ] 确定分析范围和目标
-- [ ] 收集项目上下文信息
+---
 
-### 2. 代码探索阶段
+## Workflow
 
-- [ ] 分析项目目录结构和文件组织
-- [ ] 识别技术栈和框架使用情况
-- [ ] 梳理核心模块和关键文件
+### Phase 1: Scope the Exploration
 
-### 3. 问题分析阶段
+Before diving in, clarify:
 
-- [ ] 深入阅读相关代码文件
-- [ ] 分析代码逻辑和业务逻辑
-- [ ] 识别潜在问题和改进点
+1. **What's the question?** — A specific bug? Architecture overview? Feature tracing?
+2. **What's the scope?** — A single file, a module, or the whole project?
+3. **What's the context?** — What does the user already know?
 
-### 4. 结论生成阶段
+If the user's request is vague, ask one clarifying question rather than exploring blindly.
 
-- [ ] 根据分析结果形成结论
-- [ ] 提供具体建议和解决方案
-- [ ] 输出结构化分析报告
+### Phase 2: Structural Scan
 
-## 使用场景
+Get the lay of the land before reading code in depth:
 
-### 场景1：不确定问题咨询
+- **Directory structure** — List directories to understand project organization
+- **Tech stack** — Check `package.json`, config files for frameworks and tools
+- **Key files** — Identify entry points, route definitions, state management setup
 
-当用户对代码行为或项目结构有疑问时：
+The goal is to form a mental map: _where are things, and what are the main modules?_
 
-- 分析相关代码逻辑
-- 提供明确的结论和解释
-- 给出使用建议或最佳实践
+### Phase 3: Targeted Deep Dive
 
-### 场景2：Bug调查与修复
+Based on Phase 2, narrow down and read the relevant files:
 
-当用户遇到代码问题或bug时：
+- Use **semantic search** for queries like "where is user authentication handled?"
+- Use **text search** for precise lookups (function names, variable definitions)
+- Use **file reading** for reading specific files in detail
 
-- 定位问题根源
-- 分析错误原因
-- 提供修复方案和建议
+For each file you read, extract:
 
-### 场景3：上下文理解
+- What it does (purpose)
+- What it depends on (imports)
+- What depends on it (who calls it)
 
-当用户需要理解陌生代码库时：
+### Phase 4: Synthesize & Report
 
-- 梳理项目架构
-- 分析模块职责
-- 解释关键业务逻辑
+Form conclusions from the evidence:
 
-## 工具使用指南
+1. **Answer the original question** directly
+2. **Provide evidence** — cite specific files and line numbers
+3. **Give actionable recommendations** — not just "this is bad" but "here's how to fix it"
 
-### 代码探索工具
+---
 
-- `codebase_search`: 语义搜索代码功能
-- `grep_search`: 精确文本搜索
-- `list_dir`: 目录结构分析
-- `read_file`: 文件内容读取
+## Output Format
 
-### 分析工具
+Reports should include:
 
-- `view_code_item`: 查看特定代码定义
-- `terminal`: 执行系统命令验证
-- `web_search`: 搜索技术文档参考
+1. **Problem statement** — Brief description of what was explored and why
+2. **Findings** — What was discovered, with file references and line numbers
+3. **Conclusions** — Clear, direct answers to the original question
+4. **Recommendations** — Specific, actionable next steps
 
-## 输出格式规范
+Keep reports concise. Don't paste large code blocks — summarize key points and reference file paths.
 
-分析报告应包含：
+---
 
-1. **问题概述**：简要描述分析目标
-2. **分析过程**：使用的工具和方法
-3. **发现结果**：具体的代码分析发现
-4. **结论建议**：明确的结论和 actionable 建议
-5. **相关文件**：涉及的关键文件链接
+## Quality Standards
 
-## 质量保证
+- All conclusions must be backed by code evidence
+- Recommendations must be specific and actionable
+- Analysis must be transparent and reproducible
+- Respect existing code style and architecture
 
-- ✅ 所有结论必须有代码证据支持
-- ✅ 建议必须具体可行
-- ✅ 分析过程透明可复现
-- ✅ 尊重原有代码风格和架构
+---
 
-## 参考资源
+## Reference Files
 
-如需深入了解代码分析技术，参考 `references/code-analysis-guide.md`
-如需查看常见问题模式，参考 `references/common-issues.md`
+- [code-analysis-guide.md](references/code-analysis-guide.md) — Deeper guidance on code analysis techniques
+- [common-issues.md](references/common-issues.md) — Common problem patterns and their signatures

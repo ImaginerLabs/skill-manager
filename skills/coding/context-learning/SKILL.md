@@ -1,189 +1,187 @@
 ---
 name: context-learning
-description: 当用户说「帮我理解这段代码」「分析这个模块」「梳理调用链」「上下文分析」「快速了解代码」「代码是怎么工作的」「这个模块做什么」「理清代码逻辑」「读懂这段代码」「分析依赖关系」「模块职责分析」时触发。给定文件或文件夹路径，自动梳理主文件的核心逻辑与引用链路，输出简洁清晰的上下文分析报告，帮助用户快速理解陌生代码。
+description: >
+  Quickly understands unfamiliar code by tracing imports, call chains, and data flows from a given file or folder.
+  Produces a concise context analysis report covering module purpose, dependencies, logic flow, and side effects.
+  Use this skill whenever the user needs to understand code they didn't write — onboarding to a new project,
+  investigating a bug, preparing for a code review, or figuring out how a feature works. Trigger on phrases like
+  "understand this code", "analyze this module", "trace the call chain", "context analysis", "how does this work",
+  "what does this module do", "walk me through this code", "explain the architecture", "帮我理解这段代码",
+  "分析这个模块", "梳理调用链", "上下文分析", "快速了解代码", "代码是怎么工作的", "这个模块做什么",
+  "理清代码逻辑", "读懂这段代码", "分析依赖关系", "模块职责分析". Also use when the user is new to a
+  project, investigating a bug, or preparing for a code review — even if they don't explicitly ask for "context
+  analysis", understanding the code structure first is almost always the right move.
 category: coding
 ---
 
-# 代码上下文学习
+# Code Context Learning
 
-## 核心能力
+## Core Capability
 
-给定一个文件或文件夹路径，从主文件出发，追踪其所有引用（import、依赖、调用链），梳理完整的逻辑链路，以简洁的方式反馈给用户。
+Given a file or folder path, start from the main file, trace all references (imports, dependencies, call chains), and map the complete logic flow — then present it concisely so the reader knows where to modify and what a change would affect.
 
-## 适用场景
+## When to Use
 
-- 接手陌生项目，快速理解某个模块的运作方式
-- 排查 Bug 前，先理清调用链路
-- Code Review 前，建立整体认知
-- 学习开源代码的某个功能实现
-- 重构前评估影响范围
-- 技术方案评审前了解现状
-- 新人入职代码学习
+- Onboarding to an unfamiliar project
+- Pre-bug-investigation: understand the call chain first
+- Pre-code-review: build a mental model
+- Learning how an open-source feature works
+- Pre-refactoring: assess impact scope
+- Pre-technical-design-review: understand the current state
 
-## 前置条件
+## When NOT to Use
 
-- 用户提供明确的文件或文件夹路径
-- 路径指向的代码文件存在且可读取
-- 项目已正确建立索引（如需使用语义搜索）
+- The code is a single, self-contained file with no external imports
+- You already understand the module well and just need a quick look at one function
 
 ---
 
-## 执行流程
+## Workflow
 
-### Step 1：确定入口
+### Step 1: Determine the Entry Point
 
-- 若用户给出**文件路径**：直接以该文件为主入口。
-- 若用户给出**文件夹路径**：自动识别主入口文件，优先级如下：
+- **File path given**: Use that file directly
+- **Folder path given**: Auto-detect the main entry, priority order:
   1. `index.ts` / `index.tsx` / `index.js`
   2. `main.ts` / `main.tsx` / `App.tsx`
-  3. `package.json` 中 `main` 字段指向的文件
-  4. 文件夹内唯一的顶层文件
+  3. The file pointed to by `package.json` → `main` field
+  4. The only top-level file in the folder
 
-### Step 2：读取主文件，提取关键信息
+### Step 2: Read the Main File, Extract Key Info
 
-从主文件中提取：
+Extract from the main file:
 
-- **对外暴露的接口**：export 的函数、类、组件、常量
-- **核心逻辑**：主要的业务处理流程
-- **依赖引用**：所有 import / require 的模块（区分内部模块与外部依赖）
+- **Public interface**: exported functions, classes, components, constants
+- **Core logic**: main business processing flow
+- **Dependencies**: all import/require modules (distinguish internal vs. external)
 
-**工具建议**：
+Use semantic search for indexed projects, file reading for large files, and precise symbol lookups for specific identifiers.
 
-- 优先使用 `view_code_item` 获取类、函数等代码定义
-- 大文件使用 `read_file` 按需读取
-- 已建立索引的项目可使用 `codebase_search` 进行语义搜索
+### Step 3: Trace Internal Reference Chain
 
-### Step 3：追踪内部引用链路
+For each **internal module** (relative path imports) identified in Step 2, recursively read and extract:
 
-对 Step 2 中识别的**内部模块**（相对路径引用），递归读取并提取：
+- Module purpose (what it does)
+- Key public interfaces
+- Whether it has further references
 
-- 该模块的职责（做什么）
-- 对外暴露的关键接口
-- 是否还有下一层引用
+Depth limit: 2–3 levels by default. If a level has too many references, list only the critical paths.
 
-> 追踪深度：默认 **2~3 层**，避免过度展开。若某层引用过多，只列出关键路径。
+### Step 4: Map the Logic Flow
 
-### Step 4：梳理逻辑链路
-
-将 Step 2~3 的信息整合，用**文字流程图**描述执行链路：
+Consolidate Steps 2–3 into a text-based flow diagram:
 
 ```
-入口文件
-  └─ 调用 moduleA（职责：xxx）
-       ├─ 调用 util/helper（职责：xxx）
-       └─ 调用 service/api（职责：xxx）
-            └─ 依赖 config/constants（职责：xxx）
+Entry file
+  └─ calls moduleA (purpose: xxx)
+       ├─ calls util/helper (purpose: xxx)
+       └─ calls service/api (purpose: xxx)
+            └─ depends on config/constants (purpose: xxx)
 ```
 
-### Step 5：输出分析报告
+### Step 5: Output the Analysis Report
 
-按照下方「输出格式」生成报告，要求：
-
-- **简洁**：每个模块的描述不超过 1~2 句话
-- **突出重点**：聚焦核心链路，忽略工具函数、类型定义等次要文件
-- **可操作**：让用户读完后知道"从哪里改、改哪里会影响什么"
+Follow the output format below. Each module described in 1–2 sentences max. Focus on the main path — ignore utility functions, type definitions, and other secondary files. After reading, the user should know "where to modify, what a change would affect".
 
 ---
 
-## 分析维度
+## Analysis Dimensions
 
-| 维度           | 说明                                            |
-| -------------- | ----------------------------------------------- |
-| **入口职责**   | 这个文件/模块是做什么的，解决什么问题           |
-| **数据流向**   | 数据从哪里来、经过哪些处理、流向哪里            |
-| **核心调用链** | 最关键的函数/方法调用顺序                       |
-| **外部依赖**   | 依赖了哪些第三方库，各自承担什么角色            |
-| **副作用**     | 是否有 IO、网络请求、状态变更、事件监听等副作用 |
-| **关键配置**   | 影响行为的配置项或环境变量                      |
+| Dimension                 | What to cover                                            |
+| ------------------------- | -------------------------------------------------------- |
+| **Entry purpose**         | What this file/module does, what problem it solves       |
+| **Data flow**             | Where data comes from, how it's processed, where it goes |
+| **Core call chain**       | The most critical function/method call sequence          |
+| **External dependencies** | Third-party libraries and their roles                    |
+| **Side effects**          | I/O, network requests, state mutations, event listeners  |
+| **Key configuration**     | Config items or env vars that affect behavior            |
 
 ---
 
-## 输出格式
+## Output Format
 
 ```markdown
-## 📊 代码上下文分析报告
+## Code Context Analysis Report
 
-### 基本信息
+### Basic Info
 
-| 项目     | 内容                     |
-| -------- | ------------------------ |
-| 目标路径 | `[文件/文件夹路径]`      |
-| 入口文件 | `[入口文件路径]`         |
-| 入口职责 | [一句话描述该文件的职责] |
-| 分析时间 | [YYYY-MM-DD HH:mm:ss]    |
-
----
-
-### 🔗 核心逻辑链路
-
-[文字流程图，展示调用链]
+| Item          | Content                    |
+| ------------- | -------------------------- |
+| Target path   | `[file/folder path]`       |
+| Entry file    | `[entry file path]`        |
+| Entry purpose | [One-sentence description] |
+| Analysis time | [YYYY-MM-DD HH:mm:ss]      |
 
 ---
 
-### 📦 模块说明
+### Core Logic Chain
 
-| 模块     | 路径         | 职责         | 类型                 |
-| -------- | ------------ | ------------ | -------------------- |
-| [模块名] | `[相对路径]` | [一句话描述] | 核心业务/工具/配置等 |
+[Text flow diagram showing call chain]
 
 ---
 
-### 🔄 数据流
+### Module Summary
 
-[描述数据从输入到输出的流转过程，1~3 句话]
-
----
-
-### 📚 外部依赖
-
-| 依赖包 | 版本  | 用途   | 依赖类型          |
-| ------ | ----- | ------ | ----------------- |
-| [包名] | x.x.x | [用途] | 生产依赖/开发依赖 |
+| Module | Path              | Purpose                    | Type                             |
+| ------ | ----------------- | -------------------------- | -------------------------------- |
+| [Name] | `[relative path]` | [One-sentence description] | Core business / Utility / Config |
 
 ---
 
-### ⚠️ 关键点 & 注意事项
+### Data Flow
 
-- [值得关注的设计决策或潜在风险，每条一行]
+[Describe input → processing → output in 1–3 sentences]
 
 ---
 
-### 📖 建议阅读顺序
+### External Dependencies
 
-1. `[文件路径]` — [原因]
-2. `[文件路径]` — [原因]
+| Package | Version | Purpose   | Type             |
+| ------- | ------- | --------- | ---------------- |
+| [name]  | x.x.x   | [purpose] | Production / Dev |
+
+---
+
+### Key Points & Caveats
+
+- [Noteworthy design decisions or potential risks, one per line]
+
+---
+
+### Suggested Reading Order
+
+1. `[file path]` — [reason]
+2. `[file path]` — [reason]
 3. ...
 
 ---
 
-### 🔗 关联技能推荐
+### Related Skills
 
-根据分析结果，可进一步使用以下技能：
+Based on the analysis, consider:
 
-- [ ] **tech-stack-detection** - 如需了解项目完整技术栈
-- [ ] **code-comment-writer** - 如需为代码补充注释
-- [ ] **frontend-code-review** - 如需进行代码质量检查
+- `tech-stack-detection` — for full project tech stack understanding
+- `code-comment-writer` — to add comments improving readability
+- `frontend-code-review` — for code quality checks
 ```
 
 ---
 
-## 输出原则
+## Output Principles
 
-- **不复述代码**：不粘贴大段源码，只提炼关键信息。
-- **不过度展开**：外部 npm 包只说明用途，不深入其源码。
-- **突出主干**：工具函数、类型文件、样式文件等非核心内容可略过或一笔带过。
-- **流程图优先**：链路关系用文字树形图表达，比文字描述更直观。
-- **语言简练**：每个模块的描述控制在 1~2 句以内，避免冗余。
+- **Don't restate code** — No large source code pastes; distill key information only
+- **Don't over-expand** — External npm packages: state purpose only, don't dive into their source
+- **Highlight the main path** — Utility functions, type files, styles: skip or mention briefly
+- **Flow diagrams first** — Relationships expressed as tree diagrams are more intuitive than prose
+- **Keep it brief** — Each module description limited to 1–2 sentences
 
 ---
 
-## 关联技能
+## Skill Collaboration
 
-本技能可与其他技能协同使用：
-
-| 技能名称                     | 协作场景                             |
-| ---------------------------- | ------------------------------------ |
-| `tech-stack-detection`       | 先了解项目技术栈，再进行上下文分析   |
-| `code-comment-writer`        | 分析完成后，为代码补充注释提升可读性 |
-| `frontend-code-review`       | 理解代码逻辑后，进行代码质量检查     |
-| `react-component-extraction` | 分析完成后，识别可抽取的组件或 Hook  |
+| Skill                        | Scenario                                                      |
+| ---------------------------- | ------------------------------------------------------------- |
+| `tech-stack-detection`       | Understand project tech stack first, then do context analysis |
+| `code-comment-writer`        | After analysis, add comments to improve readability           |
+| `frontend-code-review`       | After understanding logic, do a code quality check            |
+| `react-component-extraction` | After analysis, identify extractable components or Hooks      |

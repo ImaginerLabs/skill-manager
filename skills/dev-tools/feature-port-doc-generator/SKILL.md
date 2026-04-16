@@ -1,131 +1,142 @@
 ---
 name: feature-port-doc-generator
-description: 需求移植文档生成专家。当用户提供一个文件路径或 commit ID，需要将该需求改造的意图、涉及范围、移植流程和依赖关系整理成一份供其他项目参考的移植文档时触发。自动分析 commit 变更或文件内容，提取需求改造意图，输出标准化的 Markdown 移植文档。当用户说「生成移植文档」「帮我写移植说明」「整理这个需求的移植指南」「输出移植 MD」「这个改动怎么移植到其他项目」时触发。
+description: >
+  Generates standardized porting documentation from completed feature changes. Analyzes commit diffs or
+  file contents, extracts the change intent, and outputs a Markdown document that lets other teams understand
+  what changed, why, and how to implement it in their own project. Use this skill whenever the user needs to
+  document a change for cross-team or cross-project consumption — whether it's sharing a feature implementation,
+  creating a migration guide, or writing a porting reference. Trigger on phrases like "generate porting doc",
+  "write porting guide", "document this change for porting", "how to port this to other projects",
+  "生成移植文档", "帮我写移植说明", "整理这个需求的移植指南", "这个改动怎么移植到其他项目",
+  "porting documentation", "migration guide", "create port doc", "feature porting guide". Also use when
+  the user mentions sharing implementation details across teams or projects — the goal is to communicate
+  intent, not copy code, so the receiving team can implement the same feature in their own context.
 category: dev-tools
 ---
 
-# 需求移植文档生成器
+# Feature Porting Document Generator
 
-> 适用场景：将一个已完成的需求改造，整理成标准化的移植文档，供其他项目参考实施。
+## Core Approach
+
+Not copying code — transmitting intent. Let the receiving team understand "what changed, why it changed, and how to implement it in their own project."
+
+## When to Use
+
+- User provides a commit ID that needs to be documented as a porting guide
+- User provides one or more changed files and needs to extract the change intent
+- A feature implementation needs to be shared with other project teams
+
+## Workflow
+
+### Phase 1: Get Change Information
+
+**Case A: User provided a commit ID**
+
+```
+1. Get commit basic info (message, author, time)
+2. Get commit code diff
+3. Count changed files, assess change scope
+```
+
+**Case B: User specified file paths (no commit ID)**
+
+```
+1. Read the user-specified file contents
+2. Find recent related commit history for those files
+3. Confirm the relevant commits and get their diffs
+```
+
+### Phase 2: Analyze Change Intent
+
+```
+1. [Change type] What kind of change is this? (New feature / Bug fix / Performance optimization / Refactoring)
+2. [Problem/Goal] What problem does this change solve, or what goal does it achieve?
+3. [Change scope] Which files are involved? What's the purpose of each file's change?
+4. [Core logic] What's the key behavioral change (not code change)?
+5. [External dependencies] Does the change introduce new dependencies (npm packages, utility functions, components, APIs)?
+6. [Porting prerequisites] What baseline conditions must other projects meet before porting?
+```
+
+### Phase 3: Collect File Paths
+
+```
+1. For file paths in the commit diff, combine with project root to form absolute paths
+2. Use git rev-parse --show-toplevel to get the project root
+3. All file paths in the final document should use absolute path format
+```
+
+### Phase 4: Assess Porting Complexity
+
+| Complexity  | Criteria                                                                      | Porting advice                             |
+| ----------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
+| **Simple**  | Single file change, no new dependencies, independent logic                    | Can directly reference code implementation |
+| **Medium**  | Multi-file change, few dependencies, related logic                            | Port file by file in order                 |
+| **Complex** | Involves architectural changes, many dependencies, requires prerequisite work | Port in phases                             |
+
+### Phase 5: Generate Porting Document
+
+The document must include these sections:
+
+- Change overview (type, goal, background)
+- File scope (file list + change description)
+- Core logic explanation (before/after behavior comparison)
+- Dependency list (new dependencies, prerequisites)
+- Porting steps (step-by-step instructions)
+- Notes (common issues, risk points)
 
 ---
 
-## 概述
+## Output Format
 
-本 Skill 帮助开发者将一次需求改造（commit 或文件变更）的核心意图、涉及范围、移植流程和依赖关系，整理成一份结构清晰的 Markdown 文档，方便其他项目团队参考移植。
+```markdown
+## [Feature Name] Porting Document
 
-**核心思路**：不是复制代码，而是传递意图 — 让接收方理解"改了什么、为什么改、怎么在自己项目里实现"。
+### Change Overview
 
----
+- **Type**: New feature / Bug fix / Performance optimization / Refactoring
+- **Goal**: [One-sentence description]
+- **Background**: [Why this change was needed]
 
-## 何时使用
+### File Scope
 
-- 提供了一个 commit ID，需要整理成移植文档
-- 提供了一个或多个已改造的文件，需要提取改造意图
-- 需要将某个需求的实现方案分享给其他项目团队
-- 跨项目、跨分支的需求同步场景
+| File path           | Change description  |
+| ------------------- | ------------------- |
+| /abs/path/file1.ts  | [Purpose of change] |
+| /abs/path/file2.tsx | [Purpose of change] |
 
----
+### Core Logic Explanation
 
-## 工作流程
+**Before**: [Original behavior]
 
-### 第一阶段：获取变更信息
+**After**: [New behavior]
 
-**情况 A：用户提供了 commit ID**
+### Dependency List
 
-```
-1. 调用 MCP 工具获取 commit 基本信息（message、作者、时间）
-2. 调用 MCP 工具获取 commit 的代码 diff
-3. 统计改动文件数量，判断需求规模
-```
+**New dependencies**:
 
-**情况 B：用户指定了文件路径（无 commit ID）**
+- [Dependency package/utility function/component]
 
-```
-1. 读取用户指定的文件内容
-2. 使用 git log 或 MCP 工具查找该文件最近的相关提交记录
-3. 确认与需求相关的 commit，获取 diff
-4. 若无法确定 commit，直接基于文件内容分析改造意图
-```
+**Prerequisites**:
 
----
+- [Baseline conditions the project must meet]
 
-### 第二阶段：分析需求改造意图
+### Porting Steps
 
-读取变更信息后，必须回答以下问题：
+1. [Step 1: specific action]
+2. [Step 2: specific action]
+3. [Step 3: specific action]
 
-```
-1. 【需求类型】这是什么类型的改造？（功能新增 / Bug 修复 / 性能优化 / 重构 / 样式调整）
-2. 【问题/目标】改造解决了什么问题，或实现了什么目标？
-3. 【改动范围】涉及哪些文件？每个文件的改动目的是什么？
-4. 【核心逻辑】关键的逻辑变化是什么？（行为变化，而非代码变化）
-5. 【外部依赖】改造是否引入了新的依赖（npm 包、工具函数、组件、接口）？
-6. 【移植前提】其他项目移植前需要具备哪些基础条件？
+### Notes
+
+- [Risk point or common issue]
 ```
 
 ---
 
-### 第二点五阶段：收集文件绝对路径
+## Important Notes
 
-在分析完改动范围后，**必须**为每个涉及的文件确认其绝对路径：
-
-```
-1. 对于 commit diff 中的文件路径（通常是相对路径），结合项目根目录拼接为绝对路径
-2. 使用 pwd 或 git rev-parse --show-toplevel 获取项目根目录的绝对路径
-3. 最终文档中所有文件路径均使用绝对路径格式，例如：/Users/xxx/project/src/utils/helper.ts
-4. 如果无法确定绝对路径，在路径后注明「(需替换为实际绝对路径)」
-```
-
----
-
-### 第三阶段：评估移植复杂度
-
-根据分析结果，评估移植难度：
-
-| 复杂度   | 判断标准                             | 移植建议                   |
-| -------- | ------------------------------------ | -------------------------- |
-| **简单** | 单文件改动，无新依赖，逻辑独立       | 可直接参考代码实现         |
-| **中等** | 多文件改动，有少量依赖，逻辑有关联   | 按文件顺序逐步移植         |
-| **复杂** | 涉及架构调整，依赖较多，需要前置工作 | 分阶段移植，先完成前置条件 |
-
----
-
-### 第四阶段：生成移植文档
-
-按照 `references/port-doc-template.md` 中的模板，生成完整的移植文档。
-
-文档必须包含以下章节：
-
-- 需求概述（类型、目标、背景）
-- 涉及文件范围（文件列表 + 改动说明）
-- 核心逻辑说明（改动前后的行为对比）
-- 依赖清单（新增依赖、前置条件）
-- 移植步骤（分步骤的操作指引）
-- 注意事项（常见问题、风险点）
-
----
-
-### 第五阶段：输出与确认
-
-```
-1. 将生成的移植文档输出给用户
-2. 询问用户是否需要调整某个章节
-3. 根据用户反馈修改后，保存为 MD 文件（路径由用户指定，默认为当前目录）
-```
-
----
-
-## 注意事项
-
-- **路径必须绝对**：文档中所有文件路径必须使用绝对路径，禁止使用 `src/xxx` 这类相对路径，确保接收方能直接定位文件
-- **意图优先于代码**：文档的核心是传递"为什么改"，而非"改了什么代码"
-- **接收方视角**：站在不了解原项目的读者角度写文档，避免使用只有原项目才懂的术语
-- **依赖要完整**：所有新引入的依赖（包括隐式依赖）都必须在文档中列出
-- **步骤要可执行**：移植步骤必须足够具体，让接收方能独立完成移植
-
----
-
-## 可用资源
-
-- `references/workflow.md`：详细工作流程与各阶段操作指引
-- `references/port-doc-template.md`：移植文档标准模板
+- **Paths must be absolute** — All file paths in the document must use absolute paths
+- **Intent over code** — The core of the document is communicating "why it changed"
+- **Reader's perspective** — Write for someone who doesn't know the original project
+- **Dependencies must be complete** — All newly introduced dependencies must be listed
+- **Steps must be executable** — Porting steps must be specific enough to follow

@@ -1,280 +1,202 @@
 ---
 name: react-component-refactor
-description: Analyzes React component structure, identifies reusable units, and refactors large or messy components into well-organized, high-quality code following React best practices. Splits components by responsibility, extracts custom Hooks, and guarantees 1:1 logic equivalence with the original code. This skill should be used when the user says「重构组件」「帮我重构这个文件」「组件重构」「refactor component」「拆分重构」, or requests to refactor, split, or reorganize a React component file.
+description: >
+  Analyzes React component structure, identifies reusable units, and refactors large or messy components
+  into clean, well-organized code. Strictly maintains 1:1 logic equivalence — only structure changes,
+  never behavior. Supports: large component splitting, duplicate logic extraction into Hooks, messy
+  structure reorganization. Use this skill whenever the user wants to refactor a React component — whether
+  it's splitting a monolith, reorganizing a messy file, or restructuring for better maintainability.
+  Trigger on phrases like "refactor component", "refactor this file", "component refactor",
+  "refactor component", "split and refactor", "restructure component", "重构组件", "帮我重构这个文件",
+  "组件重构", "拆分重构", "整理组件结构". Also use when the user mentions a component is too large,
+  hard to maintain, or needs restructuring — but note: if the goal is specifically to extract a reusable
+  piece (not restructure the whole component), use `react-component-extraction` instead.
 category: coding
 ---
 
-# React 组件重构规范
+# React Component Refactoring
 
-## 核心能力
+## Core Capability
 
-根据用户指定的重构范围和输出目录，系统性地分析现有代码结构，识别可复用逻辑，按照 React 最佳实践完成重构。**严格保持原逻辑意图不变**，只做结构层面的优化与拆分。适用于：大型组件拆分、重复逻辑抽离为 Hook、混乱结构重组、旧代码迁移至现代 React 写法。
+Analyze existing code structure, identify reusable logic, and refactor according to React best practices. **Strictly preserve original logic intent** — only optimize and split at the structure level.
 
----
+The difference from `react-component-extraction`: extraction pulls out a specific piece for reuse; refactoring restructures the entire component for clarity and maintainability. Think of extraction as surgery, refactoring as renovation.
 
-## 执行流程
+## Workflow
 
 ```
-1. 确认重构范围与输出目录（用户指定）
-       ↓
-2. 分析代码结构（识别可复用单元）
-       ↓
-3. 制定重构方案（展示拆分计划，征询确认）
-       ↓
-4. 执行重构（生成高质量代码，写入指定目录）
-       ↓
-5. 验证逻辑等价性（确保 1:1 还原）
+1. Confirm refactoring scope and output directory
+2. Analyze code structure (identify reusable units)
+3. Design refactoring plan (seek confirmation)
+4. Execute refactoring
+5. Verify logic equivalence
 ```
 
 ---
 
-## 一、重构前准备
+## 1. Pre-refactoring Preparation
 
-### 1.1 确认用户输入
+### Confirm User Input
 
-在开始重构前，必须明确以下信息：
+| Info                  | Description                                                                 |
+| --------------------- | --------------------------------------------------------------------------- |
+| **Refactoring scope** | File path or code snippet specified by user                                 |
+| **Output directory**  | Where refactored files go (do not change without permission)                |
+| **Refactoring goal**  | Expected outcome (e.g., split sub-components, extract Hooks, full refactor) |
 
-| 信息项       | 说明                                                    |
-| ------------ | ------------------------------------------------------- |
-| **重构范围** | 用户指定的文件路径或代码片段                            |
-| **输出目录** | 重构后文件的存放路径（用户指定，不得擅自更改）          |
-| **重构目标** | 用户期望的结果（如：拆分子组件、抽离 Hook、整体重构等） |
-
-若用户未指定输出目录，**必须询问**，不得擅自决定。
-
-### 1.2 代码结构分析
-
-读取目标文件后，按以下维度分析：
+### Code Structure Analysis
 
 ```
-分析维度：
-├── 组件规模：总行数、JSX 层级深度
-├── 职责识别：该组件承担了哪些不同职责
-├── 重复逻辑：是否存在相似的 JSX 结构或逻辑
-├── 状态分布：state 的分布是否合理，是否存在状态提升需求
-├── 副作用：useEffect 的数量与职责是否清晰
-└── 可复用单元：哪些部分可以独立为组件或 Hook
+Analysis dimensions:
+├── Component scale: total lines, JSX nesting depth
+├── Responsibility identification: what different responsibilities does this component handle
+├── Duplicate logic: similar JSX structures or logic patterns
+├── State distribution: is state distribution reasonable
+├── Side effects: number and clarity of useEffect responsibilities
+└── Reusable units: what can become independent components or Hooks
 ```
 
 ---
 
-## 二、可复用单元识别规则
+## 2. Reusable Unit Identification Rules
 
-### 2.1 识别为独立组件的条件
+### Identify as independent component when:
 
-满足以下任一条件，应抽离为独立组件：
+| Condition                                                        | Example                                                     |
+| ---------------------------------------------------------------- | ----------------------------------------------------------- |
+| JSX structure exceeds 30 lines with relatively independent logic | Complex form sections, data display cards                   |
+| Same structure appears 2+ times in the same file                 | Similar list items, repeated button groups                  |
+| Has independent interaction state (expand/collapse)              | Collapsible panels, dropdown menus, modal triggers          |
+| Can be used independently from current context                   | Generic Loading state, empty state placeholder, error block |
 
-| 条件                                    | 示例                                      |
-| --------------------------------------- | ----------------------------------------- |
-| JSX 结构超过 **30 行**且逻辑相对独立    | 复杂的表单区块、数据展示卡片              |
-| **相同结构**在同一文件出现 **2 次以上** | 多个相似的列表项、重复的操作按钮组        |
-| 具有**独立的交互状态**（如展开/收起）   | 折叠面板、下拉菜单、弹窗触发器            |
-| 可以**脱离当前上下文**独立使用          | 通用 Loading 状态、空状态占位、错误提示块 |
+### Identify as custom Hook when:
 
-### 2.2 识别为自定义 Hook 的条件
+| Condition                                                  | Example                                           |
+| ---------------------------------------------------------- | ------------------------------------------------- |
+| Contains 2+ related state values + useEffect               | Data fetching logic (loading + data + error)      |
+| Same Hook combination used in multiple places              | Pagination logic, form validation logic           |
+| Side effect logic not directly tied to UI rendering        | Event listeners, timers, WebSocket connections    |
+| High complexity logic affecting main component readability | Complex filter/sort logic, permission check logic |
 
-满足以下任一条件，应抽离为自定义 Hook：
+### Keep in original component when:
 
-| 条件                                        | 示例                                   |
-| ------------------------------------------- | -------------------------------------- |
-| 包含 **2 个以上相关联的 state + useEffect** | 数据请求逻辑（loading + data + error） |
-| **相同的 Hook 组合**在多处使用              | 分页逻辑、表单校验逻辑                 |
-| 副作用逻辑**与 UI 渲染无直接关联**          | 事件监听、定时器、WebSocket 连接       |
-| 逻辑复杂度高，**影响组件主体可读性**        | 复杂的筛选/排序逻辑、权限判断逻辑      |
-
-### 2.3 保留在原组件的情况
-
-以下情况**不应过度拆分**：
-
-- 逻辑简单（< 10 行），拆分后反而增加理解成本
-- 与父组件状态高度耦合，拆分需要大量 props 传递
-- 仅当前组件使用一次，且无复用价值
+- Logic is simple (< 10 lines), splitting would increase cognitive overhead
+- Highly coupled with parent state, splitting requires excessive props passing
+- Used only once in current component with no reuse value
 
 ---
 
-## 三、重构方案设计
+## 3. Refactoring Plan Design
 
-### 3.1 方案展示格式
-
-分析完成后，**必须先向用户展示重构方案**，确认后再执行：
+**Present the plan to the user for confirmation before executing:**
 
 ```
-📋 重构方案：[原文件名]
+Refactoring plan: [original filename]
 
-原文件：src/pages/Order/index.tsx（共 320 行）
+Original file: src/pages/Order/index.tsx (320 lines)
 
-拆分计划：
-├── 📦 OrderHeader.tsx        → 抽离订单头部信息展示（原 L12-L58）
-├── 📦 OrderItemList.tsx      → 抽离订单商品列表（原 L60-L130，含重复结构）
-├── 🪝 useOrderDetail.ts      → 抽离订单数据请求逻辑（原 L8-L11, L145-L180）
-└── 📄 index.tsx              → 重构后主文件（保留核心编排逻辑，约 80 行）
+Split plan:
+├── 📦 OrderHeader.tsx        → Extract order header info display (original L12-L58)
+├── 📦 OrderItemList.tsx      → Extract order item list (original L60-L130)
+├── 🪝 useOrderDetail.ts      → Extract order data fetching logic
+└── 📄 index.tsx              → Refactored main file (keep core orchestration logic)
 
-输出目录：src/pages/Order/components/
+Output directory: src/pages/Order/components/
 
-是否确认执行以上方案？或需要调整？
+Confirm execution?
 ```
 
-### 3.2 命名规范
+---
 
-| 类型      | 命名规范                      | 示例                     |
-| --------- | ----------------------------- | ------------------------ |
-| 组件文件  | `PascalCase.tsx`              | `OrderItemList.tsx`      |
-| Hook 文件 | `useCamelCase.ts`             | `useOrderDetail.ts`      |
-| 组件目录  | `PascalCase/` 或 `camelCase/` | `OrderDetail/`           |
-| 组件导出  | 具名导出 + 默认导出           | `export { OrderHeader }` |
+## 4. Code Generation Standards
+
+### TypeScript Type Standards
+
+- Props interface must be explicitly defined, required/optional clearly distinguished
+- Enums/unions prefer TypeScript native types
+
+### Component Structure
+
+Each component file organized in this order: `external imports → internal imports → type definitions → component implementation → exports`
+
+### Custom Hook Standards
+
+Hook returns use **object** format (when > 2 return values), including standard `data / loading / error / refetch` fields.
 
 ---
 
-## 四、代码生成规范
+## 5. 1:1 Logic Preservation Guarantee
 
-### 4.1 TypeScript 类型规范
+### Never change these:
 
-> 📖 完整示例见 [code-examples.md](references/code-examples.md#1-typescript-类型规范)
+| Prohibited change        | Why                                                               |
+| ------------------------ | ----------------------------------------------------------------- |
+| **Business logic**       | Conditions, calculations, data processing must remain identical   |
+| **Side effect timing**   | useEffect trigger timing and dependencies must not change         |
+| **State initial values** | All state initial values must match original code                 |
+| **Event handling logic** | Event callback execution logic must not be simplified or modified |
+| **Render conditions**    | All conditional rendering logic must remain consistent            |
+| **Props interface**      | Exposed Props signature must not have breaking changes            |
 
-- Props 接口必须明确定义，必填/可选清晰区分
-- 枚举/联合类型优先使用 TypeScript 原生类型
+### Logic Equivalence Verification Checklist
 
-### 4.2 注释规范
+- [ ] Conditional rendering: all &&, ternary conditions match original
+- [ ] List rendering: map data source, key values, render content match original
+- [ ] Event binding: all handler trigger conditions and execution logic unchanged
+- [ ] Side effect dependencies: useEffect dependency arrays and trigger timing unchanged
+- [ ] State flow: state update logic completely identical to original
 
-注释要求**简洁、精准**，只注释"为什么"而非"是什么"。
+### Difference Annotation
 
-**注释位置规则：**
-
-- 组件顶部：一行简短的组件职责说明
-- 复杂逻辑前：说明该逻辑的意图
-- 非显而易见的 Hook 依赖：说明为何包含该依赖
-- 类型定义：关键字段加行内注释
-
-> 📖 好/坏注释对比示例见 [code-examples.md](references/code-examples.md#2-注释规范)
-
-### 4.3 组件结构规范
-
-每个组件文件按以下顺序组织：`外部 import → 内部 import → 类型定义 → 组件实现 → 导出`
-
-> 📖 完整结构示例见 [code-examples.md](references/code-examples.md#3-组件文件结构规范)
-
-### 4.4 自定义 Hook 规范
-
-Hook 返回值使用**对象**（超过 2 个返回值时），包含 `data / loading / error / refetch` 标准字段，内部使用 `AbortController` 处理卸载场景。
-
-> 📖 完整 Hook 结构示例见 [code-examples.md](references/code-examples.md#4-自定义-hook-文件结构规范)
-
----
-
-## 五、1:1 逻辑还原保证
-
-### 5.1 严禁改动的内容
-
-重构过程中，以下内容**绝对不能改变**：
-
-| 禁止改动项       | 说明                                                   |
-| ---------------- | ------------------------------------------------------ |
-| **业务逻辑**     | 条件判断、计算逻辑、数据处理流程必须完全一致           |
-| **副作用时机**   | `useEffect` 的触发时机和依赖关系不得改变               |
-| **状态初始值**   | 所有 state 的初始值必须与原代码一致                    |
-| **事件处理逻辑** | 事件回调的执行逻辑不得简化或修改                       |
-| **渲染条件**     | 所有条件渲染（`&&`、三元、`if`）的判断逻辑必须保持一致 |
-| **Props 接口**   | 对外暴露的 Props 签名不得破坏性变更（可新增可选项）    |
-
-### 5.2 逻辑等价性验证清单
-
-重构完成后，逐项核对：
-
-- [ ] **条件渲染**：所有 `&&`、三元表达式的条件与原代码一致
-- [ ] **列表渲染**：`map` 的数据源、`key` 值、渲染内容与原代码一致
-- [ ] **事件绑定**：所有事件处理函数的触发条件与执行逻辑不变
-- [ ] **副作用依赖**：`useEffect` 的依赖数组与触发时机不变
-- [ ] **状态流转**：state 的更新逻辑与原代码完全一致
-- [ ] **Props 传递**：子组件接收的 props 值与原代码中对应的值一致
-- [ ] **Context 消费**：Context 的消费位置与原代码一致
-
-### 5.3 差异标注规范
-
-若重构过程中发现原代码存在**明显 Bug 或反模式**，**不得擅自修复**，应在注释中标注并告知用户：
+If original code has **obvious bugs or anti-patterns**, **do not fix them** — annotate and inform the user:
 
 ```typescript
-// ⚠️ 注意：原代码此处使用 index 作为 key，可能导致列表重排时状态错乱。
-// 已按原逻辑保留，建议后续将 key 改为 item.id。
+// ⚠️ Note: original code uses index as key here, consider changing to item.id later
 {items.map((item, index) => <Item key={index} data={item} />)}
 ```
 
 ---
 
-## 六、React 最佳实践检查
+## 6. React Best Practices Check
 
-重构时同步应用以下最佳实践（**不改变逻辑，只优化写法**）：
-
-### 6.1 必须应用
-
-- [ ] 所有组件使用函数组件 + Hooks（不使用 Class 组件）
-- [ ] Props 接口使用 TypeScript 明确定义
-- [ ] 传递给子组件的函数使用 `useCallback` 包裹
-- [ ] 传递给子组件的对象/数组使用 `useMemo` 包裹
-- [ ] 纯展示子组件使用 `React.memo` 包裹
-- [ ] `useEffect` 中的异步操作使用 `AbortController` 或 `isMounted` 处理卸载场景
-- [ ] 列表渲染使用稳定唯一的业务 ID 作为 `key`
-
-### 6.2 按需应用
-
-- [ ] 复杂状态逻辑考虑使用 `useReducer` 替代多个 `useState`
-- [ ] 深层 Props 传递考虑使用 `Context` 或状态管理库
-- [ ] 高频事件处理添加 `debounce` / `throttle`
+- All components use function components + Hooks
+- Props interface defined in TypeScript
+- Functions passed to child components wrapped in `useCallback`
+- Objects/arrays passed to child components wrapped in `useMemo`
+- Pure display sub-components wrapped in `React.memo`
+- Async operations in useEffect use AbortController for unmount scenarios
+- List rendering uses stable, unique business IDs as keys
 
 ---
 
-## 七、输出目录规范
-
-- **严格按用户指定的输出目录**写入文件，不得更改路径
-- 若输出目录不存在，提示用户确认后创建
-- 重构后的主文件（`index.tsx`）替换原文件，或写入用户指定位置
-- 推荐结构：`components/`（子组件）+ `hooks/`（自定义 Hook）+ `index.tsx`（主文件）+ `components/index.ts`（统一导出）
-
----
-
-## 输出格式
-
-重构完成后，按以下 Markdown 格式输出结果：
+## Output Format
 
 ```markdown
-## React 组件重构完成报告
+## React Component Refactoring Report
 
-### 重构概览
+### Refactoring Overview
 
-- **原文件**：`[原文件路径]`（共 X 行）
-- **输出目录**：`[用户指定目录]`
-- **拆分文件数**：X 个
+- **Original file**: `[original file path]` (X lines)
+- **Output directory**: `[user-specified directory]`
+- **Split file count**: X
 
----
+### Split Results
 
-### 拆分结果
+| File           | Type                 | Original lines | Description                |
+| -------------- | -------------------- | -------------- | -------------------------- |
+| ComponentA.tsx | Sub-component        | L12~L58        | Responsibility description |
+| useXxx.ts      | Custom Hook          | L60~L90        | Responsibility description |
+| index.tsx      | Refactored main file | —              | Core orchestration logic   |
 
-| 文件             | 类型         | 对应原代码行 | 说明                      |
-| ---------------- | ------------ | ------------ | ------------------------- |
-| `ComponentA.tsx` | 子组件       | L12~L58      | [一句话描述职责]          |
-| `useXxx.ts`      | 自定义 Hook  | L60~L90      | [一句话描述职责]          |
-| `index.tsx`      | 重构后主文件 | —            | 保留核心编排逻辑，约 X 行 |
+### Logic Equivalence Verification
 
----
+- [ ] Conditional rendering: ✅ Matches original
+- [ ] List rendering: ✅ Key values and data source match
+- [ ] Event binding: ✅ Trigger conditions and execution logic unchanged
+- [ ] Side effect dependencies: ✅ useEffect dependency arrays unchanged
+- [ ] State flow: ✅ State update logic completely identical
 
-### 逻辑等价性验证
+### Original Code Issues Found (annotated, not fixed)
 
-- [ ] 条件渲染：✅ 与原代码一致
-- [ ] 列表渲染：✅ key 值与数据源一致
-- [ ] 事件绑定：✅ 触发条件与执行逻辑不变
-- [ ] 副作用依赖：✅ useEffect 依赖数组不变
-- [ ] 状态流转：✅ state 更新逻辑完全一致
-- [ ] Props 传递：✅ 子组件接收值与原代码一致
-
----
-
-### 发现的原代码问题（未修复，仅标注）
-
-- [文件/行号]：[问题描述] → [建议]
-- 若无问题：✅ 未发现明显 Bug 或反模式
-
----
-
-### 使用方式
-
-重构后调用方式与原代码**完全兼容**，无需修改任何调用处代码。
+- If none: ✅ No obvious bugs or anti-patterns found
 ```
