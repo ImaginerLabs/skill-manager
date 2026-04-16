@@ -99,6 +99,35 @@ vi.mock("../../../../src/components/sync/ReplaceSyncConfirmDialog", () => ({
   default: () => null,
 }));
 
+// Mock SyncSummaryPanel（Story 9.4）
+vi.mock("../../../../src/components/sync/SyncSummaryPanel", () => ({
+  default: ({
+    onConfirm,
+    onCancel,
+  }: {
+    skillCount: number;
+    targets: unknown[];
+    mode: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }) => (
+    <div data-testid="sync-summary-panel">
+      <button onClick={onConfirm}>确认同步</button>
+      <button onClick={onCancel}>取消</button>
+    </div>
+  ),
+}));
+
+// Mock SyncProgressBar（Story 9.4）
+vi.mock("../../../../src/components/sync/SyncProgressBar", () => ({
+  default: () => <div data-testid="sync-progress-bar">Progress</div>,
+}));
+
+// Mock pushSync API（Story 9.4 重试功能）
+vi.mock("../../../../src/lib/api", () => ({
+  pushSync: vi.fn(),
+}));
+
 import SyncExecutor from "../../../../src/components/sync/SyncExecutor";
 import { useSyncStore } from "../../../../src/stores/sync-store";
 
@@ -178,7 +207,7 @@ describe("SyncExecutor", () => {
   });
 
   describe("交互", () => {
-    it("点击同步按钮调用 executePush", async () => {
+    it("点击同步按钮展示摘要面板，确认后调用 executePush", async () => {
       // 重置为默认 idle 状态（上一个测试可能设置了 syncing）
       vi.mocked(useSyncStore).mockReturnValue({
         targets: [{ id: "t1", name: "项目A", path: "/tmp/a", enabled: true }],
@@ -206,7 +235,14 @@ describe("SyncExecutor", () => {
 
       render(<SyncExecutor />);
 
+      // Step 1: 点击同步按钮 → 展示摘要面板
       await user.click(screen.getByText("开始同步"));
+
+      // Step 2: 摘要面板应该出现
+      expect(screen.getByTestId("sync-summary-panel")).toBeInTheDocument();
+
+      // Step 3: 点击确认同步 → 调用 executePush
+      await user.click(screen.getByText("确认同步"));
 
       expect(mockExecutePush).toHaveBeenCalledOnce();
     });

@@ -12,11 +12,39 @@ vi.mock("react-i18next", () => ({
         "skillList.workflowBadge": "工作流",
         "skill.viewOnGithub": "在 GitHub 上查看",
         "skill.readonlyTooltip": "外部 Skill（只读）",
+        "skill.editMeta": "编辑元数据",
+        "skill.syncToIDE": "同步到 IDE",
+        "skill.copyPath": "复制路径",
+        "skill.pathCopied": "路径已复制",
+        "common.delete": "删除",
       };
       return map[key] ?? key;
     },
     i18n: { language: "zh", changeLanguage: vi.fn() },
   }),
+}));
+
+// Mock react-router-dom（SkillContextMenu 使用 useNavigate）
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", () => ({
+  useNavigate: () => mockNavigate,
+  MemoryRouter: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// Mock sync-store（SkillContextMenu 使用 useSyncStore）
+vi.mock("../../src/stores/sync-store", () => ({
+  useSyncStore: vi.fn(() => ({
+    toggleSkillSelection: vi.fn(),
+  })),
+}));
+
+// Mock toast-store
+vi.mock("../../src/components/shared/toast-store", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
 }));
 
 // Mock 数据
