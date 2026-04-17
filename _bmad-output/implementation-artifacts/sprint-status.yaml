@@ -383,3 +383,15 @@ development_status:
   swu-2-2-create-category: done
   swu-3-1-workflow-preview-markdown: done
   epic-sync-workflow-ux-enhancement-retrospective: done
+
+  # ============================================================
+  # Epic Bundle-V2: 套件管理功能扩展 — 按来源和手动选择创建套件
+  # 用户可以按来源或手动选择 Skill 创建套件，支持 Tab 切换和实时预览
+  # 来源：头脑风暴会话 2026-04-16
+  # Dependencies: Epic 8（外部 Skill 来源元数据）
+  # ============================================================
+  epic-bundle-v2: done
+  bundle-v2-data-model-refactor: done
+  bundle-v2-ui-tab-preview: done
+  bundle-v2-sync-integration: done
+  epic-bundle-v2-retrospective: optional
