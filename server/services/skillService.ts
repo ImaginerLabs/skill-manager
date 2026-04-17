@@ -174,10 +174,11 @@ export function getSkillMeta(id: string): SkillMeta | undefined {
 }
 
 /**
- * 根据 ID 获取完整 Skill（含 Markdown 正文）
- * 元数据从缓存获取，正文按需从文件系统读取
+ * 获取单个 Skill 完整内容（meta + Markdown content）
  */
-export async function getSkillFull(id: string): Promise<SkillFull> {
+export async function getSkillFull(
+  id: string,
+): Promise<SkillFull & { rawContent: string }> {
   ensureInitialized();
 
   const meta = skillCache.get(id);
@@ -185,12 +186,10 @@ export async function getSkillFull(id: string): Promise<SkillFull> {
     throw AppError.skillNotFound(id);
   }
 
-  // 从文件系统读取完整内容
   const absolutePath = path.join(SKILLS_ROOT, meta.filePath);
 
   try {
     const rawContent = await fs.readFile(absolutePath, "utf-8");
-    // 使用 gray-matter 分离 content
     const parsed = matter(rawContent);
 
     return {
@@ -199,25 +198,10 @@ export async function getSkillFull(id: string): Promise<SkillFull> {
       rawContent,
     };
   } catch (err) {
-    throw new AppError(
-      "FILE_READ_ERROR",
+    throw AppError.fileReadError(
       `读取 Skill 文件失败: ${err instanceof Error ? err.message : String(err)}`,
-      500,
     );
   }
-}
-
-/**
- * 获取解析失败的文件列表
- */
-export function getParseErrors(): Array<{
-  filePath: string;
-  error: string;
-}> {
-  return Array.from(parseErrors.entries()).map(([filePath, error]) => ({
-    filePath,
-    error,
-  }));
 }
 
 /**
@@ -253,6 +237,44 @@ export async function deleteSkill(id: string): Promise<void> {
       `删除 Skill 文件失败: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
+}
+
+/**
+ * 删除目标目录下所有内容（整个目录清空，包括所有子文件夹和文件）
+ */
+export async function deleteSkillsByPath(
+  targetPath: string,
+): Promise<string[]> {
+  const normalizedTarget = normalizePath(path.resolve(targetPath));
+
+  const exists = await fs.pathExists(normalizedTarget);
+  if (!exists) {
+    return [];
+  }
+
+  const deleted: string[] = [];
+
+  async function collectAndDelete(dirPath: string): Promise<void> {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name.startsWith(".")) continue;
+        await collectAndDelete(fullPath);
+      }
+      if (entry.isFile() || entry.isDirectory()) {
+        try {
+          await fs.remove(fullPath);
+          deleted.push(normalizePath(fullPath));
+        } catch {
+          // skip failures
+        }
+      }
+    }
+  }
+
+  await collectAndDelete(normalizedTarget);
+  return deleted;
 }
 
 /**
@@ -369,6 +391,19 @@ export async function updateSkillMeta(
       `更新 Skill 元数据失败: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
+}
+
+/**
+ * 获取解析失败的文件列表
+ */
+export function getParseErrors(): Array<{
+  filePath: string;
+  error: string;
+}> {
+  return Array.from(parseErrors.entries()).map(([filePath, error]) => ({
+    filePath,
+    error,
+  }));
 }
 
 // ---- 内部工具 ----

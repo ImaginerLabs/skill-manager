@@ -88,6 +88,15 @@ export class AppError extends Error {
     );
   }
 
+  /** 文件读取错误 */
+  static fileReadError(message = "文件读取失败"): AppError {
+    return new AppError(
+      ErrorCode.FILE_READ_ERROR,
+      message,
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
+  }
+
   /** 路径遍历攻击 */
   static pathTraversal(message = "非法路径访问"): AppError {
     return new AppError(
