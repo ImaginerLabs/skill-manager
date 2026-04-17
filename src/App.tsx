@@ -1,5 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
+import BranchGeneratorPage from "./pages/BranchGeneratorPage";
+import DevToolsPage from "./pages/DevToolsPage";
 import ImportPage from "./pages/import";
 import NotFound from "./pages/NotFound";
 import PathsPage from "./pages/PathsPage";
@@ -15,6 +17,14 @@ const router = createBrowserRouter([
       {
         path: "/",
         element: <SkillBrowsePage />,
+      },
+      {
+        path: "/tools",
+        element: <DevToolsPage />,
+      },
+      {
+        path: "/tools/branch-generator",
+        element: <BranchGeneratorPage />,
       },
       {
         path: "/workflow",

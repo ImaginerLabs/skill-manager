@@ -5,6 +5,7 @@ import {
   GitBranch,
   RefreshCw,
   Settings,
+  Wrench,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -34,6 +35,7 @@ export default function Sidebar() {
 
   // 导航项在组件内动态生成，以便使用 t() 翻译标签
   const navItems = [
+    { to: "/tools", icon: Wrench, label: t("nav.devTools") },
     { to: "/workflow", icon: GitBranch, label: t("nav.workflow") },
     { to: "/sync", icon: RefreshCw, label: t("nav.sync") },
     { to: "/import", icon: Download, label: t("nav.import") },
