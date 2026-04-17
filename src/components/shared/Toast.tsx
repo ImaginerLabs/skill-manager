@@ -26,7 +26,7 @@ const BG_MAP = {
 };
 
 /**
- * Toast 容器 — 渲染在右下角，最大堆叠 3 个
+ * Toast 容器 — 屏幕右上角，最大堆叠 3 个
  */
 export default function ToastContainer() {
   const [items, setItems] = useState<ToastItem[]>([]);
@@ -40,7 +40,7 @@ export default function ToastContainer() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"
+      className="fixed top-4 right-4 z-[10000] flex flex-col gap-2 max-w-sm"
       role="region"
       aria-label="通知"
       aria-live="polite"
