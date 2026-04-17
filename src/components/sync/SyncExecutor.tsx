@@ -3,7 +3,7 @@
 // ============================================================
 
 import { Loader2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SyncDetail, SyncMode } from "../../../shared/types";
 import { useSyncFlow } from "../../hooks/useSyncFlow";
@@ -39,6 +39,7 @@ export default function SyncExecutor() {
   const [loadingMode, setLoadingMode] = useState<"sync" | "diff" | null>(null);
   const [retryingSkillId, setRetryingSkillId] = useState<string | null>(null);
   const [pendingMode, setPendingMode] = useState<SyncMode>("incremental");
+  const pendingModeRef = useRef<SyncMode>("incremental");
   const [showTargetSelector, setShowTargetSelector] = useState(false);
   const [targetSelectorMode, setTargetSelectorMode] = useState<"sync" | "diff">(
     "sync",
@@ -56,8 +57,9 @@ export default function SyncExecutor() {
   const handleTargetSelectorConfirm = useCallback(
     (selectedIds: string[]) => {
       setShowTargetSelector(false);
+      const mode = pendingModeRef.current;
 
-      if (pendingMode === "replace") {
+      if (mode === "replace") {
         syncFlow.startSummary(
           selectedIds.length,
           enabledTargets.filter((t) => selectedIds.includes(t.id)),
@@ -69,15 +71,16 @@ export default function SyncExecutor() {
       syncFlow.startSummary(
         selectedIds.length,
         enabledTargets.filter((t) => selectedIds.includes(t.id)),
-        pendingMode,
+        mode,
       );
     },
-    [pendingMode, syncFlow, enabledTargets],
+    [syncFlow, enabledTargets],
   );
 
   // 点击同步按钮
   const handleSync = useCallback(
     (mode: SyncMode) => {
+      pendingModeRef.current = mode;
       setPendingMode(mode);
       if (enabledTargets.length === 1) {
         handleTargetSelectorConfirm([enabledTargets[0].id]);
@@ -86,8 +89,7 @@ export default function SyncExecutor() {
       setTargetSelectorMode("sync");
       setShowTargetSelector(true);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 修复闭包陷阱：pendingMode 变化时必须重新创建 handleSync
-    [enabledTargets, handleTargetSelectorConfirm, pendingMode],
+    [enabledTargets, handleTargetSelectorConfirm],
   );
 
   const handleTargetSelectorCancel = useCallback(() => {
@@ -98,7 +100,8 @@ export default function SyncExecutor() {
   const handleSummaryConfirm = useCallback(async () => {
     if (loadingMode === "sync") return;
 
-    if (pendingMode === "replace") {
+    const mode = pendingModeRef.current;
+    if (mode === "replace") {
       setShowReplaceConfirm(true);
       return;
     }
@@ -106,9 +109,9 @@ export default function SyncExecutor() {
     syncFlow.confirmSync();
     setLoadingMode("sync");
     try {
-      const result = await executePush(undefined, pendingMode);
+      const result = await executePush(undefined, mode);
       syncFlow.complete(result);
-      if (pendingMode === "incremental") {
+      if (mode === "incremental") {
         if (result.failed > 0) {
           toast.error(t("sync.syncPartialFail", { failed: result.failed }));
         } else {
@@ -141,7 +144,7 @@ export default function SyncExecutor() {
     } finally {
       setLoadingMode(null);
     }
-  }, [pendingMode, loadingMode, syncFlow, executePush, t]);
+  }, [loadingMode, syncFlow, executePush, t]);
 
   const handleSummaryCancel = useCallback(() => {
     syncFlow.cancel();
