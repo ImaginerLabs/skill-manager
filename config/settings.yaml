@@ -29,25 +29,37 @@ skillBundles:
     name: default
     displayName: 默认套件
     description: 包含所有出厂预设分类的完整技能组合
-    categoryNames:
-      - coding
-      - writing
-      - devops
-      - workflows
-      - document-processing
-      - dev-tools
-      - testing
-      - design
-      - meta-skills
+    criteria:
+      categories:
+        - coding
+        - writing
+        - devops
+        - workflows
+        - document-processing
+        - dev-tools
+        - testing
+        - design
+        - meta-skills
+        - agent
     createdAt: '2026-04-14T04:01:28.856Z'
-    updatedAt: '2026-04-16T12:04:41.888Z'
+    updatedAt: '2026-04-16T13:51:05.355Z'
   - id: bundle-mo1heq2p-0c38
     name: agent
     displayName: 智能代理
-    categoryNames:
-      - agent
+    criteria:
+      categories:
+        - agent
     createdAt: '2026-04-16T12:54:52.800Z'
     updatedAt: '2026-04-16T12:55:10.501Z'
+  - id: bundle-mo1mhqv5-mi87
+    name: anthropic
+    displayName: Anthropic
+    description: Anthropic
+    criteria:
+      sources:
+        - anthropic-official
+    createdAt: '2026-04-16T15:17:11.873Z'
+    updatedAt: '2026-04-16T15:17:11.873Z'
 activeCategories:
   - coding
   - writing

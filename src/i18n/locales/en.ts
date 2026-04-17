@@ -219,6 +219,15 @@ export const en = {
     brokenRef: "{{count}} category references broken",
     deselectAll: "Deselect All",
     categoryCount: "{{count}} categories",
+    preview: "Preview",
+    skills: "Skills",
+    byCategory: "By Category",
+    bySource: "By Source",
+    bySkill: "Manual Select",
+    selectSources: "Select Sources",
+    searchSources: "Search sources...",
+    selectSkills: "Select Skills",
+    searchSkills: "Search skills...",
   },
 
   // ── Category Management ───────────────────────────────────

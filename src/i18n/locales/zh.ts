@@ -215,6 +215,15 @@ export const zh = {
     brokenRef: "{{count}} 个分类引用已失效",
     deselectAll: "取消全选",
     categoryCount: "{{count}} categories",
+    preview: "预览",
+    skills: "个 Skill",
+    byCategory: "按分类",
+    bySource: "按来源",
+    bySkill: "手动选择",
+    selectSources: "选择来源",
+    searchSources: "搜索来源...",
+    selectSkills: "选择 Skill",
+    searchSkills: "搜索 Skill...",
   },
 
   // ── 分类管理 ──────────────────────────────────────────────
