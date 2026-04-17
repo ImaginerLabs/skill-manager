@@ -24,3 +24,7 @@ config/
 
 # 锁文件
 package-lock.json
+
+.claude/
+.opencode/
+.trae/

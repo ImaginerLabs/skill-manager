@@ -2,7 +2,7 @@
 title: "Changelog 与版本号迭代机制（方案 A）"
 type: "chore"
 created: "2026-04-12"
-status: "in-review"
+status: "done"
 baseline_commit: "48084f7"
 context: []
 ---

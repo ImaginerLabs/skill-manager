@@ -2,7 +2,7 @@
 title: "亮色/暗色主题切换"
 type: "feature"
 created: "2026-04-13"
-status: "draft"
+status: "done"
 context: []
 ---
 

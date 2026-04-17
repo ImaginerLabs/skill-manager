@@ -406,7 +406,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - ❌ **不要使用 `require()`** — 项目是 ESM，使用 `import`
 - ❌ **不要使用 `.eslintrc` 格式** — 使用 flat config（`eslint.config.js`）
 - ❌ **不要使用 `@tailwind` 指令** — Tailwind v4 使用 `@import "tailwindcss"`
-- ❌ **不要使用亮色主题样式** — 本项目仅暗色主题
+- ❌ **不要引入仅亮色或仅暗色的硬编码样式** — 使用 CSS 变量和 `[data-theme="light"]`/`[data-theme="dark"]` 选择器，确保主题可切换
 - ❌ **不要在组件/store 中直接调用 `fetch`** — 必须通过 `src/lib/api.ts` 封装
 - ❌ **不要直接调用 `fs.writeFile()`** — 使用 `safeWrite()` 保证原子性和并发安全
 - ❌ **不要对外部 Skill（`readonly: true`）执行编辑/删除/移动操作** — 后端 `skillService` 的 `deleteSkill`、`moveSkillToCategory`、`updateSkillMeta` 均有 `readonly` 拦截，前端 SkillPreview 禁用编辑/删除按钮

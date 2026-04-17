@@ -2,7 +2,7 @@
 title: "活跃度热力图 Hover 浮窗 — 展示当日修改文件列表"
 type: "feature"
 created: "2026-04-13"
-status: "draft"
+status: "done"
 context:
   - "{project-root}/_bmad-output/project-context.md"
 ---
