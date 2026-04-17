@@ -4,11 +4,11 @@ sync:
     - id: sync-mo18ay8z-qj3x
       name: trae-cn
       path: /Users/alex/.trae-cn/skills
-      enabled: true
+      enabled: false
     - id: sync-mo1arcsq-51da
       name: codebuddy
       path: /Users/alex/.codebuddy/skills
-      enabled: false
+      enabled: true
     - id: sync-mo2cayw3-1czq
       name: open code
       path: /Users/alex/.config/opencode/skills

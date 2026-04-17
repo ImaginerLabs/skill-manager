@@ -181,6 +181,16 @@ export async function deleteSkill(id: string): Promise<void> {
   });
 }
 
+/** 删除目标目录下所有 Skill */
+export async function deleteSkillsByPath(targetPath: string): Promise<{
+  deleted: string[];
+}> {
+  return apiCall<{ deleted: string[] }>(
+    `/api/skills/by-path?path=${encodeURIComponent(targetPath)}`,
+    { method: "DELETE" },
+  );
+}
+
 // ---- Import/Scan API ----
 
 import type { ImportResult, ScanResult } from "../../shared/types";

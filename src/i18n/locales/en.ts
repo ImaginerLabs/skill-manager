@@ -164,6 +164,9 @@ export const en = {
     deleteConfirmTitle: "Confirm Delete",
     deleteConfirmDesc:
       'Are you sure you want to delete sync target "{{name}}"?',
+    deleteAllSkillsTitle: "Delete All Skills",
+    deleteAllSkillsDesc:
+      'Are you sure you want to delete all Skills under "{{name}}"?\nThis action is irreversible and will permanently delete all synced Skill files in that directory.',
     validating: "Validating...",
     validatePath: "Validate Path",
     pathValid: "Path is valid",
@@ -174,6 +177,8 @@ export const en = {
     updateFailed: "Failed to update sync target",
     deleteSuccess: "Sync target deleted",
     deleteFailed: "Failed to delete sync target",
+    deleteAllSkillsSuccess: "Deleted {{count}} Skill files",
+    deleteAllSkillsFailed: "Failed to delete Skill files",
     enableAll: "Enable All",
     disableAll: "Disable All",
   },

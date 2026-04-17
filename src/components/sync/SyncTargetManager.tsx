@@ -2,13 +2,25 @@
 // components/sync/SyncTargetManager.tsx — 同步目标管理组件
 // ============================================================
 
-import { Check, Edit2, FolderOpen, Plus, Trash2, X } from "lucide-react";
+import {
+  Check,
+  Edit2,
+  Eraser,
+  FolderOpen,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import type { PathPreset } from "../../../shared/types";
 import { useConfirmDialog } from "../../hooks/useConfirmDialog";
-import { fetchPathPresets, validateSyncPath } from "../../lib/api";
+import {
+  deleteSkillsByPath,
+  fetchPathPresets,
+  validateSyncPath,
+} from "../../lib/api";
 import { useSyncStore } from "../../stores/sync-store";
 import ConfirmDialog from "../shared/ConfirmDialog";
 import { PathPresetSelect } from "../shared/PathPresetSelect";
@@ -53,6 +65,7 @@ export default function SyncTargetManager() {
     path: "",
   });
   const [deleting, setDeleting] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [validating, setValidating] = useState(false);
   const [pathStatus, setPathStatus] = useState<{
     exists: boolean;
@@ -79,6 +92,33 @@ export default function SyncTargetManager() {
       );
     } finally {
       setDeleting(false);
+    }
+  });
+
+  // 删除目录下所有 Skills 确认对话框状态
+  const {
+    confirmState: deleteAllState,
+    requestConfirm: requestDeleteAll,
+    handleConfirm: handleConfirmDeleteAll,
+    handleCancel: handleCancelDeleteAll,
+  } = useConfirmDialog<string>(async (targetId) => {
+    setDeletingAll(true);
+    try {
+      const target = targets.find((t) => t.id === targetId);
+      const result = await deleteSkillsByPath(target?.path ?? "");
+      toast.success(
+        t("syncTarget.deleteAllSkillsSuccess", {
+          count: result.deleted.length,
+        }),
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("syncTarget.deleteAllSkillsFailed"),
+      );
+    } finally {
+      setDeletingAll(false);
     }
   });
 
@@ -476,6 +516,15 @@ export default function SyncTargetManager() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => requestDeleteAll(target.id)}
+                        aria-label={`${t("syncTarget.deleteAllSkillsTitle")} ${target.name}`}
+                      >
+                        <Eraser size={13} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-7 w-7 text-[hsl(var(--destructive))]"
                         onClick={() => requestDelete(target.id)}
                         aria-label={`${t("common.delete")} ${target.name}`}
@@ -504,6 +553,21 @@ export default function SyncTargetManager() {
         confirmLabel={deleting ? t("common.processing") : t("common.delete")}
         onConfirm={handleConfirmDelete}
         confirmDisabled={deleting}
+      />
+
+      {/* 删除目录下所有 Skills 确认对话框 */}
+      <ConfirmDialog
+        open={deleteAllState.open}
+        onOpenChange={(open) => !open && handleCancelDeleteAll()}
+        variant="danger"
+        title={t("syncTarget.deleteAllSkillsTitle")}
+        description={t("syncTarget.deleteAllSkillsDesc", {
+          name:
+            targets.find((tgt) => tgt.id === deleteAllState.target)?.name ?? "",
+        })}
+        confirmLabel={deletingAll ? t("common.processing") : t("common.delete")}
+        onConfirm={handleConfirmDeleteAll}
+        confirmDisabled={deletingAll}
       />
     </div>
   );

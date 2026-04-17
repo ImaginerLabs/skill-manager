@@ -10,6 +10,7 @@ import {
 } from "../../shared/schemas.js";
 import {
   deleteSkill,
+  deleteSkillsByPath,
   getAllSkills,
   getParseErrors,
   getSkillFull,
@@ -146,6 +147,29 @@ skillRoutes.put(
       }
       const updated = await moveSkillToCategory(id, parsed.data.category);
       res.json({ success: true, data: updated });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
+ * DELETE /api/skills/by-path?path=xxx — 删除目标目录下所有 Skill 文件
+ */
+skillRoutes.delete(
+  "/skills/by-path",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { path: targetPath } = req.query;
+      if (typeof targetPath !== "string" || !targetPath.trim()) {
+        res.status(400).json({
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: "path is required" },
+        });
+        return;
+      }
+      const deleted = await deleteSkillsByPath(targetPath);
+      res.json({ success: true, data: { deleted } });
     } catch (err) {
       next(err);
     }

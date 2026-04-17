@@ -161,6 +161,9 @@ export const zh = {
     pathPlaceholder: "/path/to/project/.codebuddy/skills",
     deleteConfirmTitle: "确认删除",
     deleteConfirmDesc: '确定要删除同步目标 "{{name}}" 吗？',
+    deleteAllSkillsTitle: "删除所有 Skills",
+    deleteAllSkillsDesc:
+      '确定要删除 "{{name}}" 目录下的所有 Skill 文件吗？\n此操作不可逆，将永久删除该目录下所有同步而来的 Skill 文件。',
     validating: "验证中...",
     validatePath: "验证路径",
     pathValid: "路径有效",
@@ -171,6 +174,8 @@ export const zh = {
     updateFailed: "更新同步目标失败",
     deleteSuccess: "同步目标已删除",
     deleteFailed: "删除同步目标失败",
+    deleteAllSkillsSuccess: "已删除 {{count}} 个 Skill 文件",
+    deleteAllSkillsFailed: "删除 Skill 文件失败",
     enableAll: "全部启用",
     disableAll: "全部禁用",
   },
