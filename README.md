@@ -1,6 +1,8 @@
 # Skill Manager — Skill 管理器
 
 > 本地 AI Skill 文件的浏览、编排与 IDE 同步工具
+>
+> **当前版本**: v0.4.23
 
 📖 [English Documentation](./README.en.md)
 
@@ -56,7 +58,7 @@
 
 ### 环境要求
 
-- Node.js >= 18
+- Node.js >= 20
 - npm >= 9
 
 ### 安装与启动

@@ -27,7 +27,7 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 
 | 技术         | 版本    | 备注                                     |
 | ------------ | ------- | ---------------------------------------- |
-| Node.js      | ≥18     | `.nvmrc` 锁定 18                         |
+| Node.js      | ≥20     | `.nvmrc` 锁定 20                         |
 | TypeScript   | ^6.0.2  | strict mode，分离 client/server tsconfig |
 | React        | ^19.2.5 | 函数组件 + Hooks only                    |
 | React Router | ^7.14.0 | `createBrowserRouter` API                |
@@ -487,4 +487,13 @@ _本文件包含 AI 代理在本项目中编写代码时必须遵循的关键规
 - 定期审查移除过时规则
 - 保持精简，聚焦于 LLM 容易遗漏的细节
 
-最后更新：2026-04-15（V2 功能全量完成后更新：V2 Epic 1~4 全部 done，包含同步多模式、来源视图浏览、工作流自定义步骤、默认套件全选修复）
+最后更新：2026-04-18（添加 CLAUDE.md 集成，新增 .claude/rules/project-rules.md）
+
+## CLAUDE.md 集成
+
+本项目已集成 Claude Code (claude.ai/code) 专用指导文件：
+
+- `CLAUDE.md` — Claude Code CLI 专用的项目引导文件，涵盖技术栈、开发者命令、架构概览、关键规则和 Git 工作流
+- `.claude/rules/project-rules.md` — BMad 项目规则，包含四阶段开发流程、Story 执行流程、状态流转等
+
+Claude Code 用户应首先阅读 `CLAUDE.md` 获取项目概览和开发者命令。

@@ -1,6 +1,8 @@
 # Skill Manager
 
 > A local tool for browsing, orchestrating, and syncing AI Skill files to your IDE
+>
+> **Current Version**: v0.4.23
 
 📖 [中文文档](./README.md)
 
@@ -56,7 +58,7 @@
 
 ### Requirements
 
-- Node.js >= 18
+- Node.js >= 20
 - npm >= 9
 
 ### Install & Run

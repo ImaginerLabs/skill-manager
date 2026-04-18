@@ -3,7 +3,7 @@
 ## Tech Stack
 
 - **Frontend**: React 19 + TypeScript, Vite 8, Tailwind CSS v4, Zustand 5
-- **Backend**: Express 5 (ESM), Node.js ≥18
+- **Backend**: Express 5 (ESM), Node.js ≥20
 - **Testing**: Vitest (unit/integration) + Playwright (E2E)
 - **Shared**: `shared/types.ts`, `shared/schemas.ts`, `shared/constants.ts`
 
