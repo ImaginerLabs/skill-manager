@@ -144,6 +144,11 @@
   outline-offset: 2px;
 }
 
+/* ---- Command Palette 输入框去除焦点边框 ---- */
+[cmdk-input] {
+  outline: none;
+}
+
 /* ---- 滚动条样式 ---- */
 
 ::-webkit-scrollbar {
