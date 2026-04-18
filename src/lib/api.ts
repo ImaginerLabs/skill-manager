@@ -73,10 +73,13 @@ export async function fetchSkills(): Promise<SkillMeta[]> {
 }
 
 /** 获取单个 Skill 完整内容 */
-export async function fetchSkillById(id: string): Promise<SkillFull> {
+export async function fetchSkillById(
+  id: string,
+  options?: RequestInit,
+): Promise<SkillFull> {
   return apiCall<SkillFull>(
     `/api/skills/${encodeURIComponent(id)}`,
-    undefined,
+    options,
     SkillFullSchema,
   );
 }

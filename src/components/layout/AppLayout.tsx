@@ -67,7 +67,13 @@ export default function AppLayout() {
     ) {
       setPreviewOpen(true);
     }
-  }, [selectedSkillId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    isSkillBrowsePage,
+    selectedSkillId,
+    previewMode,
+    previewOpen,
+    setPreviewOpen,
+  ]);
 
   // 全局键盘快捷键
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
+import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 import BranchGeneratorPage from "./pages/BranchGeneratorPage";
 import DevToolsPage from "./pages/DevToolsPage";
 import ImportPage from "./pages/import";
@@ -55,5 +56,9 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ErrorBoundary>
+      <RouterProvider router={router} />
+    </ErrorBoundary>
+  );
 }

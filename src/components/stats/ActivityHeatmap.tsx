@@ -23,7 +23,6 @@ export default function ActivityHeatmap() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const controller = new AbortController();
     let isMounted = true;
 
     setLoading(true);
@@ -40,7 +39,6 @@ export default function ActivityHeatmap() {
 
     return () => {
       isMounted = false;
-      controller.abort();
     };
   }, []);
 

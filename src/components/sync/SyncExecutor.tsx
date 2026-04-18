@@ -106,7 +106,7 @@ export default function SyncExecutor() {
       return;
     }
 
-    syncFlow.confirmSync();
+    syncFlow.confirmSync(syncFlow.state.skillCount);
     setLoadingMode("sync");
     try {
       const result = await executePush(undefined, mode);
@@ -155,7 +155,7 @@ export default function SyncExecutor() {
     if (loadingMode === "sync") return;
 
     setShowReplaceConfirm(false);
-    syncFlow.confirmSync();
+    syncFlow.confirmSync(syncFlow.state.skillCount);
     setLoadingMode("sync");
     try {
       const result = await executePush(undefined, "replace");

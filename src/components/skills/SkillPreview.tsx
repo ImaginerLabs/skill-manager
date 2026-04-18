@@ -71,26 +71,23 @@ export default function SkillPreview() {
     }
     prevSkillIdRef.current = selectedSkillId;
 
-    let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
 
-    fetchSkillById(selectedSkillId)
+    fetchSkillById(selectedSkillId, { signal: controller.signal })
       .then((data) => {
-        if (!cancelled) {
-          setSkill(data);
-          setLoading(false);
-        }
+        setSkill(data);
+        setLoading(false);
       })
       .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "加载失败");
-          setLoading(false);
-        }
+        if (err.name === "AbortError") return; // 忽略取消的请求
+        setError(err instanceof Error ? err.message : "加载失败");
+        setLoading(false);
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
       if (transitionTimer) clearTimeout(transitionTimer);
     };
   }, [selectedSkillId]);

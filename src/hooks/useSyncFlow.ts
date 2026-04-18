@@ -149,7 +149,7 @@ export interface UseSyncFlowReturn {
     targets: SyncTarget[],
     mode: SyncMode,
   ) => void;
-  confirmSync: () => void;
+  confirmSync: (skillCount: number) => void;
   updateProgress: (completed: number) => void;
   complete: (result: SyncResult) => void;
   setError: (error: string) => void;
@@ -190,21 +190,24 @@ export function useSyncFlow(): UseSyncFlowReturn {
     [],
   );
 
-  const confirmSync = useCallback(() => {
-    dispatch({ type: "CONFIRM_SYNC" });
+  const confirmSync = useCallback(
+    (skillCount: number) => {
+      dispatch({ type: "CONFIRM_SYNC" });
 
-    // 启动进度模拟定时器
-    clearProgressTimer();
-    let simulated = 0;
-    const total = state.skillCount;
-    const step = Math.max(1, Math.ceil(total / 10));
-    const maxSimulated = Math.floor(total * 0.9);
+      // 启动进度模拟定时器
+      clearProgressTimer();
+      let simulated = 0;
+      const total = skillCount; // 使用传入的 skillCount，避免闭包陈旧
+      const step = Math.max(1, Math.ceil(total / 10));
+      const maxSimulated = Math.floor(total * 0.9);
 
-    progressTimerRef.current = setInterval(() => {
-      simulated = Math.min(simulated + step, maxSimulated);
-      dispatch({ type: "PROGRESS", payload: { completed: simulated } });
-    }, 500);
-  }, [state.skillCount, clearProgressTimer]);
+      progressTimerRef.current = setInterval(() => {
+        simulated = Math.min(simulated + step, maxSimulated);
+        dispatch({ type: "PROGRESS", payload: { completed: simulated } });
+      }, 500);
+    },
+    [clearProgressTimer],
+  );
 
   const complete = useCallback(
     (result: SyncResult) => {

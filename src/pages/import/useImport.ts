@@ -57,7 +57,7 @@ export function useImport() {
       .catch((err) => console.error("[ImportPage] 加载分类失败:", err));
     fetchPathPresets()
       .then(setPathPresets)
-      .catch(() => {});
+      .catch((err) => console.error("[ImportPage] 加载路径预设失败:", err));
   }, []);
 
   const handleScan = useCallback(async () => {
